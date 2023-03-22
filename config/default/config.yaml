@@ -1,0 +1,34 @@
+apiVersion: config.bankdata.dk/v1
+kind: ProjectConfig
+health:
+  healthProbeBindAddress: :8081
+metrics:
+  bindAddress: 0.0.0.0:8080
+webhook:
+  port: 9443
+leaderElection:
+  leaderElect: true
+  resourceName: 5d272013.bankdata.dk
+styraToken: token
+styraAddress: http://127.0.0.1:8080
+styraSystemUserRoles: 
+  - SystemViewer
+  - SystemPolicyEditor
+  - SystemInstall
+styraSystemPrefix: ""
+styraSystemSuffix: ""
+logLevel: 0
+#sentryDSN: 
+#environment: 
+#sentryDebug: 
+#sentryHTTPSProxy: 
+#controllerClass: 
+#webhooksDisabled: 
+#datasourceWebhookAddress:
+gitCredentials: []
+# - user: testuser
+#   password: password
+#   repoPrefix: https://git.com
+#identityProvider: 
+#jwtGroupClaim:
+migrationEnabled: false

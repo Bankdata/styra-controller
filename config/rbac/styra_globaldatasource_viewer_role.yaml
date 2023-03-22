@@ -1,0 +1,27 @@
+# permissions for end users to view globaldatasources.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: globaldatasource-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: styra-controller
+    app.kubernetes.io/part-of: styra-controller
+    app.kubernetes.io/managed-by: kustomize
+  name: globaldatasource-viewer-role
+rules:
+- apiGroups:
+  - styra.bankdata.dk
+  resources:
+  - globaldatasources
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - styra.bankdata.dk
+  resources:
+  - globaldatasources/status
+  verbs:
+  - get

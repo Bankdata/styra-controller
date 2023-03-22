@@ -1,0 +1,12 @@
+apiVersion: styra.bankdata.dk/v1beta1
+kind: System
+metadata:
+  labels:
+    app.kubernetes.io/name: system
+    app.kubernetes.io/instance: system-sample
+    app.kubernetes.io/part-of: styra-controller
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: styra-controller
+  name: system-sample
+spec:
+  # TODO(user): Add fields here

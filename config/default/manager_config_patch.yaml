@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: system
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        args:
+        - --config=/etc/styra-controller/config.yaml
+        volumeMounts:
+        - name: config
+          mountPath: /etc/styra-controller
+      volumes:
+      - name: config
+        secret:
+          secretName: config

@@ -1,0 +1,264 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.11.3
+  creationTimestamp: null
+  name: systems.styra.bankdata.dk
+spec:
+  group: styra.bankdata.dk
+  names:
+    kind: System
+    listKind: SystemList
+    plural: systems
+    singular: system
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.ready
+      name: Ready
+      type: string
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: System is the Schema for the Systems API.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec is the specification of the System resource.
+            properties:
+              datasources:
+                description: Datasources represents a list of Styra datasources to
+                  be mounted in the system.
+                items:
+                  description: Datasource represents a Styra datasource to be mounted
+                    in the system.
+                  properties:
+                    path:
+                      description: Path is the path within the system where the datasource
+                        should reside.
+                      type: string
+                  required:
+                  - path
+                  type: object
+                type: array
+              decisionMappings:
+                description: DecisionMappings holds the list of decision mappings
+                  for the system.
+                items:
+                  description: DecisionMapping specifies how a system decision mapping
+                    should be configured. This allows configuration of when a decision
+                    is considered allowed or not. It also provides the ability to
+                    show additional columns in Styra.
+                  properties:
+                    allowed:
+                      description: AllowedMapping specifies how to determine if a
+                        decision is allowed or not.
+                      properties:
+                        expected:
+                          description: Expected is the value we expect to be set in
+                            the Path in order to consider the decision allowed.
+                          properties:
+                            boolean:
+                              description: Boolean holds a pointer to a bool if the
+                                Expected value represents a bool.
+                              type: boolean
+                            integer:
+                              description: Integer holds a pointer to an int if the
+                                Expected value represents an int.
+                              type: integer
+                            string:
+                              description: String holds a pointer to a string if the
+                                Expected value represents a string.
+                              type: string
+                          type: object
+                        negated:
+                          description: Negated negates the expectation.
+                          type: boolean
+                        path:
+                          description: Path is the path to the value which we check
+                            our expectation against.
+                          type: string
+                      required:
+                      - path
+                      type: object
+                    columns:
+                      description: Columns holds a list of ColumnMapping for the decision
+                        mapping.
+                      items:
+                        description: ColumnMapping specifies how a value in the decision
+                          result should be mapped to a column in the Styra decision
+                          log.
+                        properties:
+                          key:
+                            description: Key is the name of the column as shown in
+                              the decision log.
+                            type: string
+                          path:
+                            description: Path is where in the decision result the
+                              value for the column is found.
+                            type: string
+                        required:
+                        - key
+                        - path
+                        type: object
+                      type: array
+                    name:
+                      description: Name is the name of the decision mapping.
+                      type: string
+                    reason:
+                      description: ReasonMapping specifies where the reason of the
+                        decision can be found.
+                      properties:
+                        path:
+                          description: Path is the path to where the reason is found
+                            in the decision result.
+                          type: string
+                      type: object
+                  type: object
+                type: array
+              deletionProtection:
+                description: DeletionProtection disables deletion of the system in
+                  Styra, when the System resource is deleted.
+                type: boolean
+              localPlane:
+                description: LocalPlane specifies how the Styra Local Plane should
+                  be configured. This is used to generate Secret and ConfigMap for
+                  the SLP to consume.
+                properties:
+                  name:
+                    description: Name is the hostname of the SLP service.
+                    type: string
+                required:
+                - name
+                type: object
+              sourceControl:
+                description: SourceControl holds SourceControl configuration.
+                properties:
+                  origin:
+                    description: GitRepo specifies the configuration for how to pull
+                      policy from git.
+                    properties:
+                      commit:
+                        description: Commit is used to point to a specific commit
+                          SHA. This takes precedence over `Reference` if both are
+                          specified.
+                        type: string
+                      credentialsSecretName:
+                        description: CredentialsSecretName is a reference to an existing
+                          secret which holds git credentials. This secret should have
+                          the keys `username` and `password`.
+                        type: string
+                      path:
+                        description: Path is the path in the git repo where the policies
+                          are located.
+                        type: string
+                      reference:
+                        description: Reference is used to point to a tag or branch.
+                          This will be ignored if `Commit` is specified.
+                        type: string
+                      url:
+                        description: URL is the URL of the git repo.
+                        type: string
+                    required:
+                    - url
+                    type: object
+                required:
+                - origin
+                type: object
+              subjects:
+                description: Subjects is the list of subjects which should have access
+                  to the system.
+                items:
+                  description: Subject represents a subject which has been granted
+                    access to the system. The subject is assigned the roles set in
+                    the controller configuration file.
+                  properties:
+                    kind:
+                      description: Kind is the SubjectKind of the subject.
+                      enum:
+                      - user
+                      - group
+                      type: string
+                    name:
+                      description: Name is the name of the subject. The meaning of
+                        this field depends on the SubjectKind.
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
+            type: object
+          status:
+            description: Status is the status of the System resource.
+            properties:
+              conditions:
+                description: Conditions holds a list of Condition which describes
+                  the state of the System.
+                items:
+                  description: Condition represents a System condition.
+                  properties:
+                    lastProbeTime:
+                      description: LastProbeTime is a timestamp for the last time
+                        the condition was checked.
+                      format: date-time
+                      type: string
+                    lastTransitionTime:
+                      description: LastTransitionTime is a timestamp for the last
+                        time that the condition changed state.
+                      format: date-time
+                      type: string
+                    status:
+                      description: Status is the status of the Condition.
+                      type: string
+                    type:
+                      description: Type is the ConditionType of the Condition.
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              failureMessage:
+                description: Failure message holds a message when Phase is Failed.
+                type: string
+              id:
+                description: ID is the system ID in Styra.
+                type: string
+              phase:
+                default: Pending
+                description: Phase is the current state of syncing the system.
+                enum:
+                - Pending
+                - Failed
+                - Created
+                type: string
+              ready:
+                description: Ready is true when the system is created and in sync.
+                type: boolean
+            required:
+            - ready
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

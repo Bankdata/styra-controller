@@ -1,0 +1,94 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-styra-bankdata-dk-v1alpha1-globaldatasource
+  failurePolicy: Fail
+  name: mglobaldatasource.kb.io
+  rules:
+  - apiGroups:
+    - styra.bankdata.dk
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - globaldatasources
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-styra-bankdata-dk-v1beta1-system
+  failurePolicy: Fail
+  name: msystem.kb.io
+  rules:
+  - apiGroups:
+    - styra.bankdata.dk
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - systems
+  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-styra-bankdata-dk-v1alpha1-globaldatasource
+  failurePolicy: Fail
+  name: vglobaldatasource.kb.io
+  rules:
+  - apiGroups:
+    - styra.bankdata.dk
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - globaldatasources
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-styra-bankdata-dk-v1beta1-system
+  failurePolicy: Fail
+  name: vsystem.kb.io
+  rules:
+  - apiGroups:
+    - styra.bankdata.dk
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - systems
+  sideEffects: None

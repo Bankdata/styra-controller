@@ -1,0 +1,90 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - styra.bankdata.dk
+  resources:
+  - globaldatasources
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - styra.bankdata.dk
+  resources:
+  - globaldatasources/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - styra.bankdata.dk
+  resources:
+  - globaldatasources/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - styra.bankdata.dk
+  resources:
+  - systems
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - styra.bankdata.dk
+  resources:
+  - systems/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - styra.bankdata.dk
+  resources:
+  - systems/status
+  verbs:
+  - get
+  - patch
+  - update
