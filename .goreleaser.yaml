@@ -84,6 +84,4 @@ release:
   footer: |
     ## Docker Images
     - `ghcr.io/bankdata/styra-controller:latest`
-    - "ghcr.io/bankdata/styra-controller:{{ .Version }}"
-    - "ghcr.io/bankdata/styra-controller:{{ .Version }}-amd64"
-    - "ghcr.io/bankdata/styra-controller:{{ .Version }}-arm64"
+    - `ghcr.io/bankdata/styra-controller:{{ .Version }}`
