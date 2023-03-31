@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1_test
+package config
 
 import (
 	"testing"
@@ -23,7 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestV1(t *testing.T) {
+func TestConfig(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "api/config/v1")
+	RunSpecs(t, "internal/config")
 }

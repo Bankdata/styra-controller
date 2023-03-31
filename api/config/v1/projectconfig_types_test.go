@@ -19,54 +19,87 @@ package v1_test
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	cfg "sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
 
 	v1 "github.com/bankdata/styra-controller/api/config/v1"
+	"github.com/bankdata/styra-controller/api/config/v2alpha1"
 )
 
 var _ = Describe("ProjectConfig", func() {
-	DescribeTable("GetGitCredentialForRepo",
-		func(gitCredentials []*v1.GitCredential, repo string, expected *v1.GitCredential) {
-			c := &v1.ProjectConfig{
-				GitCredentials: gitCredentials,
-			}
-			Ω(c.GetGitCredentialForRepo(repo)).To(Equal(expected))
-		},
-		Entry("empty list of git credentials", nil, "test", nil),
 
-		Entry("get eficode credentials",
-			[]*v1.GitCredential{
-				{
-					User:       "",
-					Password:   "",
-					RepoPrefix: "https://git.bankdata.eficode.io/",
+	Describe("ToV2Alpha1", func() {
+		It("converts to v2alpha1", func() {
+			v1cfg := &v1.ProjectConfig{
+				ControllerManagerConfigurationSpec: cfg.ControllerManagerConfigurationSpec{
+					CacheNamespace: "test",
 				},
-			},
-			"https://git.bankdata.eficode.io/test/test.git",
-			&v1.GitCredential{
-				User:       "",
-				Password:   "",
-				RepoPrefix: "https://git.bankdata.eficode.io/",
-			},
-		),
-		Entry("get eficode credentials should return longest match",
-			[]*v1.GitCredential{
-				{
-					User:       "",
-					Password:   "",
-					RepoPrefix: "https://git.bankdata.eficode.io/",
+				StyraToken:               "token",
+				StyraAddress:             "addr",
+				StyraSystemUserRoles:     []string{"role1", "role2"},
+				StyraSystemPrefix:        "prefix",
+				StyraSystemSuffix:        "suffix",
+				LogLevel:                 42,
+				SentryDSN:                "https://my-sentry.com",
+				SentryDebug:              true,
+				Environment:              "test",
+				SentryHTTPSProxy:         "https://my-proxy.com",
+				ControllerClass:          "class",
+				DatasourceWebhookAddress: "https://my-webhook.com",
+				WebhooksDisabled:         true,
+				MigrationEnabled:         true,
+				GitCredentials: []*v1.GitCredential{
+					{
+						User:       "user",
+						Password:   "password",
+						RepoPrefix: "https://github.com/my-org",
+					},
+					{
+						User:       "other-user",
+						Password:   "other-password",
+						RepoPrefix: "https://github.com/my-other-org",
+					},
 				},
-				{
-					User:       "",
-					Password:   "",
-					RepoPrefix: "https://git.bankdata.eficode.io/test",
+			}
+
+			expected := &v2alpha1.ProjectConfig{
+				ControllerManagerConfigurationSpec: cfg.ControllerManagerConfigurationSpec{
+					CacheNamespace: "test",
 				},
-			},
-			"https://git.bankdata.eficode.io/test/test.git",
-			&v1.GitCredential{
-				User:       "",
-				Password:   "",
-				RepoPrefix: "https://git.bankdata.eficode.io/test",
-			},
-		),
-	)
+				ControllerClass:    "class",
+				DisableCRDWebhooks: true,
+				EnableMigrations:   true,
+				GitCredentials: []*v2alpha1.GitCredential{
+					{
+						User:       "user",
+						Password:   "password",
+						RepoPrefix: "https://github.com/my-org",
+					},
+					{
+						User:       "other-user",
+						Password:   "other-password",
+						RepoPrefix: "https://github.com/my-other-org",
+					},
+				},
+				LogLevel:        42,
+				SystemPrefix:    "prefix",
+				SystemSuffix:    "suffix",
+				SystemUserRoles: []string{"role1", "role2"},
+				Sentry: &v2alpha1.SentryConfig{
+					DSN:         "https://my-sentry.com",
+					Debug:       true,
+					Environment: "test",
+					HTTPSProxy:  "https://my-proxy.com",
+				},
+				NotificationWebhook: &v2alpha1.NotificationWebhookConfig{
+					Address: "https://my-webhook.com",
+				},
+				Styra: v2alpha1.StyraConfig{
+					Token:   "token",
+					Address: "addr",
+				},
+			}
+
+			Ω(v1cfg.ToV2Alpha1()).To(Equal(expected))
+		})
+	})
 })
