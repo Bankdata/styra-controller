@@ -33,7 +33,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	configv1 "github.com/bankdata/styra-controller/api/config/v1"
+	configv2alpha1 "github.com/bankdata/styra-controller/api/config/v2alpha1"
 	styrav1alpha1 "github.com/bankdata/styra-controller/api/styra/v1alpha1"
 	styrav1beta1 "github.com/bankdata/styra-controller/api/styra/v1beta1"
 	styractrls "github.com/bankdata/styra-controller/internal/controller/styra"
@@ -113,10 +113,12 @@ var _ = BeforeSuite(func() {
 		Styra:         styraClientMock,
 		WebhookClient: webhookMock,
 		Recorder:      k8sManager.GetEventRecorderFor("system-controller"),
-		Config: &configv1.ProjectConfig{
-			StyraSystemUserRoles: []string{string(styra.RoleSystemViewer)},
-			IdentityProvider:     "AzureAD Bankdata",
-			JwtGroupClaim:        "groups",
+		Config: &configv2alpha1.ProjectConfig{
+			SystemUserRoles: []string{string(styra.RoleSystemViewer)},
+			SSO: &configv2alpha1.SSOConfig{
+				IdentityProvider: "AzureAD Bankdata",
+				JWTGroupsClaim:   "groups",
+			},
 		},
 	}
 
@@ -124,7 +126,11 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	globalDatasourceReconciler := &styractrls.GlobalDatasourceReconciler{
-		Config: &configv1.ProjectConfig{GitUser: "test-user", GitPassword: "test-secret"},
+		Config: &configv2alpha1.ProjectConfig{
+			GitCredentials: []*configv2alpha1.GitCredential{
+				{User: "test-user", Password: "test-secret"},
+			},
+		},
 		Client: k8sClient,
 		Styra:  styraClientMock,
 	}

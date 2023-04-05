@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	configv1 "github.com/bankdata/styra-controller/api/config/v1"
+	configv2alpha1 "github.com/bankdata/styra-controller/api/config/v2alpha1"
 	styrav1alpha1 "github.com/bankdata/styra-controller/api/styra/v1alpha1"
 	ctrlerr "github.com/bankdata/styra-controller/internal/errors"
 	"github.com/bankdata/styra-controller/internal/fields"
@@ -49,7 +49,7 @@ type GlobalDatasourceReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	Styra  styra.ClientInterface
-	Config *configv1.ProjectConfig
+	Config *configv2alpha1.ProjectConfig
 }
 
 //+kubebuilder:rbac:groups=styra.bankdata.dk,resources=globaldatasources,verbs=get;list;watch;create;update;patch;delete
@@ -97,18 +97,23 @@ func (r *GlobalDatasourceReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		if err != nil {
 			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not update Styra secret")
 		}
-	} else if r.Config.GitUser != "" && r.Config.GitPassword != "" {
+	} else {
 		log.Info("Reconciling git credentials from default credentials")
-		_, err := r.Styra.CreateUpdateSecret(
-			ctx,
-			path.Join("libraries/global", gds.Name, "git"),
-			&styra.CreateUpdateSecretsRequest{
-				Name:   r.Config.GitUser,
-				Secret: r.Config.GitPassword,
-			},
-		)
-		if err != nil {
-			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not update Styra secret")
+		gitCredential := r.Config.GetGitCredentialForRepo(gds.Spec.URL)
+		if gitCredential == nil {
+			log.Info("Could not find matching credentials", "url", gds.Spec.URL)
+		} else {
+			_, err := r.Styra.CreateUpdateSecret(
+				ctx,
+				path.Join("libraries/global", gds.Name, "git"),
+				&styra.CreateUpdateSecretsRequest{
+					Name:   gitCredential.User,
+					Secret: gitCredential.Password,
+				},
+			)
+			if err != nil {
+				return ctrl.Result{}, ctrlerr.Wrap(err, "Could not update Styra secret")
+			}
 		}
 	}
 
@@ -154,12 +159,14 @@ func (r *GlobalDatasourceReconciler) specToUpdate(gds *styrav1alpha1.GlobalDatas
 	if s.Enabled == nil || *s.Enabled {
 		req.Enabled = true
 	}
+
 	credentials := path.Join("libraries/global", gds.Name, "git")
 	if s.CredentialsSecretRef != nil {
 		req.Credentials = credentials
-	} else if r.Config.GitUser != "" && r.Config.GitPassword != "" {
+	} else if r.Config.GetGitCredentialForRepo(gds.Spec.URL) != nil {
 		req.Credentials = credentials
 	}
+
 	return req
 }
 
@@ -184,7 +191,7 @@ func (r *GlobalDatasourceReconciler) needsUpdate(gds *styrav1alpha1.GlobalDataso
 		if s.CredentialsSecretRef != nil {
 			return true
 		}
-		if r.Config.GitUser != "" && r.Config.GitPassword != "" {
+		if r.Config.GetGitCredentialForRepo(gds.Spec.URL) != nil {
 			return true
 		}
 	}

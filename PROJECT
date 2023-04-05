@@ -49,4 +49,11 @@ resources:
   kind: Object
   path: github.com/bankdata/styra-controller/api/test/v1
   version: v1
+- api:
+    crdVersion: v1
+  domain: bankdata.dk
+  group: config
+  kind: ProjectConfig
+  path: github.com/bankdata/styra-controller/api/config/v2alpha1
+  version: v2alpha1
 version: "3"

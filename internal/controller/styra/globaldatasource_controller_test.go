@@ -21,14 +21,14 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	configv1 "github.com/bankdata/styra-controller/api/config/v1"
+	configv2alpha1 "github.com/bankdata/styra-controller/api/config/v2alpha1"
 	styrav1alpha1 "github.com/bankdata/styra-controller/api/styra/v1alpha1"
 	"github.com/bankdata/styra-controller/pkg/ptr"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
 type specToUpdateTest struct {
-	cfg      *configv1.ProjectConfig
+	cfg      *configv2alpha1.ProjectConfig
 	ds       *styrav1alpha1.GlobalDatasource
 	expected *styra.UpsertDatasourceRequest
 }
@@ -36,7 +36,7 @@ type specToUpdateTest struct {
 var _ = DescribeTable("globalDatasourceSpecToUpdate", func(test specToUpdateTest) {
 	cfg := test.cfg
 	if cfg == nil {
-		cfg = &configv1.ProjectConfig{}
+		cfg = &configv2alpha1.ProjectConfig{}
 	}
 	r := &GlobalDatasourceReconciler{Config: cfg}
 	Expect(r.specToUpdate(test.ds)).To(Equal(test.expected))
@@ -54,7 +54,11 @@ var _ = DescribeTable("globalDatasourceSpecToUpdate", func(test specToUpdateTest
 	}),
 
 	Entry("using default git credentials", specToUpdateTest{
-		cfg: &configv1.ProjectConfig{GitUser: "test-user", GitPassword: "test-pw"},
+		cfg: &configv2alpha1.ProjectConfig{
+			GitCredentials: []*configv2alpha1.GitCredential{
+				{User: "test-user", Password: "test-pw"},
+			},
+		},
 		ds: &styrav1alpha1.GlobalDatasource{
 			ObjectMeta: metav1.ObjectMeta{Name: "test"},
 			Spec:       styrav1alpha1.GlobalDatasourceSpec{},
@@ -66,7 +70,11 @@ var _ = DescribeTable("globalDatasourceSpecToUpdate", func(test specToUpdateTest
 	}),
 
 	Entry("using credentials from secret", specToUpdateTest{
-		cfg: &configv1.ProjectConfig{GitUser: "test-user", GitPassword: "test-pw"},
+		cfg: &configv2alpha1.ProjectConfig{
+			GitCredentials: []*configv2alpha1.GitCredential{
+				{User: "test-user", Password: "test-pw"},
+			},
+		},
 		ds: &styrav1alpha1.GlobalDatasource{
 			ObjectMeta: metav1.ObjectMeta{Name: "test"},
 			Spec: styrav1alpha1.GlobalDatasourceSpec{
@@ -83,7 +91,11 @@ var _ = DescribeTable("globalDatasourceSpecToUpdate", func(test specToUpdateTest
 	}),
 
 	Entry("setting all fields", specToUpdateTest{
-		cfg: &configv1.ProjectConfig{GitUser: "test-user", GitPassword: "test-pw"},
+		cfg: &configv2alpha1.ProjectConfig{
+			GitCredentials: []*configv2alpha1.GitCredential{
+				{User: "test-user", Password: "test-pw"},
+			},
+		},
 		ds: &styrav1alpha1.GlobalDatasource{
 			ObjectMeta: metav1.ObjectMeta{Name: "test"},
 			Spec: styrav1alpha1.GlobalDatasourceSpec{
@@ -114,7 +126,7 @@ var _ = DescribeTable("globalDatasourceSpecToUpdate", func(test specToUpdateTest
 )
 
 type needsUpdateTest struct {
-	cfg      *configv1.ProjectConfig
+	cfg      *configv2alpha1.ProjectConfig
 	gds      *styrav1alpha1.GlobalDatasource
 	dc       *styra.DatasourceConfig
 	expected bool
@@ -123,7 +135,7 @@ type needsUpdateTest struct {
 var _ = DescribeTable("needsUpdate", func(test needsUpdateTest) {
 	cfg := test.cfg
 	if cfg == nil {
-		cfg = &configv1.ProjectConfig{}
+		cfg = &configv2alpha1.ProjectConfig{}
 	}
 	r := &GlobalDatasourceReconciler{Config: cfg}
 	Expect(r.needsUpdate(test.gds, test.dc)).To(Equal(test.expected))
@@ -185,9 +197,10 @@ var _ = DescribeTable("needsUpdate", func(test needsUpdateTest) {
 		expected: false,
 	}),
 	Entry("git credentials from default", needsUpdateTest{
-		cfg: &configv1.ProjectConfig{
-			GitUser:     "test-user",
-			GitPassword: "test-pw",
+		cfg: &configv2alpha1.ProjectConfig{
+			GitCredentials: []*configv2alpha1.GitCredential{
+				{User: "test-user", Password: "test-pw"},
+			},
 		},
 		gds: &styrav1alpha1.GlobalDatasource{
 			ObjectMeta: metav1.ObjectMeta{Name: "test"},
@@ -201,9 +214,10 @@ var _ = DescribeTable("needsUpdate", func(test needsUpdateTest) {
 		expected: true,
 	}),
 	Entry("git credentials from default in sync", needsUpdateTest{
-		cfg: &configv1.ProjectConfig{
-			GitUser:     "test-user",
-			GitPassword: "test-pw",
+		cfg: &configv2alpha1.ProjectConfig{
+			GitCredentials: []*configv2alpha1.GitCredential{
+				{User: "test-user", Password: "test-pw"},
+			},
 		},
 		gds: &styrav1alpha1.GlobalDatasource{
 			ObjectMeta: metav1.ObjectMeta{Name: "test"},

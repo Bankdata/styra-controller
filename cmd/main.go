@@ -40,8 +40,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 
 	configv1 "github.com/bankdata/styra-controller/api/config/v1"
+	configv2alpha1 "github.com/bankdata/styra-controller/api/config/v2alpha1"
 	styrav1alpha1 "github.com/bankdata/styra-controller/api/styra/v1alpha1"
 	styrav1beta1 "github.com/bankdata/styra-controller/api/styra/v1beta1"
+	"github.com/bankdata/styra-controller/internal/config"
 	controllers "github.com/bankdata/styra-controller/internal/controller/styra"
 	"github.com/bankdata/styra-controller/internal/webhook"
 	"github.com/bankdata/styra-controller/pkg/styra"
@@ -63,6 +65,7 @@ func init() {
 	utilruntime.Must(styrav1alpha1.AddToScheme(scheme))
 	utilruntime.Must(configv1.AddToScheme(scheme))
 	utilruntime.Must(styrav1beta1.AddToScheme(scheme))
+	utilruntime.Must(configv2alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -76,13 +79,18 @@ func main() {
 
 	flag.Parse()
 
-	ctrlConfig := configv1.ProjectConfig{}
+	ctrlConfig := &configv2alpha1.ProjectConfig{}
 	options := ctrl.Options{Scheme: scheme}
 	if configFile != "" {
 		var err error
-		options, err = options.AndFrom(ctrl.ConfigFile().AtPath(configFile).OfKind(&ctrlConfig))
+		ctrlConfig, err = config.Load(configFile, scheme)
 		if err != nil {
 			setupLog.Error(err, "unable to load the config file")
+			exit(err)
+		}
+		options, err = options.AndFrom(ctrlConfig)
+		if err != nil {
+			setupLog.Error(err, "could not load options from config")
 			exit(err)
 		}
 	}
@@ -92,13 +100,13 @@ func main() {
 		zap.Level(zapcore.Level(-ctrlConfig.LogLevel)),
 	))
 
-	if ctrlConfig.SentryDSN != "" {
+	if ctrlConfig.Sentry != nil {
 		err := sentry.Init(sentry.ClientOptions{
-			Dsn:         ctrlConfig.SentryDSN,
-			Environment: ctrlConfig.Environment,
+			Dsn:         ctrlConfig.Sentry.DSN,
+			Environment: ctrlConfig.Sentry.Environment,
 			Release:     os.Getenv("STYRACTRL_VERSION"),
-			Debug:       ctrlConfig.SentryDebug,
-			HTTPSProxy:  ctrlConfig.SentryHTTPSProxy,
+			Debug:       ctrlConfig.Sentry.Debug,
+			HTTPSProxy:  ctrlConfig.Sentry.HTTPSProxy,
 		})
 		if err != nil {
 			setupLog.Error(err, "failed to init sentry")
@@ -113,12 +121,12 @@ func main() {
 		exit(err)
 	}
 
-	roles := make([]styra.Role, len(ctrlConfig.StyraSystemUserRoles))
-	for i, role := range ctrlConfig.StyraSystemUserRoles {
+	roles := make([]styra.Role, len(ctrlConfig.SystemUserRoles))
+	for i, role := range ctrlConfig.SystemUserRoles {
 		roles[i] = styra.Role(role)
 	}
 
-	styraClient := styra.New(ctrlConfig.StyraAddress, ctrlConfig.StyraToken)
+	styraClient := styra.New(ctrlConfig.Styra.Address, ctrlConfig.Styra.Token)
 
 	// System Controller
 	metric := prometheus.NewGaugeVec(
@@ -138,14 +146,14 @@ func main() {
 	r1 := &controllers.SystemReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
-		Styra:    styra.New(ctrlConfig.StyraAddress, ctrlConfig.StyraToken),
+		Styra:    styra.New(ctrlConfig.Styra.Address, ctrlConfig.Styra.Token),
 		Recorder: mgr.GetEventRecorderFor("system-controller"),
 		Metric:   metric,
-		Config:   &ctrlConfig,
+		Config:   ctrlConfig,
 	}
 
-	if ctrlConfig.DatasourceWebhookAddress != "" {
-		r1.WebhookClient = webhook.New(ctrlConfig.DatasourceWebhookAddress)
+	if ctrlConfig.NotificationWebhook != nil {
+		r1.WebhookClient = webhook.New(ctrlConfig.NotificationWebhook.Address)
 	}
 
 	if err = r1.SetupWithManager(mgr); err != nil {
@@ -153,7 +161,7 @@ func main() {
 		exit(err)
 	}
 
-	if !ctrlConfig.WebhooksDisabled {
+	if !ctrlConfig.DisableCRDWebhooks {
 		if err = (&styrav1beta1.System{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "System")
 			os.Exit(1)
@@ -163,14 +171,14 @@ func main() {
 	if err = (&controllers.GlobalDatasourceReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-		Config: &ctrlConfig,
+		Config: ctrlConfig,
 		Styra:  styraClient,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GlobalDatasource")
 		os.Exit(1)
 	}
 
-	if !ctrlConfig.WebhooksDisabled {
+	if !ctrlConfig.DisableCRDWebhooks {
 		if err = (&styrav1alpha1.GlobalDatasource{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "GlobalDatasource")
 			os.Exit(1)

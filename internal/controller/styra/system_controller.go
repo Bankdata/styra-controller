@@ -43,7 +43,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	configv1 "github.com/bankdata/styra-controller/api/config/v1"
+	configv2alpha1 "github.com/bankdata/styra-controller/api/config/v2alpha1"
 	"github.com/bankdata/styra-controller/api/styra/v1beta1"
 	ctrlerr "github.com/bankdata/styra-controller/internal/errors"
 	"github.com/bankdata/styra-controller/internal/fields"
@@ -64,7 +64,7 @@ type SystemReconciler struct {
 	WebhookClient webhook.Client
 	Recorder      record.EventRecorder
 	Metric        *prometheus.GaugeVec
-	Config        *configv1.ProjectConfig
+	Config        *configv2alpha1.ProjectConfig
 }
 
 //+kubebuilder:rbac:groups=styra.bankdata.dk,resources=systems,verbs=get;list;watch;create;update;patch;delete
@@ -229,7 +229,7 @@ func (r *SystemReconciler) reconcile(
 	systemID := system.Status.ID
 	migrationID := system.ObjectMeta.Annotations["styra-controller/migration-id"]
 
-	if r.Config.MigrationEnabled && systemID == "" && migrationID != "" {
+	if r.Config.EnableMigrations && systemID == "" && migrationID != "" {
 		log.Info(fmt.Sprintf("Use migrationId(%s) to fetch system from Styra DAS", migrationID))
 
 		cfg, err = r.getSystem(ctx, log, migrationID)
@@ -498,14 +498,13 @@ func (r *SystemReconciler) reconcileSubjects(
 	for _, rb := range res.Rolebindings {
 		roleBindingsByRole[rb.RoleID] = rb
 	}
-	systemUserRoles := make([]styra.Role, len(r.Config.StyraSystemUserRoles))
-	for i, role := range r.Config.StyraSystemUserRoles {
+	systemUserRoles := make([]styra.Role, len(r.Config.SystemUserRoles))
+	for i, role := range r.Config.SystemUserRoles {
 		systemUserRoles[i] = styra.Role(role)
 	}
 	rolebindingSubjects := createRolebindingSubjects(
 		system.Spec.Subjects,
-		r.Config.IdentityProvider,
-		r.Config.JwtGroupClaim,
+		r.Config.SSO,
 	)
 	for _, role := range systemUserRoles {
 		rb, ok := roleBindingsByRole[role]
@@ -563,8 +562,7 @@ func (r *SystemReconciler) reconcileSubjects(
 
 func createRolebindingSubjects(
 	subjects []v1beta1.Subject,
-	identityProvider string,
-	jwtGroupClaim string,
+	sso *configv2alpha1.SSOConfig,
 ) []*styra.Subject {
 	styraSubjectsByUserID := map[string]struct{}{}
 	styraSubjectsByClaimValue := map[string]struct{}{}
@@ -582,13 +580,17 @@ func createRolebindingSubjects(
 			})
 			styraSubjectsByUserID[subject.Name] = struct{}{}
 
-		} else if subject.Kind == v1beta1.SubjectKindGroup {
+		} else if subject.Kind == v1beta1.SubjectKindGroup && sso != nil {
 			if _, ok := styraSubjectsByClaimValue[subject.Name]; ok {
 				continue
 			}
 			styraSubjects = append(styraSubjects, &styra.Subject{
-				Kind:        styra.SubjectKindClaim,
-				ClaimConfig: &styra.ClaimConfig{IdentityProvider: identityProvider, Key: jwtGroupClaim, Value: subject.Name},
+				Kind: styra.SubjectKindClaim,
+				ClaimConfig: &styra.ClaimConfig{
+					IdentityProvider: sso.IdentityProvider,
+					Key:              sso.JWTGroupsClaim,
+					Value:            subject.Name,
+				},
 			})
 			styraSubjectsByClaimValue[subject.Name] = struct{}{}
 
@@ -979,7 +981,7 @@ func (r *SystemReconciler) updateSystem(
 
 func (r *SystemReconciler) specToSystemConfig(system *v1beta1.System) *styra.SystemConfig {
 	cfg := &styra.SystemConfig{
-		Name:     system.DisplayName(r.Config.StyraSystemPrefix, r.Config.StyraSystemSuffix),
+		Name:     system.DisplayName(r.Config.SystemPrefix, r.Config.SystemSuffix),
 		Type:     "custom",
 		ReadOnly: true,
 	}

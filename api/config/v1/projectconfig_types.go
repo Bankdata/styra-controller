@@ -17,9 +17,7 @@ limitations under the License.
 package v1
 
 import (
-	"sort"
-	"strings"
-
+	"github.com/bankdata/styra-controller/api/config/v2alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	cfg "sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
 )
@@ -65,19 +63,48 @@ func init() {
 	SchemeBuilder.Register(&ProjectConfig{})
 }
 
-// GetGitCredentialForRepo determines which default GitCredential to use for checking out the
-// policy repository based on the URL to the policy repository.
-func (c *ProjectConfig) GetGitCredentialForRepo(repo string) *GitCredential {
+// ToV2Alpha1 returns this ProjectConfig converted to a v2alpha1.ProjectConfig
+func (c *ProjectConfig) ToV2Alpha1() *v2alpha1.ProjectConfig {
+	v2cfg := &v2alpha1.ProjectConfig{
+		ControllerManagerConfigurationSpec: c.ControllerManagerConfigurationSpec,
+		ControllerClass:                    c.ControllerClass,
+		DisableCRDWebhooks:                 c.WebhooksDisabled,
+		EnableMigrations:                   c.MigrationEnabled,
+		LogLevel:                           c.LogLevel,
+		SystemPrefix:                       c.StyraSystemPrefix,
+		SystemSuffix:                       c.StyraSystemSuffix,
+		SystemUserRoles:                    c.StyraSystemUserRoles,
+		Styra: v2alpha1.StyraConfig{
+			Token:   c.StyraToken,
+			Address: c.StyraAddress,
+		},
+	}
 
-	sort.Slice(c.GitCredentials, func(i, j int) bool {
-		return len(c.GitCredentials[i].RepoPrefix) > len(c.GitCredentials[j].RepoPrefix)
-	})
-
-	for _, gitCredential := range c.GitCredentials {
-		if strings.HasPrefix(repo, gitCredential.RepoPrefix) {
-			return gitCredential
+	if c.SentryDSN != "" {
+		v2cfg.Sentry = &v2alpha1.SentryConfig{
+			DSN:         c.SentryDSN,
+			Debug:       c.SentryDebug,
+			Environment: c.Environment,
+			HTTPSProxy:  c.SentryHTTPSProxy,
 		}
 	}
 
-	return nil
+	if c.DatasourceWebhookAddress != "" {
+		v2cfg.NotificationWebhook = &v2alpha1.NotificationWebhookConfig{
+			Address: c.DatasourceWebhookAddress,
+		}
+	}
+
+	if c.GitCredentials != nil {
+		v2cfg.GitCredentials = make([]*v2alpha1.GitCredential, len(c.GitCredentials))
+		for i, c := range c.GitCredentials {
+			v2cfg.GitCredentials[i] = &v2alpha1.GitCredential{
+				User:       c.User,
+				Password:   c.Password,
+				RepoPrefix: c.RepoPrefix,
+			}
+		}
+	}
+
+	return v2cfg
 }
