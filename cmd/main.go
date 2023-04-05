@@ -123,7 +123,7 @@ func main() {
 		err := sentry.Init(sentry.ClientOptions{
 			Dsn:         ctrlConfig.Sentry.DSN,
 			Environment: ctrlConfig.Sentry.Environment,
-			Release:     os.Getenv("STYRACTRL_VERSION"),
+			Release:     version,
 			Debug:       ctrlConfig.Sentry.Debug,
 			HTTPSProxy:  ctrlConfig.Sentry.HTTPSProxy,
 		})
