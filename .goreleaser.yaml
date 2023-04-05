@@ -82,6 +82,5 @@ release:
     owner: Bankdata
     name: styra-controller
   footer: |
-    ## Docker Images
-    - `ghcr.io/bankdata/styra-controller:latest`
+    ## Docker Image
     - `ghcr.io/bankdata/styra-controller:{{ .Version }}`
