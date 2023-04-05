@@ -19,6 +19,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"time"
 
@@ -57,6 +58,11 @@ const (
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
+
+	// these are set by goreleaser
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
 )
 
 func init() {
@@ -70,14 +76,27 @@ func init() {
 }
 
 func main() {
-	var configFile string
+	var (
+		configFile   string
+		printVersion bool
+	)
 
 	flag.StringVar(&configFile, "config", "",
 		"The controller will load its initial configuration from this file. "+
 			"Omit this flag to use the default configuration values. "+
 			"Command-line flags override configuration from this file.")
 
+	flag.BoolVar(&printVersion, "version", false, "show version information")
+
 	flag.Parse()
+
+	if printVersion {
+		fmt.Printf(
+			"styra-controller (https://github.com/bankdata/styra-controller) version %s\ncommit %s\ndate %s\n",
+			version, commit, date,
+		)
+		return
+	}
 
 	ctrlConfig := &configv2alpha1.ProjectConfig{}
 	options := ctrl.Options{Scheme: scheme}
