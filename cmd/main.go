@@ -49,7 +49,7 @@ import (
 )
 
 const (
-	logLevelDebug = -1
+	logLevelDebug = 1
 )
 
 var (
@@ -86,15 +86,11 @@ func main() {
 			exit(err)
 		}
 	}
-	opts := zap.Options{}
 
-	if ctrlConfig.LogLevel >= logLevelDebug {
-		opts.Development = true
-	}
-
-	opts.Level = zapcore.Level(ctrlConfig.LogLevel)
-
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	ctrl.SetLogger(zap.New(
+		zap.UseDevMode(ctrlConfig.LogLevel >= logLevelDebug),
+		zap.Level(zapcore.Level(-ctrlConfig.LogLevel)),
+	))
 
 	if ctrlConfig.SentryDSN != "" {
 		err := sentry.Init(sentry.ClientOptions{

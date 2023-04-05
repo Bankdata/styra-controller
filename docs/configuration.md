@@ -19,15 +19,13 @@ This document describes the different configuration options for the Styra Contro
 * `GitCredentials`
 
 ## Observability
-### Local Logging
-The controllers logs are written to stdout. If the logs should be persistent an external system should be configured to scrape and store the logs. The controllers log level is configured by setting `logLevel` to an integer.
 
-| Level | Meaning |
-|-------|---------|
-| -1    | Debug   | 
-| 0     | Info    | 
-| 1     | Warn    |
-| 2     | Error   | 
+### Local Logging
+
+The controllers logs are written to stdout. If the logs should be persistent an
+external system should be configured to scrape and store the logs. The
+verbosity of the controller logs is configured by setting `logLevel` to an
+integer. A log level above 0 should only be set for debugging purposes.
 
 ### Logging to Sentry
 To configure Sentry there exists four configuration options: `sentryDSN`, `environment`, `sentryDebug`, and `sentryHTTPSProxy`. `sentryDSN` is the DSN to the Sentry instance. `environment` specifies the Sentry environment that the log should be categorized under in Sentry. `sentryDebug` toggles whether information sendt to Sentry should also be sent to stdout. If Sentry can only be reaches through a proxy set `sentryHTTPSProxy` to the proxy URL.
