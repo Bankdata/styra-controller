@@ -403,7 +403,9 @@ string
 </td>
 <td>
 <p>CredentialsSecretName is a reference to an existing secret which holds git
-credentials. This secret should have the keys <code>username</code> and <code>password</code>.</p>
+credentials. This secret should have the keys <code>name</code> and <code>secret</code>. The
+<code>name</code> key should contain the http basic auth username and the <code>secret</code>
+key should contain the http basic auth password.</p>
 </td>
 </tr>
 <tr>
@@ -947,5 +949,5 @@ System.</p>
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>cbb237f</code>.
+on git commit <code>ef394ca</code>.
 </em></p>

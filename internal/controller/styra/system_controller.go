@@ -415,8 +415,18 @@ func (r *SystemReconciler) reconcileCredentials(
 				WithEvent("ErrorCredentialsSecretCouldNotFetch").
 				WithSystemCondition(v1beta1.ConditionTypeGitCredentialsUpdated)
 		}
-		username = string(secret.Data["username"])
-		password = string(secret.Data["password"])
+		if n, ok := secret.Data["name"]; ok {
+			username = string(n)
+		} else {
+			log.Info("using deprecated username field from git credentials secret")
+			username = string(secret.Data["username"])
+		}
+		if s, ok := secret.Data["secret"]; ok {
+			password = string(s)
+		} else {
+			log.Info("using deprecated password field from git credentials secret")
+			password = string(secret.Data["password"])
+		}
 	}
 
 	if _, err := r.Styra.CreateUpdateSecret(

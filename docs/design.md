@@ -56,8 +56,9 @@ by referencing a secret by setting
 `.spec.sourceControl.origin.credentialsSecretName`. For instance, if you set
 `.spec.sourceControler.origin.credentialsSecretName: my-git-credentials` the
 styra-controller will look for a secret called `my-git-credentials` in the same
-namespace as the `System` resource. The secret is expected to contain a
-`username` and a `password` key.
+namespace as the `System` resource. The secret is expected to contain a `name`
+and a `secret` key. The `name` key should contain the basic auth username and
+`secret` should contain the basic auth password.
 
 If you would rather not have to set this for every system, the controller also
 supports default credentials which will be used if the `credentialsSecretName`

@@ -166,7 +166,9 @@ type SourceControl struct {
 // GitRepo specifies the configuration for how to pull policy from git.
 type GitRepo struct {
 	// CredentialsSecretName is a reference to an existing secret which holds git
-	// credentials. This secret should have the keys `username` and `password`.
+	// credentials. This secret should have the keys `name` and `secret`. The
+	// `name` key should contain the http basic auth username and the `secret`
+	// key should contain the http basic auth password.
 	CredentialsSecretName string `json:"credentialsSecretName,omitempty"`
 
 	// Path is the path in the git repo where the policies are located.
