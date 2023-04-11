@@ -67,6 +67,10 @@ generate-mocks: mockery ## Generate mocks
 	$(MOCKERY) --all --case underscore --dir pkg/styra --output pkg/styra/mocks -r --keeptree
 	$(MOCKERY) --all --case underscore --dir internal/webhook --output internal/webhook/mocks -r --keeptree
 
+.PHONY: generate-docs
+generate-docs: gen-crd-api-reference-docs ## Generate API documentation based on the API types.
+	./scripts/gen-api-docs/gen-api-docs.sh all
+
 .PHONY: lint
 lint: golangci-lint ## Run linters
 	$(GOLANGCI_LINT) run
@@ -145,11 +149,6 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 .PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
-
-##@ Generate API Documentation
-.PHONY: api-docs-gen
-api-docs-gen: gen-crd-api-reference-docs
-	./scripts/gen-api-docs/gen-api-docs.sh all
 
 ##@ Build Dependencies
 

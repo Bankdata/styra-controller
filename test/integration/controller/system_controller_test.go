@@ -939,8 +939,8 @@ discovery:
 				Namespace: key.Namespace,
 			},
 			Data: map[string][]byte{
-				"username": []byte("git-user"),
-				"password": []byte("git-password"),
+				"name":   []byte("git-user"),
+				"secret": []byte("git-password"),
 			},
 		}
 		Expect(k8sClient.Create(ctx, secret)).To(Succeed())
