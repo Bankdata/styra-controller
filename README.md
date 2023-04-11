@@ -50,6 +50,23 @@ or the full
 For a guide on how to install styra-controller see 
 [the installation instructions](docs/installation.md).
 
+## Limitations
+
+The styra-controller is a rather new project made to accomodate the needs we
+have in Bankdata. This means that the feature set currently has some
+limitations. The following is a few of the most important ones.
+
+- Only supported datasource category for `GlobalDatasource` is `git/rego`
+- Only supported datasource category for datasources added to systems is `rest`
+- Git ssh auth is not supported
+- Only supported system type is `custom`
+- Stacks are currently unsupported
+
+These limitations merely reflect the current state, and we might change them
+and add new features when the need for them arises. If you want to help
+removing any of these limitations feel free to open an issue or submit a pull
+request.
+
 ## Contributing
 
 For a guide on how to contribute to the styra-controller project as well as how
