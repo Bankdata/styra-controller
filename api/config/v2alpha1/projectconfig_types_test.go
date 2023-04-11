@@ -31,41 +31,42 @@ var _ = Describe("ProjectConfig", func() {
 			}
 			Ω(c.GetGitCredentialForRepo(repo)).To(Equal(expected))
 		},
-		Entry("empty list of git credentials", nil, "test", nil),
 
-		Entry("get eficode credentials",
+		Entry("returns nil if the list of credentials is empty", nil, "test", nil),
+
+		Entry("finds matching credential",
 			[]*v2alpha1.GitCredential{
 				{
 					User:       "",
 					Password:   "",
-					RepoPrefix: "https://git.bankdata.eficode.io/",
+					RepoPrefix: "https://github.com/bankdata",
 				},
 			},
-			"https://git.bankdata.eficode.io/test/test.git",
+			"https://github.com/bankdata/styra-controller.git",
 			&v2alpha1.GitCredential{
 				User:       "",
 				Password:   "",
-				RepoPrefix: "https://git.bankdata.eficode.io/",
+				RepoPrefix: "https://github.com/bankdata",
 			},
 		),
-		Entry("get eficode credentials should return longest match",
+		Entry("returns longest matching credential",
 			[]*v2alpha1.GitCredential{
 				{
 					User:       "",
 					Password:   "",
-					RepoPrefix: "https://git.bankdata.eficode.io/",
+					RepoPrefix: "https://github.com/bankdata",
 				},
 				{
 					User:       "",
 					Password:   "",
-					RepoPrefix: "https://git.bankdata.eficode.io/test",
+					RepoPrefix: "https://github.com/bankdata/styra-controller",
 				},
 			},
-			"https://git.bankdata.eficode.io/test/test.git",
+			"https://github.com/bankdata/styra-controller.git",
 			&v2alpha1.GitCredential{
 				User:       "",
 				Password:   "",
-				RepoPrefix: "https://git.bankdata.eficode.io/test",
+				RepoPrefix: "https://github.com/bankdata/styra-controller",
 			},
 		),
 	)
