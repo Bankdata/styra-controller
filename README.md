@@ -75,6 +75,4 @@ to deploy the styra-controller for testing purposes see
 
 ## Security
 
-If you find a security vulnerability related to the styra-controller project,
-please do not report it by opening a GitHub issue, but instead please write an
-email explaining the issue and send it to mim@bankdata.dk.
+For more information about the security policy of the project see [SECURITY.md](SECURITY.md).
