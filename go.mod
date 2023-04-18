@@ -8,7 +8,7 @@ require (
 	github.com/go-logr/logr v1.2.4
 	github.com/golangci/golangci-lint v1.52.2
 	github.com/google/uuid v1.3.0
-	github.com/goreleaser/goreleaser v1.17.1
+	github.com/goreleaser/goreleaser v1.17.2
 	github.com/onsi/ginkgo/v2 v2.9.2
 	github.com/onsi/gomega v1.27.6
 	github.com/pkg/errors v0.9.1
