@@ -159,7 +159,7 @@ $(LOCALBIN):
 
 ## Tool Binaries
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
-KUSTOMIZE_GO_MOD_VERSION ?= $(shell cat go.mod | grep -E "sigs.k8s.io/kustomize/kustomize/v4" | cut -d ' ' -f 2)
+KUSTOMIZE_GO_MOD_VERSION ?= $(shell cat go.mod | grep -E "sigs.k8s.io/kustomize/kustomize/v5" | cut -d ' ' -f 2)
 
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 CONTROLLER_GEN_GO_MOD_VERSION ?= $(shell cat go.mod | grep -E "sigs.k8s.io/controller-tools" | cut -d ' ' -f 2)
@@ -187,7 +187,7 @@ GORELEASER_GO_MOD_VERSION ?= $(shell cat go.mod | grep -E "github.com/goreleaser
 kustomize: ## Download kustomize locally if necessary.
 	test -s $(KUSTOMIZE) && \
 	$(KUSTOMIZE) version | grep $(KUSTOMIZE_GO_MOD_VERSION) || \
-	GOBIN=$(LOCALBIN) go install -ldflags "-X sigs.k8s.io/kustomize/api/provenance.version=$(KUSTOMIZE_GO_MOD_VERSION)" sigs.k8s.io/kustomize/kustomize/v4
+	GOBIN=$(LOCALBIN) go install -ldflags "-X sigs.k8s.io/kustomize/api/provenance.version=$(KUSTOMIZE_GO_MOD_VERSION)" sigs.k8s.io/kustomize/kustomize/v5
 
 .PHONY: controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
