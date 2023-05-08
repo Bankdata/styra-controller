@@ -187,14 +187,20 @@ func (r *SystemReconciler) reconcileDeletion(
 	if finalizer.IsSet(system) {
 		// finalizer is present so we need to ensure system is deleted in
 		// styra, unless deletion protection is enabled
-		if system.Spec.DeletionProtection != nil &&
-			!*system.Spec.DeletionProtection &&
-			system.Status.ID != "" {
-			log.Info("Deleting system in styra")
-			_, err := r.Styra.DeleteSystem(ctx, system.Status.ID)
-			if err != nil {
-				return ctrl.Result{}, ctrlerr.Wrap(err, "Could not delete system in styra").
-					WithEvent("ErrorDeleteSystemInStyra")
+		if system.Status.ID != "" {
+			deletionProtected := false
+			if system.Spec.DeletionProtection != nil {
+				deletionProtected = *system.Spec.DeletionProtection
+			} else {
+				deletionProtected = r.Config.DeletionProtectionDefault
+			}
+			if !deletionProtected {
+				log.Info("Deleting system in styra")
+				_, err := r.Styra.DeleteSystem(ctx, system.Status.ID)
+				if err != nil {
+					return ctrl.Result{}, ctrlerr.Wrap(err, "Could not delete system in styra").
+						WithEvent("ErrorDeleteSystemInStyra")
+				}
 			}
 		}
 

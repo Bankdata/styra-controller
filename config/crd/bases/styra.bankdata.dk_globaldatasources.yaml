@@ -74,8 +74,8 @@ spec:
                   be enabled.
                 type: boolean
               name:
-                description: Name is the name the datasource has in the Styra DAS
-                  GUI
+                description: Name is the name to use for the global datasource in
+                  Styra DAS
                 type: string
               path:
                 description: Path is the path in git in git/xx datasources.

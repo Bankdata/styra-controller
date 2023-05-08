@@ -45,9 +45,6 @@ var _ webhook.Defaulter = &GlobalDatasource{}
 func (r *GlobalDatasource) Default() {
 	globalDatasourceWebhookLog.Info("default", "name", r.Name)
 
-	if r.Spec.DeletionProtection == nil {
-		r.Spec.DeletionProtection = ptr.Bool(true)
-	}
 	if r.Spec.Enabled == nil {
 		r.Spec.Enabled = ptr.Bool(true)
 	}
