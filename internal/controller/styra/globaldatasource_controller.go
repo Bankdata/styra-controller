@@ -88,7 +88,7 @@ func (r *GlobalDatasourceReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		}
 		_, err := r.Styra.CreateUpdateSecret(
 			ctx,
-			path.Join("libraries/global", gds.Name, "git"),
+			path.Join("libraries/global", gds.Spec.Name, "git"),
 			&styra.CreateUpdateSecretsRequest{
 				Name:   string(s.Data["name"]),
 				Secret: string(s.Data["secret"]),
@@ -105,7 +105,7 @@ func (r *GlobalDatasourceReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		} else {
 			_, err := r.Styra.CreateUpdateSecret(
 				ctx,
-				path.Join("libraries/global", gds.Name, "git"),
+				path.Join("libraries/global", gds.Spec.Name, "git"),
 				&styra.CreateUpdateSecretsRequest{
 					Name:   gitCredential.User,
 					Secret: gitCredential.Password,
@@ -119,7 +119,7 @@ func (r *GlobalDatasourceReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	log.Info("Reconciling datasource")
 	update := false
-	dsName := path.Join("global", gds.Name)
+	dsName := path.Join("global", gds.Spec.Name)
 	gdsr, err := r.Styra.GetDatasource(ctx, dsName)
 	if err != nil {
 		var herr *styra.HTTPError
@@ -160,7 +160,7 @@ func (r *GlobalDatasourceReconciler) specToUpdate(gds *styrav1alpha1.GlobalDatas
 		req.Enabled = true
 	}
 
-	credentials := path.Join("libraries/global", gds.Name, "git")
+	credentials := path.Join("libraries/global", gds.Spec.Name, "git")
 	if s.CredentialsSecretRef != nil {
 		req.Credentials = credentials
 	} else if r.Config.GetGitCredentialForRepo(gds.Spec.URL) != nil {
@@ -187,7 +187,7 @@ func (r *GlobalDatasourceReconciler) needsUpdate(gds *styrav1alpha1.GlobalDataso
 		return true
 	}
 
-	if dc.Credentials != path.Join("libraries/global", gds.Name, "git") {
+	if dc.Credentials != path.Join("libraries/global", gds.Spec.Name, "git") {
 		if s.CredentialsSecretRef != nil {
 			return true
 		}
@@ -268,7 +268,7 @@ func (r *GlobalDatasourceReconciler) findGlobalDatasourcesForSecret(secret clien
 
 	reqs := make([]reconcile.Request, len(gdsl.Items))
 	for i, gds := range gdsl.Items {
-		reqs[i] = reconcile.Request{NamespacedName: types.NamespacedName{Name: gds.Name}}
+		reqs[i] = reconcile.Request{NamespacedName: types.NamespacedName{Name: gds.Spec.Name}}
 	}
 	return reqs
 }

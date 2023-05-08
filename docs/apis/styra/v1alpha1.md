@@ -56,6 +56,17 @@ GlobalDatasourceSpec
 <table>
 <tr>
 <td>
+<code>name</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name is the name to use for the global datasource in Styra DAS</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>category</code><br/>
 <em>
 <a href="#styra.bankdata.dk/v1alpha1.GlobalDatasourceCategory">
@@ -268,6 +279,17 @@ string
 <tbody>
 <tr>
 <td>
+<code>name</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name is the name to use for the global datasource in Styra DAS</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>category</code><br/>
 <em>
 <a href="#styra.bankdata.dk/v1alpha1.GlobalDatasourceCategory">
@@ -398,5 +420,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>ef394ca</code>.
+on git commit <code>9e2e328</code>.
 </em></p>

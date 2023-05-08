@@ -31,6 +31,8 @@ const (
 
 // GlobalDatasourceSpec is the specification of the GlobalDatasource.
 type GlobalDatasourceSpec struct {
+	// Name is the name to use for the global datasource in Styra DAS
+	Name string `json:"name"`
 	// Category is the datasource category. For more information about
 	// supported categories see the available GlobalDatasourceCategory
 	// constants in the package.
