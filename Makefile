@@ -64,8 +64,7 @@ generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and
 
 .PHONY: generate-mocks
 generate-mocks: mockery ## Generate mocks
-	$(MOCKERY) --all --case underscore --dir pkg/styra --output pkg/styra/mocks -r --keeptree
-	$(MOCKERY) --all --case underscore --dir internal/webhook --output internal/webhook/mocks -r --keeptree
+	$(MOCKERY)
 
 .PHONY: generate-docs
 generate-docs: gen-crd-api-reference-docs ## Generate API documentation based on the API types.
