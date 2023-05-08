@@ -61,7 +61,7 @@ var _ = DescribeTable("globalDatasourceSpecToUpdate", func(test specToUpdateTest
 		},
 		ds: &styrav1alpha1.GlobalDatasource{
 			ObjectMeta: metav1.ObjectMeta{Name: "test"},
-			Spec:       styrav1alpha1.GlobalDatasourceSpec{},
+			Spec:       styrav1alpha1.GlobalDatasourceSpec{Name: "test"},
 		},
 		expected: &styra.UpsertDatasourceRequest{
 			Credentials: "libraries/global/test/git",
@@ -78,6 +78,7 @@ var _ = DescribeTable("globalDatasourceSpecToUpdate", func(test specToUpdateTest
 		ds: &styrav1alpha1.GlobalDatasource{
 			ObjectMeta: metav1.ObjectMeta{Name: "test"},
 			Spec: styrav1alpha1.GlobalDatasourceSpec{
+				Name: "test",
 				CredentialsSecretRef: &styrav1alpha1.GlobalDatasourceSecretRef{
 					Namespace: "test-ns",
 					Name:      "test-name",
@@ -99,6 +100,7 @@ var _ = DescribeTable("globalDatasourceSpecToUpdate", func(test specToUpdateTest
 		ds: &styrav1alpha1.GlobalDatasource{
 			ObjectMeta: metav1.ObjectMeta{Name: "test"},
 			Spec: styrav1alpha1.GlobalDatasourceSpec{
+				Name:        "test",
 				Category:    "test-category",
 				Description: "test-description",
 				URL:         "test-url",
@@ -175,6 +177,7 @@ var _ = DescribeTable("needsUpdate", func(test needsUpdateTest) {
 		gds: &styrav1alpha1.GlobalDatasource{
 			ObjectMeta: metav1.ObjectMeta{Name: "test"},
 			Spec: styrav1alpha1.GlobalDatasourceSpec{
+				Name:                 "test",
 				CredentialsSecretRef: &styrav1alpha1.GlobalDatasourceSecretRef{},
 			},
 		},
@@ -187,6 +190,7 @@ var _ = DescribeTable("needsUpdate", func(test needsUpdateTest) {
 		gds: &styrav1alpha1.GlobalDatasource{
 			ObjectMeta: metav1.ObjectMeta{Name: "test"},
 			Spec: styrav1alpha1.GlobalDatasourceSpec{
+				Name:                 "test",
 				CredentialsSecretRef: &styrav1alpha1.GlobalDatasourceSecretRef{},
 			},
 		},
@@ -205,6 +209,7 @@ var _ = DescribeTable("needsUpdate", func(test needsUpdateTest) {
 		gds: &styrav1alpha1.GlobalDatasource{
 			ObjectMeta: metav1.ObjectMeta{Name: "test"},
 			Spec: styrav1alpha1.GlobalDatasourceSpec{
+				Name:                 "test",
 				CredentialsSecretRef: &styrav1alpha1.GlobalDatasourceSecretRef{},
 			},
 		},
@@ -221,7 +226,7 @@ var _ = DescribeTable("needsUpdate", func(test needsUpdateTest) {
 		},
 		gds: &styrav1alpha1.GlobalDatasource{
 			ObjectMeta: metav1.ObjectMeta{Name: "test"},
-			Spec:       styrav1alpha1.GlobalDatasourceSpec{},
+			Spec:       styrav1alpha1.GlobalDatasourceSpec{Name: "test"},
 		},
 		dc: &styra.DatasourceConfig{
 			Credentials: "libraries/global/test/git",
@@ -233,6 +238,7 @@ var _ = DescribeTable("needsUpdate", func(test needsUpdateTest) {
 		gds: &styrav1alpha1.GlobalDatasource{
 			ObjectMeta: metav1.ObjectMeta{Name: "test"},
 			Spec: styrav1alpha1.GlobalDatasourceSpec{
+				Name:                 "test",
 				Category:             "test-category",
 				Description:          "test-description",
 				Enabled:              ptr.Bool(false),
@@ -250,6 +256,7 @@ var _ = DescribeTable("needsUpdate", func(test needsUpdateTest) {
 		gds: &styrav1alpha1.GlobalDatasource{
 			ObjectMeta: metav1.ObjectMeta{Name: "test"},
 			Spec: styrav1alpha1.GlobalDatasourceSpec{
+				Name:                 "test",
 				Category:             "test-category",
 				Description:          "test-description",
 				Enabled:              ptr.Bool(true),

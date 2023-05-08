@@ -27,6 +27,7 @@ var _ = Describe("GlobalDatasourceReconciler", func() {
 					Name: key.Name,
 				},
 				Spec: styrav1alpha1.GlobalDatasourceSpec{
+					Name:     key.Name,
 					Category: styrav1alpha1.GlobalDatasourceCategoryGitRego,
 					URL:      "http://test.com/test.git",
 				},

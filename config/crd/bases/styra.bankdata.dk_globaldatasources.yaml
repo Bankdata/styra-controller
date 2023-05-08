@@ -3,8 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.3
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.11.4
   name: globaldatasources.styra.bankdata.dk
 spec:
   group: styra.bankdata.dk
@@ -74,6 +73,10 @@ spec:
                 description: Enabled toggles whether or not the datasource should
                   be enabled.
                 type: boolean
+              name:
+                description: Name is the name the datasource has in the Styra DAS
+                  GUI
+                type: string
               path:
                 description: Path is the path in git in git/xx datasources.
                 type: string
@@ -89,6 +92,7 @@ spec:
                 type: string
             required:
             - category
+            - name
             type: object
           status:
             description: GlobalDatasourceStatus holds the status of the GlobalDatasource
