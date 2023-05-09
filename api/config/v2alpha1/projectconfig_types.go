@@ -63,7 +63,7 @@ type ProjectConfig struct {
 
 	NotificationWebhook *NotificationWebhookConfig `json:"notificationWebhook"`
 
-	Sentry *SentryConfig `json:"sentryConfig"`
+	Sentry *SentryConfig `json:"sentry"`
 
 	SSO *SSOConfig `json:"sso"`
 
@@ -81,13 +81,13 @@ type ProjectConfig struct {
 
 	// SystemUserRoles is a list of Styra DAS system level roles which the subjects of
 	// a system will be granted.
-	SystemUserRoles []string `json:"userRoles"`
+	SystemUserRoles []string `json:"systemUserRoles"`
 }
 
 // StyraConfig contains configuration for connecting to the Styra DAS apis
 type StyraConfig struct {
 	// Address is the URL for the Styra DAS API server.
-	Address string `json:"displayName"`
+	Address string `json:"address"`
 
 	// Token is a Styra DAS API token. These can be created in the Styra DAS GUI
 	// or through the API. The token should have the `WorkspaceAdministrator` role.

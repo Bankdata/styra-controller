@@ -19,6 +19,8 @@ package v2alpha1_test
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 
 	"github.com/bankdata/styra-controller/api/config/v2alpha1"
 )
@@ -71,4 +73,69 @@ var _ = Describe("ProjectConfig", func() {
 		),
 	)
 
+	Describe("unmarshalling", func() {
+		It("correctly unmarshals all fields", func() {
+			validConfig := []byte(`
+apiVersion: config.bankdata.dk/v2alpha1
+kind: ProjectConfig
+controllerClass: "class"
+deletionProtectionDefault: true
+disableCRDWebhooks: true
+enableMigrations: true
+gitCredentials:
+  - user: my-git-user
+    password: my-git-password
+    repoPrefix: https://github.com/my-org
+logLevel: 42
+notificationWebhook:
+  address: "https://webhook.com"
+sentry:
+  debug: true
+  dsn: "https://sentry.com"
+  environment: "test"
+  httpsProxy: "https://proxy.com"
+sso:
+  identityProvider: "my-provider"
+  jwtGroupsClaim: "groups"
+styra:
+  address: "https://styra.com"
+  token: "token"
+systemPrefix: "prefix"
+systemSuffix: "suffix"
+systemUserRoles: 
+  - SystemViewer
+`)
+			scheme := runtime.NewScheme()
+			Ω(v2alpha1.AddToScheme(scheme)).Should(Succeed())
+			decoder := serializer.NewCodecFactory(scheme).UniversalDeserializer()
+			var c v2alpha1.ProjectConfig
+			_, _, err := decoder.Decode(validConfig, nil, &c)
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(c.ControllerClass).Should(Equal("class"))
+			Ω(c.DeletionProtectionDefault).Should(BeTrue())
+			Ω(c.DisableCRDWebhooks).Should(BeTrue())
+			Ω(c.EnableMigrations).Should(BeTrue())
+			Ω(len(c.GitCredentials)).Should(Equal(1))
+			Ω(c.GitCredentials[0].User).Should(Equal("my-git-user"))
+			Ω(c.GitCredentials[0].Password).Should(Equal("my-git-password"))
+			Ω(c.GitCredentials[0].RepoPrefix).Should(Equal("https://github.com/my-org"))
+			Ω(c.LogLevel).Should(Equal(42))
+			Ω(c.NotificationWebhook).ShouldNot(BeNil())
+			Ω(c.NotificationWebhook.Address).Should(Equal("https://webhook.com"))
+			Ω(c.Sentry).ShouldNot(BeNil())
+			Ω(c.Sentry.Debug).Should(BeTrue())
+			Ω(c.Sentry.DSN).Should(Equal("https://sentry.com"))
+			Ω(c.Sentry.Environment).Should(Equal("test"))
+			Ω(c.Sentry.HTTPSProxy).Should(Equal("https://proxy.com"))
+			Ω(c.SSO).ShouldNot(BeNil())
+			Ω(c.SSO.IdentityProvider).Should(Equal("my-provider"))
+			Ω(c.SSO.JWTGroupsClaim).Should(Equal("groups"))
+			Ω(c.Styra.Address).Should(Equal("https://styra.com"))
+			Ω(c.Styra.Token).Should(Equal("token"))
+			Ω(c.SystemPrefix).Should(Equal("prefix"))
+			Ω(c.SystemSuffix).Should(Equal("suffix"))
+			Ω(len(c.SystemUserRoles)).Should(Equal(1))
+			Ω(c.SystemUserRoles[0]).Should(Equal("SystemViewer"))
+		})
+	})
 })
