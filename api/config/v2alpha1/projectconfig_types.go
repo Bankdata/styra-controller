@@ -37,6 +37,10 @@ type ProjectConfig struct {
 	// running multiple controllers in the same cluster.
 	ControllerClass string `json:"controllerClass"`
 
+	// DeletionProtectionDefault sets the default to use with regards to deletion
+	// protection if it is not set on the resource.
+	DeletionProtectionDefault bool `json:"deletionProtectionDefault"`
+
 	// DisableCRDWebhooks disables the CRD webhooks on the controller. If running
 	// multiple controllers in the same cluster, only one will need to have it's
 	// webhooks enabled.

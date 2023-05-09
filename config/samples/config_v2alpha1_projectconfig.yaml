@@ -6,6 +6,10 @@ kind: ProjectConfig
 # multiple controllers in the same cluster.
 controllerClass: ""
 
+# deletionProtectionDefault sets the default to use with regards to deletion
+# protection if it is not set on the resource.
+deletionProtectionDefault: false
+
 # disableCRDWebhooks disables the CRD webhooks on the controller. If running
 # multiple controllers in the same cluster, only one will need to have it's
 # webhooks enabled.

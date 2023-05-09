@@ -43,15 +43,6 @@ func newGlobalDatasource() *v1alpha1.GlobalDatasource {
 var _ = Describe("GlobalDatasource", Label("integration"), func() {
 
 	Describe("Default", Label("integration"), func() {
-		It("should set deletionProtection", func() {
-			gds := newGlobalDatasource()
-			ctx := context.Background()
-			Ω(k8sClient.Create(ctx, gds)).To(Succeed())
-			Ω(gds.Spec.DeletionProtection).NotTo(BeNil())
-			Ω(*gds.Spec.DeletionProtection).To(BeTrue())
-			Ω(k8sClient.Delete(ctx, gds)).To(Succeed())
-		})
-
 		It("should set the enabled true", func() {
 			gds := newGlobalDatasource()
 			ctx := context.Background()

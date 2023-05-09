@@ -26,8 +26,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-
-	"github.com/bankdata/styra-controller/pkg/ptr"
 )
 
 // log is for logging in this package.
@@ -53,10 +51,6 @@ func (s *System) Default() {
 		if s.Spec.SourceControl.Origin.Reference == "" && s.Spec.SourceControl.Origin.Commit == "" {
 			s.Spec.SourceControl.Origin.Reference = "refs/heads/master"
 		}
-	}
-
-	if s.Spec.DeletionProtection == nil {
-		s.Spec.DeletionProtection = ptr.Bool(true)
 	}
 }
 
