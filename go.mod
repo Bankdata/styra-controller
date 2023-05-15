@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
-	github.com/getsentry/sentry-go v0.20.0
+	github.com/getsentry/sentry-go v0.21.0
 	github.com/go-logr/logr v1.2.4
 	github.com/golangci/golangci-lint v1.52.2
 	github.com/google/uuid v1.3.0
