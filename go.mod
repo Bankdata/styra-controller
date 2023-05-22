@@ -13,7 +13,7 @@ require (
 	github.com/onsi/gomega v1.27.7
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.15.1
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.3
 	github.com/vektra/mockery/v2 v2.27.1
 	go.uber.org/zap v1.24.0
 	gopkg.in/yaml.v2 v2.4.0
