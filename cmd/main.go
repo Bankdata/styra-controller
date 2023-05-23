@@ -56,8 +56,7 @@ const (
 )
 
 var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	scheme = runtime.NewScheme()
 
 	// these are set by goreleaser
 	version = "dev"
@@ -98,18 +97,21 @@ func main() {
 		return
 	}
 
+	log := ctrl.Log.WithName("setup")
+	logDebug := log.V(logLevelDebug)
+
 	ctrlConfig := &configv2alpha1.ProjectConfig{}
 	options := ctrl.Options{Scheme: scheme}
 	if configFile != "" {
 		var err error
 		ctrlConfig, err = config.Load(configFile, scheme)
 		if err != nil {
-			setupLog.Error(err, "unable to load the config file")
+			log.Error(err, "unable to load the config file")
 			exit(err)
 		}
 		options, err = options.AndFrom(ctrlConfig)
 		if err != nil {
-			setupLog.Error(err, "could not load options from config")
+			log.Error(err, "could not load options from config")
 			exit(err)
 		}
 	}
@@ -128,15 +130,24 @@ func main() {
 			HTTPSProxy:  ctrlConfig.Sentry.HTTPSProxy,
 		})
 		if err != nil {
-			setupLog.Error(err, "failed to init sentry")
+			log.Error(err, "failed to init sentry")
 			exit(err)
 		}
 		defer sentry.Flush(2 * time.Second)
 	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), options)
+	restCfg := ctrl.GetConfigOrDie()
+
+	logDebug.Info(
+		"rest config details",
+		"timeout", restCfg.Timeout,
+		"host", restCfg.Host,
+		"apiPath", restCfg.APIPath,
+	)
+
+	mgr, err := ctrl.NewManager(restCfg, options)
 	if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		log.Error(err, "unable to start manager")
 		exit(err)
 	}
 
@@ -158,7 +169,7 @@ func main() {
 
 	if err := metrics.Registry.Register(metric); err != nil {
 		err := errors.Wrap(err, "could not register controller_system_status_ready metric")
-		setupLog.Error(err, err.Error())
+		log.Error(err, err.Error())
 		exit(err)
 	}
 
@@ -176,13 +187,13 @@ func main() {
 	}
 
 	if err = r1.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "System")
+		log.Error(err, "unable to create controller", "controller", "System")
 		exit(err)
 	}
 
 	if !ctrlConfig.DisableCRDWebhooks {
 		if err = (&styrav1beta1.System{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "System")
+			log.Error(err, "unable to create webhook", "webhook", "System")
 			os.Exit(1)
 		}
 	}
@@ -193,30 +204,30 @@ func main() {
 		Config: ctrlConfig,
 		Styra:  styraClient,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "GlobalDatasource")
+		log.Error(err, "unable to create controller", "controller", "GlobalDatasource")
 		os.Exit(1)
 	}
 
 	if !ctrlConfig.DisableCRDWebhooks {
 		if err = (&styrav1alpha1.GlobalDatasource{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "GlobalDatasource")
+			log.Error(err, "unable to create webhook", "webhook", "GlobalDatasource")
 			os.Exit(1)
 		}
 	}
 
 	//+kubebuilder:scaffold:builder
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up health check")
+		log.Error(err, "unable to set up health check")
 		exit(err)
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
+		log.Error(err, "unable to set up ready check")
 		exit(err)
 	}
 
-	setupLog.Info("starting manager")
+	log.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "problem running manager")
+		log.Error(err, "problem running manager")
 		exit(err)
 	}
 }
