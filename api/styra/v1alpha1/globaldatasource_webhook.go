@@ -24,6 +24,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/bankdata/styra-controller/pkg/ptr"
 )
@@ -66,24 +67,24 @@ func (r *GlobalDatasource) defaultGit() {
 var _ webhook.Validator = &GlobalDatasource{}
 
 // ValidateCreate implements webhook.Validator so that a webhook can be registered for the type.
-func (r *GlobalDatasource) ValidateCreate() error {
+func (r *GlobalDatasource) ValidateCreate() (admission.Warnings, error) {
 	globalDatasourceWebhookLog.Info("validate create", "name", r.Name)
 	return r.validate()
 }
 
 // ValidateUpdate implements webhook.Validator so that a webhook can be registered for the type.
-func (r *GlobalDatasource) ValidateUpdate(_ runtime.Object) error {
+func (r *GlobalDatasource) ValidateUpdate(_ runtime.Object) (admission.Warnings, error) {
 	globalDatasourceWebhookLog.Info("validate update", "name", r.Name)
 	return r.validate()
 }
 
 // ValidateDelete implements webhook.Validator so that a webhook can be registered for the type.
-func (r *GlobalDatasource) ValidateDelete() error {
+func (r *GlobalDatasource) ValidateDelete() (admission.Warnings, error) {
 	globalDatasourceWebhookLog.Info("validate delete", "name", r.Name)
-	return nil
+	return nil, nil
 }
 
-func (r *GlobalDatasource) validate() error {
+func (r *GlobalDatasource) validate() (admission.Warnings, error) {
 	var errs field.ErrorList
 
 	switch r.Spec.Category {
@@ -92,14 +93,14 @@ func (r *GlobalDatasource) validate() error {
 	}
 
 	if len(errs) > 0 {
-		return apierrors.NewInvalid(
+		return nil, apierrors.NewInvalid(
 			schema.GroupKind{Group: GroupVersion.Group, Kind: "GlobalDatasource"},
 			r.Name,
 			errs,
 		)
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (s *GlobalDatasourceSpec) validateGitRegoFields() field.ErrorList {

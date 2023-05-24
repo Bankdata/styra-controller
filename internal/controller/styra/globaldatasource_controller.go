@@ -33,7 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	ctrlpred "sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	configv2alpha1 "github.com/bankdata/styra-controller/api/config/v2alpha1"
 	styrav1alpha1 "github.com/bankdata/styra-controller/api/styra/v1alpha1"
@@ -213,7 +212,7 @@ func (r *GlobalDatasourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&styrav1alpha1.GlobalDatasource{}, builder.WithPredicates(p)).
 		Watches(
-			&source.Kind{Type: &corev1.Secret{}},
+			&corev1.Secret{},
 			handler.EnqueueRequestsFromMapFunc(r.findGlobalDatasourcesForSecret),
 			builder.WithPredicates(ctrlpred.ResourceVersionChangedPredicate{}),
 		).
@@ -258,9 +257,12 @@ func setupFieldIndexer(indexer client.FieldIndexer) error {
 	return nil
 }
 
-func (r *GlobalDatasourceReconciler) findGlobalDatasourcesForSecret(secret client.Object) []reconcile.Request {
+func (r *GlobalDatasourceReconciler) findGlobalDatasourcesForSecret(
+	ctx context.Context,
+	secret client.Object,
+) []reconcile.Request {
 	var gdsl styrav1alpha1.GlobalDatasourceList
-	if err := r.List(context.Background(), &gdsl, &client.ListOptions{
+	if err := r.List(ctx, &gdsl, &client.ListOptions{
 		FieldSelector: fields.GlobalDatasourceCredentialsSecretRefFieldSelector(secret.GetNamespace(), secret.GetName()),
 	}); err != nil {
 		return nil

@@ -41,7 +41,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	ctrlpred "sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	configv2alpha1 "github.com/bankdata/styra-controller/api/config/v2alpha1"
 	"github.com/bankdata/styra-controller/api/styra/v1beta1"
@@ -387,7 +386,6 @@ func (r *SystemReconciler) reconcileCredentials(
 	log logr.Logger,
 	system *v1beta1.System,
 ) (ctrl.Result, error) {
-
 	log.Info("Reconciling credentials")
 
 	if system.Spec.SourceControl == nil {
@@ -547,7 +545,7 @@ func (r *SystemReconciler) reconcileSubjects(
 		}
 	}
 
-	//Remove users and groups from all other rolebindings
+	// Remove users and groups from all other rolebindings
 	roles := map[styra.Role]struct{}{}
 	for _, role := range systemUserRoles {
 		roles[role] = struct{}{}
@@ -1176,25 +1174,21 @@ func (r *SystemReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1beta1.System{}, builder.WithPredicates(p)).
 		Watches(
-			&source.Kind{Type: &corev1.Secret{}},
+			&corev1.Secret{},
 			handler.EnqueueRequestsFromMapFunc(r.findSystemsForSecret),
 			builder.WithPredicates(ctrlpred.ResourceVersionChangedPredicate{}),
 		).
 		Watches(
-			&source.Kind{Type: &corev1.ConfigMap{}},
+			&corev1.ConfigMap{},
 			handler.EnqueueRequestsFromMapFunc(r.findSystemsForConfigMap),
 			builder.WithPredicates(ctrlpred.ResourceVersionChangedPredicate{}),
 		).
 		Complete(sentry.Decorate(r))
 }
 
-func (r *SystemReconciler) findSystemsForSecret(secret client.Object) []reconcile.Request {
-	ctx := context.Background()
-
+func (r *SystemReconciler) findSystemsForSecret(ctx context.Context, secret client.Object) []reconcile.Request {
 	requests := r.findSystemsRefferingToSecret(ctx, secret)
-	requests = append(requests, r.findSecretOwners(ctx, secret)...)
-
-	return requests
+	return append(requests, r.findSecretOwners(ctx, secret)...)
 }
 
 // findSystemsRefferingToSecret detects if modified secret is the secret containing Git credentials for a System.
@@ -1269,10 +1263,8 @@ func ownerIsSystem(owner metav1.OwnerReference) bool {
 }
 
 // findSystemsForConfigMap detects if modified configmap is the configmap containing opa/slp config.
-func (r *SystemReconciler) findSystemsForConfigMap(configmap client.Object) []reconcile.Request {
-
+func (r *SystemReconciler) findSystemsForConfigMap(ctx context.Context, configmap client.Object) []reconcile.Request {
 	var requests []reconcile.Request
-	ctx := context.Background()
 
 	for _, owner := range configmap.GetOwnerReferences() {
 		if !ownerIsSystem(owner) {

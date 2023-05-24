@@ -21,6 +21,8 @@ import (
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	//nolint:staticcheck // issue https://github.com/Bankdata/styra-controller/issues/82
 	cfg "sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
 )
 
@@ -149,7 +151,6 @@ type GitCredential struct {
 // GetGitCredentialForRepo determines which default GitCredential to use for checking out the
 // policy repository based on the URL to the policy repository.
 func (c *ProjectConfig) GetGitCredentialForRepo(repo string) *GitCredential {
-
 	sort.Slice(c.GitCredentials, func(i, j int) bool {
 		return len(c.GitCredentials[i].RepoPrefix) > len(c.GitCredentials[j].RepoPrefix)
 	})
