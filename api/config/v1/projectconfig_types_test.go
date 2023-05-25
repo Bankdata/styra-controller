@@ -19,6 +19,8 @@ package v1_test
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	//nolint:staticcheck // issue https://github.com/Bankdata/styra-controller/issues/82
 	cfg "sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
 
 	v1 "github.com/bankdata/styra-controller/api/config/v1"
@@ -26,10 +28,10 @@ import (
 )
 
 var _ = Describe("ProjectConfig", func() {
-
 	Describe("ToV2Alpha1", func() {
 		It("converts to v2alpha1", func() {
 			v1cfg := &v1.ProjectConfig{
+				//nolint:staticcheck // issue https://github.com/Bankdata/styra-controller/issues/82
 				ControllerManagerConfigurationSpec: cfg.ControllerManagerConfigurationSpec{
 					CacheNamespace: "test",
 				},
@@ -62,6 +64,7 @@ var _ = Describe("ProjectConfig", func() {
 			}
 
 			expected := &v2alpha1.ProjectConfig{
+				//nolint:staticcheck // issue https://github.com/Bankdata/styra-controller/issues/82
 				ControllerManagerConfigurationSpec: cfg.ControllerManagerConfigurationSpec{
 					CacheNamespace: "test",
 				},

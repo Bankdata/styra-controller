@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
+	//nolint:staticcheck // issue https://github.com/Bankdata/styra-controller/issues/82
 	"github.com/bankdata/styra-controller/api/config/v2alpha1"
 )
 

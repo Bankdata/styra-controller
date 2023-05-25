@@ -109,6 +109,8 @@ func main() {
 			log.Error(err, "unable to load the config file")
 			exit(err)
 		}
+
+		//nolint:staticcheck // issue https://github.com/Bankdata/styra-controller/issues/82
 		options, err = options.AndFrom(ctrlConfig)
 		if err != nil {
 			log.Error(err, "could not load options from config")

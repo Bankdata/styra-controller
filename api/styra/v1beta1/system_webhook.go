@@ -26,6 +26,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // log is for logging in this package.
@@ -59,40 +60,40 @@ func (s *System) Default() {
 var _ webhook.Validator = &System{}
 
 // ValidateCreate implements webhook.Validator so that a webhook can be registered for the type.
-func (s *System) ValidateCreate() error {
+func (s *System) ValidateCreate() (admission.Warnings, error) {
 	systemlog.Info("validate create", "name", s.Name)
 
 	return s.validate()
 }
 
 // ValidateUpdate implements webhook.Validator so that a webhook will be registered for the type.
-func (s *System) ValidateUpdate(_ runtime.Object) error {
+func (s *System) ValidateUpdate(_ runtime.Object) (admission.Warnings, error) {
 	systemlog.Info("validate update", "name", s.Name)
 
 	return s.validate()
 }
 
 // ValidateDelete implements webhook.Validator so that a webhook will be registered for the type.
-func (s *System) ValidateDelete() error {
+func (s *System) ValidateDelete() (admission.Warnings, error) {
 	systemlog.Info("validate delete", "name", s.Name)
 
-	return nil
+	return nil, nil
 }
 
-func (s *System) validate() error {
+func (s *System) validate() (admission.Warnings, error) {
 	var errs field.ErrorList
 
 	errs = append(errs, s.Spec.validate(field.NewPath("spec"))...)
 
 	if len(errs) > 0 {
-		return apierrors.NewInvalid(
+		return nil, apierrors.NewInvalid(
 			schema.GroupKind{Group: GroupVersion.Group, Kind: "System"},
 			s.Name,
 			errs,
 		)
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (s *SystemSpec) validate(path *field.Path) field.ErrorList {

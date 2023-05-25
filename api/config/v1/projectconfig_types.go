@@ -19,6 +19,8 @@ package v1
 import (
 	"github.com/bankdata/styra-controller/api/config/v2alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	//nolint:staticcheck // issue https://github.com/Bankdata/styra-controller/issues/82
 	cfg "sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
 )
 
