@@ -67,9 +67,7 @@ spec:
         #   type: RuntimeDefault
       containers:
       - command:
-        - /manager
-        args:
-        - --leader-elect
+        - /styra-controller
         image: controller:latest
         imagePullPolicy: IfNotPresent
         name: manager
