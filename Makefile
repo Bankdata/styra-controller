@@ -87,17 +87,17 @@ test-integration: ginkgo manifests generate lint envtest ## Run integration test
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r --label-filter "integration" --coverprofile cover.out
 
 .PHONY: kind-create
-kind-create: ## Create kind cluster
+kind-create: kind ## Create kind cluster
 	$(KIND) get clusters | grep styra-controller || \
 	$(KIND) create cluster --name styra-controller && \
 	kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.yaml
 
 .PHONY: kind-delete
-kind-delete: ## Delete kind cluster
+kind-delete: kind ## Delete kind cluster
 	$(KIND) delete cluster --name styra-controller
 
 .PHONY: kind-load
-kind-load: docker-build ## Build and load docker image in kind
+kind-load: docker-build kind ## Build and load docker image in kind
 	$(KIND) load docker-image ${IMG} --name styra-controller
 
 ##@ Build
