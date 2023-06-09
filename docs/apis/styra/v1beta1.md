@@ -324,6 +324,49 @@ AllowedMapping
 </tr>
 </tbody>
 </table>
+<h3 id="styra.bankdata.dk/v1beta1.DiscoveryOverrides">DiscoveryOverrides
+</h3>
+<p>
+(<em>Appears on:</em><a href="#styra.bankdata.dk/v1beta1.SystemSpec">SystemSpec</a>)
+</p>
+<div>
+<p>DiscoveryOverrides specifies system specific overrides for the configuration
+served from the Styra OPA Discovery API</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>status</code><br/>
+<em>
+<a href="#styra.bankdata.dk/v1beta1.OPAConfigStatus">
+OPAConfigStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>distributed_tracing</code><br/>
+<em>
+<a href="#styra.bankdata.dk/v1beta1.OPAConfigDistributedTracing">
+OPAConfigDistributedTracing
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="styra.bankdata.dk/v1beta1.Expected">Expected
 </h3>
 <p>
@@ -482,6 +525,143 @@ string
 </td>
 <td>
 <p>Name is the hostname of the SLP service.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="styra.bankdata.dk/v1beta1.OPAConfigDistributedTracing">OPAConfigDistributedTracing
+</h3>
+<p>
+(<em>Appears on:</em><a href="#styra.bankdata.dk/v1beta1.DiscoveryOverrides">DiscoveryOverrides</a>)
+</p>
+<div>
+<p>OPAConfigDistributedTracing configures the <code>distributed_tracing</code> key in the
+OPA configuration.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>type</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>address</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>service_name</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>sample_percentage</code><br/>
+<em>
+int
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>encryption</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>allow_insecure_tls</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>tls_ca_cert_file</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>tls_cert_file</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>tls_private_key_file</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="styra.bankdata.dk/v1beta1.OPAConfigStatus">OPAConfigStatus
+</h3>
+<p>
+(<em>Appears on:</em><a href="#styra.bankdata.dk/v1beta1.DiscoveryOverrides">DiscoveryOverrides</a>)
+</p>
+<div>
+<p>OPAConfigStatus configures the <code>status</code> key in the OPA configuration</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>prometheus</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
 </td>
 </tr>
 </tbody>
@@ -701,7 +881,23 @@ System resource is deleted.</p>
 </em>
 </td>
 <td>
-<p>Datasources represents a list of Styra datasources to be mounted in the system.</p>
+<p>Datasources represents a list of Styra datasources to be mounted in the
+system.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>discoveryOverrides</code><br/>
+<em>
+<a href="#styra.bankdata.dk/v1beta1.DiscoveryOverrides">
+DiscoveryOverrides
+</a>
+</em>
+</td>
+<td>
+<p>DiscoveryOverrides is an opa config which will take precedence over the
+configuration supplied by Styra discovery API. Configuration set here
+will be merged with the configuration supplied by the discovery API.</p>
 </td>
 </tr>
 <tr>
@@ -839,7 +1035,23 @@ System resource is deleted.</p>
 </em>
 </td>
 <td>
-<p>Datasources represents a list of Styra datasources to be mounted in the system.</p>
+<p>Datasources represents a list of Styra datasources to be mounted in the
+system.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>discoveryOverrides</code><br/>
+<em>
+<a href="#styra.bankdata.dk/v1beta1.DiscoveryOverrides">
+DiscoveryOverrides
+</a>
+</em>
+</td>
+<td>
+<p>DiscoveryOverrides is an opa config which will take precedence over the
+configuration supplied by Styra discovery API. Configuration set here
+will be merged with the configuration supplied by the discovery API.</p>
 </td>
 </tr>
 <tr>
@@ -949,5 +1161,5 @@ System.</p>
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>9e2e328</code>.
+on git commit <code>534b87f</code>.
 </em></p>

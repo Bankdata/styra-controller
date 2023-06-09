@@ -25,6 +25,7 @@ import (
 	"reflect"
 	"sort"
 
+	"github.com/bankdata/styra-controller/api/styra/v1beta1"
 	"github.com/pkg/errors"
 )
 
@@ -77,14 +78,21 @@ type GetSystemResponse struct {
 
 // SystemConfig represents the configuration of a system in the Styra APIs.
 type SystemConfig struct {
-	DecisionMappings map[string]DecisionMapping `json:"decision_mappings,omitempty"`
-	Description      string                     `json:"description,omitempty"`
-	Name             string                     `json:"name"`
-	ReadOnly         bool                       `json:"read_only"`
-	SourceControl    *SourceControlConfig       `json:"source_control,omitempty"`
-	Type             string                     `json:"type"`
-	ID               string                     `json:"id"`
-	Datasources      []*DatasourceConfig        `json:"datasources,omitempty"`
+	DecisionMappings     map[string]DecisionMapping `json:"decision_mappings,omitempty"`
+	Description          string                     `json:"description,omitempty"`
+	Name                 string                     `json:"name"`
+	ReadOnly             bool                       `json:"read_only"`
+	SourceControl        *SourceControlConfig       `json:"source_control,omitempty"`
+	Type                 string                     `json:"type"`
+	ID                   string                     `json:"id"`
+	Datasources          []*DatasourceConfig        `json:"datasources,omitempty"`
+	DeploymentParameters *DeploymentParameters      `json:"deployment_parameters,omitempty"`
+}
+
+// DeploymentParameters are additional OPA deployment parameters for the
+// system.
+type DeploymentParameters struct {
+	Discovery *v1beta1.DiscoveryOverrides `json:"discovery,omitempty"`
 }
 
 // SourceControlConfig defines the structure of a source control configuration.
@@ -262,7 +270,6 @@ func (c *Client) VerifyGitConfiguration(
 	request *VerfiyGitConfigRequest,
 ) (*VerfiyGitConfigResponse, error) {
 	res, err := c.request(ctx, http.MethodPost, fmt.Sprintf("%s/source-control/verify-config", endpointV1Systems), request)
-
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call validate git config ")
 	}
@@ -289,7 +296,6 @@ func (c *Client) VerifyGitConfiguration(
 // API.
 func (c *Client) DeleteSystem(ctx context.Context, id string) (*DeleteSystemResponse, error) {
 	res, err := c.request(ctx, http.MethodDelete, fmt.Sprintf("%s/%s", endpointV1Systems, id), nil)
-
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call delete system")
 	}

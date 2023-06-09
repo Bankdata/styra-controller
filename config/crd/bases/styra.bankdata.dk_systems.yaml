@@ -138,6 +138,51 @@ spec:
                 description: DeletionProtection disables deletion of the system in
                   Styra, when the System resource is deleted.
                 type: boolean
+              discoveryOverrides:
+                description: DiscoveryOverrides is an opa config which will take precedence
+                  over the configuration supplied by Styra discovery API. Configuration
+                  set here will be merged with the configuration supplied by the discovery
+                  API.
+                properties:
+                  distributed_tracing:
+                    description: OPAConfigDistributedTracing configures the `distributed_tracing`
+                      key in the OPA configuration.
+                    properties:
+                      address:
+                        type: string
+                      allow_insecure_tls:
+                        type: boolean
+                      encryption:
+                        enum:
+                        - "off"
+                        - tls
+                        - mtls
+                        type: string
+                      sample_percentage:
+                        type: integer
+                      service_name:
+                        type: string
+                      tls_ca_cert_file:
+                        type: string
+                      tls_cert_file:
+                        type: string
+                      tls_private_key_file:
+                        type: string
+                      type:
+                        type: string
+                    type: object
+                  status:
+                    description: OPAConfigStatus configures the `status` key in the
+                      OPA configuration
+                    properties:
+                      prometheus:
+                        type: boolean
+                    required:
+                    - prometheus
+                    type: object
+                required:
+                - status
+                type: object
               localPlane:
                 description: LocalPlane specifies how the Styra Local Plane should
                   be configured. This is used to generate Secret and ConfigMap for

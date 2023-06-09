@@ -1111,7 +1111,13 @@ func (r *SystemReconciler) specToSystemConfig(system *v1beta1.System) *styra.Sys
 		} else if system.Spec.SourceControl.Origin.Reference != "" {
 			cfg.SourceControl.Origin.Reference = system.Spec.SourceControl.Origin.Reference
 		}
+	}
 
+	if system.Spec.DiscoveryOverrides != nil {
+		if cfg.DeploymentParameters == nil {
+			cfg.DeploymentParameters = &styra.DeploymentParameters{}
+		}
+		cfg.DeploymentParameters.Discovery = system.Spec.DiscoveryOverrides
 	}
 
 	return cfg

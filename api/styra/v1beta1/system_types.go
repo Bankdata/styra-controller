@@ -35,11 +35,44 @@ type SystemSpec struct {
 	// DecisionMappings holds the list of decision mappings for the system.
 	DecisionMappings []DecisionMapping `json:"decisionMappings,omitempty"`
 
-	// Datasources represents a list of Styra datasources to be mounted in the system.
+	// Datasources represents a list of Styra datasources to be mounted in the
+	// system.
 	Datasources []Datasource `json:"datasources,omitempty"`
+
+	// DiscoveryOverrides is an opa config which will take precedence over the
+	// configuration supplied by Styra discovery API. Configuration set here
+	// will be merged with the configuration supplied by the discovery API.
+	DiscoveryOverrides *DiscoveryOverrides `json:"discoveryOverrides,omitempty"`
 
 	SourceControl *SourceControl `json:"sourceControl,omitempty"`
 	LocalPlane    *LocalPlane    `json:"localPlane,omitempty"`
+}
+
+// DiscoveryOverrides specifies system specific overrides for the configuration
+// served from the Styra OPA Discovery API
+type DiscoveryOverrides struct {
+	Status             *OPAConfigStatus             `json:"status"`
+	DistributedTracing *OPAConfigDistributedTracing `json:"distributed_tracing,omitempty"`
+}
+
+// OPAConfigStatus configures the `status` key in the OPA configuration
+type OPAConfigStatus struct {
+	Prometheus bool `json:"prometheus"`
+}
+
+// OPAConfigDistributedTracing configures the `distributed_tracing` key in the
+// OPA configuration.
+type OPAConfigDistributedTracing struct {
+	Type             string `json:"type,omitempty"`
+	Address          string `json:"address,omitempty"`
+	ServiceName      string `json:"service_name,omitempty"`
+	SamplePercentage int    `json:"sample_percentage,omitempty"`
+	//+kubebuilder:validation:Enum=off;tls;mtls
+	Encryption        string `json:"encryption,omitempty"`
+	AllowInsecureTLS  bool   `json:"allow_insecure_tls,omitempty"`
+	TLSCACertFile     string `json:"tls_ca_cert_file,omitempty"`
+	TLSCertFile       string `json:"tls_cert_file,omitempty"`
+	TLSPrivateKeyFile string `json:"tls_private_key_file,omitempty"`
 }
 
 // LocalPlane specifies how the Styra Local Plane should be configured. This is
