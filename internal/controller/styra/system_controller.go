@@ -247,7 +247,18 @@ func (r *SystemReconciler) reconcile(
 	} else if systemID != "" {
 		cfg, err = r.getSystem(ctx, log, systemID)
 		if err != nil {
-			return ctrl.Result{}, err
+			var serr *styra.HTTPError
+			if errors.As(err, &serr) && serr.StatusCode == http.StatusNotFound {
+				res, err := r.createSystem(ctx, log, system)
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+				if err := r.reconcileID(ctx, log, system, res.SystemConfig.ID); err != nil {
+					return ctrl.Result{}, err
+				}
+			} else {
+				return ctrl.Result{}, err
+			}
 		}
 	} else {
 		res, err := r.createSystem(ctx, log, system)

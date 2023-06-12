@@ -68,6 +68,11 @@ func (err *ReconcilerErr) Cause() error {
 	return err.err
 }
 
+// Unwrap is the same as `Cause()`
+func (err *ReconcilerErr) Unwrap() error {
+	return err.Cause()
+}
+
 // StackTrace implements the stackTracer interface.
 func (err *ReconcilerErr) StackTrace() errors.StackTrace {
 	var st stackTracer
