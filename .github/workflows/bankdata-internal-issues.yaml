@@ -1,0 +1,29 @@
+name: Create Internal Issue on Jira from Issue
+
+on:
+  issues:
+    types: [opened, reopened]
+
+jobs:
+  create-jira-issue-from-labeled-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Jira login
+        id: login
+        uses: atlassian/gajira-login@master
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+      - name: Create TR Jira issue for internal-priority labels
+        id: create_jira_internal_priority_issue
+        uses: atlassian/gajira-create@master
+        with:
+          project: ${{ secrets.JIRA_PROJECT }}
+          issuetype: Task
+          summary: |
+            styra-controller: ${{ github.event.issue.title }}
+          description: |
+            Github issue: ${{ github.event.issue.html_url }}
+
+            ${{ github.event.issue.body }}
