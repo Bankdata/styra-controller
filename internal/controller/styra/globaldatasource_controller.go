@@ -34,7 +34,7 @@ import (
 	ctrlpred "sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	configv2alpha1 "github.com/bankdata/styra-controller/api/config/v2alpha1"
+	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
 	styrav1alpha1 "github.com/bankdata/styra-controller/api/styra/v1alpha1"
 	ctrlerr "github.com/bankdata/styra-controller/internal/errors"
 	"github.com/bankdata/styra-controller/internal/fields"
@@ -48,7 +48,7 @@ type GlobalDatasourceReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	Styra  styra.ClientInterface
-	Config *configv2alpha1.ProjectConfig
+	Config *configv2alpha2.ProjectConfig
 }
 
 //+kubebuilder:rbac:groups=styra.bankdata.dk,resources=globaldatasources,verbs=get;list;watch;create;update;patch;delete

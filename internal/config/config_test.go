@@ -24,12 +24,15 @@ import (
 
 	v1 "github.com/bankdata/styra-controller/api/config/v1"
 	"github.com/bankdata/styra-controller/api/config/v2alpha1"
+	"github.com/bankdata/styra-controller/api/config/v2alpha2"
 )
 
 var _ = DescribeTable("deserialize",
-	func(data []byte, expected *v2alpha1.ProjectConfig, shouldErr bool) {
+	func(data []byte, expected *v2alpha2.ProjectConfig, shouldErr bool) {
 		scheme := runtime.NewScheme()
-		err := v2alpha1.AddToScheme(scheme)
+		err := v2alpha2.AddToScheme(scheme)
+		Ω(err).ShouldNot(HaveOccurred())
+		err = v2alpha1.AddToScheme(scheme)
 		Ω(err).ShouldNot(HaveOccurred())
 		err = v1.AddToScheme(scheme)
 		Ω(err).ShouldNot(HaveOccurred())
@@ -59,8 +62,8 @@ apiVersion: config.bankdata.dk/v1
 kind: ProjectConfig
 styraToken: my-token
 `),
-		&v2alpha1.ProjectConfig{
-			Styra: v2alpha1.StyraConfig{
+		&v2alpha2.ProjectConfig{
+			Styra: v2alpha2.StyraConfig{
 				Token: "my-token",
 			},
 		},
@@ -74,12 +77,27 @@ kind: ProjectConfig
 styra:
   token: my-token
 `),
-		&v2alpha1.ProjectConfig{
+		&v2alpha2.ProjectConfig{
+			Styra: v2alpha2.StyraConfig{
+				Token: "my-token",
+			},
+		},
+		false,
+	),
+
+	Entry("can deserialize v2alpha2",
+		[]byte(`
+apiVersion: config.bankdata.dk/v2alpha2
+kind: ProjectConfig
+styra:
+  token: my-token
+`),
+		&v2alpha2.ProjectConfig{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "ProjectConfig",
-				APIVersion: v2alpha1.GroupVersion.Identifier(),
+				APIVersion: v2alpha2.GroupVersion.Identifier(),
 			},
-			Styra: v2alpha1.StyraConfig{
+			Styra: v2alpha2.StyraConfig{
 				Token: "my-token",
 			},
 		},

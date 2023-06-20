@@ -14,18 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v2alpha1
+package v2alpha2
 
 import (
 	"sort"
 	"strings"
+	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	//nolint:staticcheck // issue https://github.com/Bankdata/styra-controller/issues/82
-	cfg "sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
-
-	"github.com/bankdata/styra-controller/api/config/v2alpha2"
 )
 
 //+kubebuilder:object:root=true
@@ -33,8 +29,6 @@ import (
 // ProjectConfig is the Schema for the projectconfigs API
 type ProjectConfig struct {
 	metav1.TypeMeta `json:",inline"`
-
-	cfg.ControllerManagerConfigurationSpec `json:",inline"`
 
 	// ControllerClass sets a controller class for this controller. This allows
 	// the provided CRDs to target a specific controller. This is useful when
@@ -65,6 +59,8 @@ type ProjectConfig struct {
 	// purposes.
 	LogLevel int `json:"logLevel"`
 
+	LeaderElection *LeaderElectionConfig `json:"leaderElection"`
+
 	NotificationWebhook *NotificationWebhookConfig `json:"notificationWebhook"`
 
 	Sentry *SentryConfig `json:"sentry"`
@@ -86,6 +82,13 @@ type ProjectConfig struct {
 	// SystemUserRoles is a list of Styra DAS system level roles which the subjects of
 	// a system will be granted.
 	SystemUserRoles []string `json:"systemUserRoles"`
+}
+
+// LeaderElectionConfig contains configuration for leader election
+type LeaderElectionConfig struct {
+	LeaseDuration time.Duration `json:"leaseDuration"`
+	RenewDeadline time.Duration `json:"renewDeadline"`
+	RetryPeriod   time.Duration `json:"retryPeriod"`
 }
 
 // StyraConfig contains configuration for connecting to the Styra DAS apis
@@ -164,59 +167,6 @@ func (c *ProjectConfig) GetGitCredentialForRepo(repo string) *GitCredential {
 	}
 
 	return nil
-}
-
-// ToV2Alpha2 returns this ProjectConfig converted to a v2alpha2.ProjectConfig
-func (c *ProjectConfig) ToV2Alpha2() *v2alpha2.ProjectConfig {
-	v2cfg := &v2alpha2.ProjectConfig{
-		ControllerClass:    c.ControllerClass,
-		DisableCRDWebhooks: c.DisableCRDWebhooks,
-		EnableMigrations:   c.EnableMigrations,
-		LogLevel:           c.LogLevel,
-		SystemPrefix:       c.SystemPrefix,
-		SystemSuffix:       c.SystemSuffix,
-		SystemUserRoles:    c.SystemUserRoles,
-		Styra: v2alpha2.StyraConfig{
-			Token:   c.Styra.Token,
-			Address: c.Styra.Address,
-		},
-	}
-
-	if c.Sentry != nil {
-		v2cfg.Sentry = &v2alpha2.SentryConfig{
-			DSN:         c.Sentry.DSN,
-			Debug:       c.Sentry.Debug,
-			Environment: c.Sentry.Environment,
-			HTTPSProxy:  c.Sentry.HTTPSProxy,
-		}
-	}
-
-	if c.NotificationWebhook != nil {
-		v2cfg.NotificationWebhook = &v2alpha2.NotificationWebhookConfig{
-			Address: c.NotificationWebhook.Address,
-		}
-	}
-
-	if c.GitCredentials != nil {
-		v2cfg.GitCredentials = make([]*v2alpha2.GitCredential, len(c.GitCredentials))
-		for i, c := range c.GitCredentials {
-			v2cfg.GitCredentials[i] = &v2alpha2.GitCredential{
-				User:       c.User,
-				Password:   c.Password,
-				RepoPrefix: c.RepoPrefix,
-			}
-		}
-	}
-
-	if c.LeaderElection != nil && c.LeaderElection.LeaderElect != nil && *c.LeaderElection.LeaderElect {
-		v2cfg.LeaderElection = &v2alpha2.LeaderElectionConfig{
-			LeaseDuration: c.LeaderElection.LeaseDuration.Duration,
-			RenewDeadline: c.LeaderElection.RenewDeadline.Duration,
-			RetryPeriod:   c.LeaderElection.RetryPeriod.Duration,
-		}
-	}
-
-	return v2cfg
 }
 
 func init() {

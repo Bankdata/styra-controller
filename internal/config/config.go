@@ -22,14 +22,24 @@ import (
 
 	v1 "github.com/bankdata/styra-controller/api/config/v1"
 	"github.com/bankdata/styra-controller/api/config/v2alpha1"
+	"github.com/bankdata/styra-controller/api/config/v2alpha2"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
+)
+
+const (
+	healthProbeBindAddress = ":8081"
+	metricsBindAddress     = ":8080"
+	leaderElectionID       = "5d272013.bankdata.dk"
+	webhookPort            = 9443
 )
 
 // Load loads controller configuration from the given file using the types
 // registered in the scheme.
-func Load(file string, scheme *runtime.Scheme) (*v2alpha1.ProjectConfig, error) {
+func Load(file string, scheme *runtime.Scheme) (*v2alpha2.ProjectConfig, error) {
 	bs, err := os.ReadFile(file)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not read config file")
@@ -37,15 +47,33 @@ func Load(file string, scheme *runtime.Scheme) (*v2alpha1.ProjectConfig, error) 
 	return deserialize(bs, scheme)
 }
 
-func deserialize(data []byte, scheme *runtime.Scheme) (*v2alpha1.ProjectConfig, error) {
+// OptionsFromConfig creates a manager.Options based on a configuration file
+func OptionsFromConfig(cfg *v2alpha2.ProjectConfig) manager.Options {
+	o := manager.Options{
+		HealthProbeBindAddress: healthProbeBindAddress,
+		MetricsBindAddress:     metricsBindAddress,
+		WebhookServer:          webhook.NewServer(webhook.Options{Port: webhookPort}),
+	}
+
+	if cfg.LeaderElection != nil {
+		o.LeaderElection = true
+		o.LeaseDuration = &cfg.LeaderElection.LeaseDuration
+		o.RenewDeadline = &cfg.LeaderElection.RenewDeadline
+		o.RetryPeriod = &cfg.LeaderElection.RetryPeriod
+		o.LeaderElectionID = leaderElectionID
+	}
+
+	return o
+}
+
+func deserialize(data []byte, scheme *runtime.Scheme) (*v2alpha2.ProjectConfig, error) {
 	decoder := serializer.NewCodecFactory(scheme).UniversalDeserializer()
 	_, gvk, err := decoder.Decode(data, nil, nil)
-
 	if err != nil {
 		return nil, errors.Wrap(err, "could not decode config")
 	}
 
-	if gvk.Group != v2alpha1.GroupVersion.Group {
+	if gvk.Group != v2alpha2.GroupVersion.Group {
 		return nil, errors.New("unsupported api group")
 	}
 
@@ -53,19 +81,25 @@ func deserialize(data []byte, scheme *runtime.Scheme) (*v2alpha1.ProjectConfig, 
 		return nil, errors.New("unsupported api kind")
 	}
 
-	cfg := &v2alpha1.ProjectConfig{}
+	cfg := &v2alpha2.ProjectConfig{}
 
 	switch gvk.Version {
-	case v2alpha1.GroupVersion.Version:
+	case v2alpha2.GroupVersion.Version:
 		if _, _, err := decoder.Decode(data, nil, cfg); err != nil {
 			return nil, errors.Wrap(err, "could not decode into kind")
 		}
+	case v2alpha1.GroupVersion.Version:
+		var v2cfg v2alpha1.ProjectConfig
+		if _, _, err := decoder.Decode(data, nil, &v2cfg); err != nil {
+			return nil, errors.Wrap(err, "could not decode into kind")
+		}
+		cfg = v2cfg.ToV2Alpha2()
 	case v1.GroupVersion.Version:
 		var v1cfg v1.ProjectConfig
 		if _, _, err := decoder.Decode(data, nil, &v1cfg); err != nil {
 			return nil, errors.Wrap(err, "could not decode into kind")
 		}
-		cfg = v1cfg.ToV2Alpha1()
+		cfg = v1cfg.ToV2Alpha1().ToV2Alpha2()
 	default:
 		return nil, errors.New("unsupported api version")
 	}

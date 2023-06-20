@@ -20,14 +20,14 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	configv2alpha1 "github.com/bankdata/styra-controller/api/config/v2alpha1"
+	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
 	styrav1beta1 "github.com/bankdata/styra-controller/api/styra/v1beta1"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
 var _ = DescribeTable("createRolebindingSubjects",
 	func(subjects []styrav1beta1.Subject, expectedSubject []*styra.Subject) {
-		Ω(createRolebindingSubjects(subjects, &configv2alpha1.SSOConfig{
+		Ω(createRolebindingSubjects(subjects, &configv2alpha2.SSOConfig{
 			IdentityProvider: "BDAD",
 			JWTGroupsClaim:   "groups",
 		})).To(Equal(expectedSubject))

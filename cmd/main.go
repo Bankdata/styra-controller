@@ -42,6 +42,7 @@ import (
 
 	configv1 "github.com/bankdata/styra-controller/api/config/v1"
 	configv2alpha1 "github.com/bankdata/styra-controller/api/config/v2alpha1"
+	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
 	styrav1alpha1 "github.com/bankdata/styra-controller/api/styra/v1alpha1"
 	styrav1beta1 "github.com/bankdata/styra-controller/api/styra/v1beta1"
 	"github.com/bankdata/styra-controller/internal/config"
@@ -66,11 +67,11 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
 	utilruntime.Must(styrav1alpha1.AddToScheme(scheme))
 	utilruntime.Must(configv1.AddToScheme(scheme))
 	utilruntime.Must(styrav1beta1.AddToScheme(scheme))
 	utilruntime.Must(configv2alpha1.AddToScheme(scheme))
+	utilruntime.Must(configv2alpha2.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -80,13 +81,9 @@ func main() {
 		printVersion bool
 	)
 
-	flag.StringVar(&configFile, "config", "",
-		"The controller will load its initial configuration from this file. "+
-			"Omit this flag to use the default configuration values. "+
-			"Command-line flags override configuration from this file.")
-
+	flag.StringVar(&configFile, "config", "/etc/styra-controller/config.yaml",
+		"The controller will load its initial configuration from this file. ")
 	flag.BoolVar(&printVersion, "version", false, "show version information")
-
 	flag.Parse()
 
 	if printVersion {
@@ -100,22 +97,16 @@ func main() {
 	log := ctrl.Log.WithName("setup")
 	logDebug := log.V(logLevelDebug)
 
-	ctrlConfig := &configv2alpha1.ProjectConfig{}
-	options := ctrl.Options{Scheme: scheme}
-	if configFile != "" {
-		var err error
-		ctrlConfig, err = config.Load(configFile, scheme)
-		if err != nil {
-			log.Error(err, "unable to load the config file")
-			exit(err)
-		}
+	ctrlConfig, err := config.Load(configFile, scheme)
+	if err != nil {
+		log.Error(err, "unable to load the config file")
+		exit(err)
+	}
 
-		//nolint:staticcheck // issue https://github.com/Bankdata/styra-controller/issues/82
-		options, err = options.AndFrom(ctrlConfig)
-		if err != nil {
-			log.Error(err, "could not load options from config")
-			exit(err)
-		}
+	options := config.OptionsFromConfig(ctrlConfig)
+	if err != nil {
+		log.Error(err, "could not load options from config")
+		exit(err)
 	}
 
 	ctrl.SetLogger(zap.New(
