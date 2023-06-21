@@ -253,6 +253,17 @@ string
 <p>Path is the path within the system where the datasource should reside.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>description</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Description is a description of the datasource</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="styra.bankdata.dk/v1beta1.DecisionMapping">DecisionMapping
@@ -1161,5 +1172,5 @@ System.</p>
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>534b87f</code>.
+on git commit <code>d2179ec</code>.
 </em></p>

@@ -699,11 +699,12 @@ func (r *SystemReconciler) reconcileDatasources(
 		id := path.Join("systems", system.Status.ID, ssds.Path)
 		expectedByID[id] = ssds
 		ds, ok := existingByID[id]
-		if !ok || ds.Category != "rest" {
+		if !ok || ds.Category != "rest" || ds.Description != ssds.Description {
 			log := log.WithValues("datasourceID", id)
 			log.Info("Creating or updating datasource")
 			_, err := r.Styra.UpsertDatasource(ctx, id, &styra.UpsertDatasourceRequest{
-				Category: "rest",
+				Category:    "rest",
+				Description: ssds.Description,
 			})
 			if err != nil {
 				return ctrl.Result{}, ctrlerr.Wrap(err, "Could not create or update datasource").

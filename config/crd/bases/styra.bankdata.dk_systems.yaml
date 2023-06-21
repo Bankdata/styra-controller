@@ -51,6 +51,9 @@ spec:
                   description: Datasource represents a Styra datasource to be mounted
                     in the system.
                   properties:
+                    description:
+                      description: Description is a description of the datasource
+                      type: string
                     path:
                       description: Path is the path within the system where the datasource
                         should reside.
