@@ -48,8 +48,9 @@ func Load(file string, scheme *runtime.Scheme) (*v2alpha2.ProjectConfig, error) 
 }
 
 // OptionsFromConfig creates a manager.Options based on a configuration file
-func OptionsFromConfig(cfg *v2alpha2.ProjectConfig) manager.Options {
+func OptionsFromConfig(cfg *v2alpha2.ProjectConfig, scheme *runtime.Scheme) manager.Options {
 	o := manager.Options{
+		Scheme:                 scheme,
 		HealthProbeBindAddress: healthProbeBindAddress,
 		MetricsBindAddress:     metricsBindAddress,
 		WebhookServer:          webhook.NewServer(webhook.Options{Port: webhookPort}),

@@ -103,7 +103,7 @@ func main() {
 		exit(err)
 	}
 
-	options := config.OptionsFromConfig(ctrlConfig)
+	options := config.OptionsFromConfig(ctrlConfig, scheme)
 	if err != nil {
 		log.Error(err, "could not load options from config")
 		exit(err)
