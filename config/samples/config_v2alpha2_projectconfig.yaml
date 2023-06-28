@@ -28,6 +28,13 @@ gitCredentials: []
 #   password: my-git-password
 #   repoPrefix: https://github.com/my-org
 
+# leaderElection contains configuration for the controller-runtime leader
+# election.
+#leaderElection:
+#  leaseDuration: 15s
+#  renewDeadLine: 10s
+#  retryPeriod: 2s
+
 # logLevel sets the logging level of the controller. A higher number gives more
 # verbosity. A number higher than 0 should only be used for debugging purposes.
 logLevel: 0
