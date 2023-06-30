@@ -82,6 +82,13 @@ func (c *ProjectConfig) ToV2Alpha1() *v2alpha1.ProjectConfig {
 		},
 	}
 
+	if c.JwtGroupClaim != "" {
+		v2cfg.SSO = &v2alpha1.SSOConfig{
+			IdentityProvider: c.IdentityProvider,
+			JWTGroupsClaim:   c.JwtGroupClaim,
+		}
+	}
+
 	if c.SentryDSN != "" {
 		v2cfg.Sentry = &v2alpha1.SentryConfig{
 			DSN:         c.SentryDSN,
