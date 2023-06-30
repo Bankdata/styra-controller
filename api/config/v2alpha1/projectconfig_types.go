@@ -203,9 +203,9 @@ func (c *ProjectConfig) ToV2Alpha2() *v2alpha2.ProjectConfig {
 
 	if c.LeaderElection != nil && c.LeaderElection.LeaderElect != nil && *c.LeaderElection.LeaderElect {
 		v2cfg.LeaderElection = &v2alpha2.LeaderElectionConfig{
-			LeaseDuration: c.LeaderElection.LeaseDuration.Duration,
-			RenewDeadline: c.LeaderElection.RenewDeadline.Duration,
-			RetryPeriod:   c.LeaderElection.RetryPeriod.Duration,
+			LeaseDuration: c.LeaderElection.LeaseDuration,
+			RenewDeadline: c.LeaderElection.RenewDeadline,
+			RetryPeriod:   c.LeaderElection.RetryPeriod,
 		}
 	}
 

@@ -58,9 +58,9 @@ func OptionsFromConfig(cfg *v2alpha2.ProjectConfig, scheme *runtime.Scheme) mana
 
 	if cfg.LeaderElection != nil {
 		o.LeaderElection = true
-		o.LeaseDuration = &cfg.LeaderElection.LeaseDuration
-		o.RenewDeadline = &cfg.LeaderElection.RenewDeadline
-		o.RetryPeriod = &cfg.LeaderElection.RetryPeriod
+		o.LeaseDuration = &cfg.LeaderElection.LeaseDuration.Duration
+		o.RenewDeadline = &cfg.LeaderElection.RenewDeadline.Duration
+		o.RetryPeriod = &cfg.LeaderElection.RetryPeriod.Duration
 		o.LeaderElectionID = leaderElectionID
 	}
 
