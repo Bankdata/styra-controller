@@ -169,31 +169,24 @@ func (c *ProjectConfig) GetGitCredentialForRepo(repo string) *GitCredential {
 // ToV2Alpha2 returns this ProjectConfig converted to a v2alpha2.ProjectConfig
 func (c *ProjectConfig) ToV2Alpha2() *v2alpha2.ProjectConfig {
 	v2cfg := &v2alpha2.ProjectConfig{
-		ControllerClass:    c.ControllerClass,
-		DisableCRDWebhooks: c.DisableCRDWebhooks,
-		EnableMigrations:   c.EnableMigrations,
-		LogLevel:           c.LogLevel,
-		SystemPrefix:       c.SystemPrefix,
-		SystemSuffix:       c.SystemSuffix,
-		SystemUserRoles:    c.SystemUserRoles,
+		ControllerClass:           c.ControllerClass,
+		DeletionProtectionDefault: c.DeletionProtectionDefault,
+		DisableCRDWebhooks:        c.DisableCRDWebhooks,
+		EnableMigrations:          c.EnableMigrations,
+		LogLevel:                  c.LogLevel,
 		Styra: v2alpha2.StyraConfig{
 			Token:   c.Styra.Token,
 			Address: c.Styra.Address,
 		},
+		SystemPrefix:    c.SystemPrefix,
+		SystemSuffix:    c.SystemSuffix,
+		SystemUserRoles: c.SystemUserRoles,
 	}
 
-	if c.Sentry != nil {
-		v2cfg.Sentry = &v2alpha2.SentryConfig{
-			DSN:         c.Sentry.DSN,
-			Debug:       c.Sentry.Debug,
-			Environment: c.Sentry.Environment,
-			HTTPSProxy:  c.Sentry.HTTPSProxy,
-		}
-	}
-
-	if c.NotificationWebhook != nil {
-		v2cfg.NotificationWebhook = &v2alpha2.NotificationWebhookConfig{
-			Address: c.NotificationWebhook.Address,
+	if c.SSO != nil {
+		v2cfg.SSO = &v2alpha2.SSOConfig{
+			IdentityProvider: c.SSO.IdentityProvider,
+			JWTGroupsClaim:   c.SSO.JWTGroupsClaim,
 		}
 	}
 
@@ -210,9 +203,24 @@ func (c *ProjectConfig) ToV2Alpha2() *v2alpha2.ProjectConfig {
 
 	if c.LeaderElection != nil && c.LeaderElection.LeaderElect != nil && *c.LeaderElection.LeaderElect {
 		v2cfg.LeaderElection = &v2alpha2.LeaderElectionConfig{
-			LeaseDuration: c.LeaderElection.LeaseDuration.Duration,
-			RenewDeadline: c.LeaderElection.RenewDeadline.Duration,
-			RetryPeriod:   c.LeaderElection.RetryPeriod.Duration,
+			LeaseDuration: c.LeaderElection.LeaseDuration,
+			RenewDeadline: c.LeaderElection.RenewDeadline,
+			RetryPeriod:   c.LeaderElection.RetryPeriod,
+		}
+	}
+
+	if c.NotificationWebhook != nil {
+		v2cfg.NotificationWebhook = &v2alpha2.NotificationWebhookConfig{
+			Address: c.NotificationWebhook.Address,
+		}
+	}
+
+	if c.Sentry != nil {
+		v2cfg.Sentry = &v2alpha2.SentryConfig{
+			DSN:         c.Sentry.DSN,
+			Debug:       c.Sentry.Debug,
+			Environment: c.Sentry.Environment,
+			HTTPSProxy:  c.Sentry.HTTPSProxy,
 		}
 	}
 
