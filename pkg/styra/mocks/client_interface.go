@@ -144,6 +144,32 @@ func (_m *ClientInterface) DeleteDatasource(ctx context.Context, id string) (*st
 	return r0, r1
 }
 
+// DeletePolicy provides a mock function with given fields: ctx, policyName
+func (_m *ClientInterface) DeletePolicy(ctx context.Context, policyName string) (*styra.DeletePolicyResponse, error) {
+	ret := _m.Called(ctx, policyName)
+
+	var r0 *styra.DeletePolicyResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*styra.DeletePolicyResponse, error)); ok {
+		return rf(ctx, policyName)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *styra.DeletePolicyResponse); ok {
+		r0 = rf(ctx, policyName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*styra.DeletePolicyResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, policyName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // DeleteRoleBindingV2 provides a mock function with given fields: ctx, id
 func (_m *ClientInterface) DeleteRoleBindingV2(ctx context.Context, id string) (*styra.DeleteRoleBindingV2Response, error) {
 	ret := _m.Called(ctx, id)
@@ -428,13 +454,12 @@ func (_m *ClientInterface) VerifyGitConfiguration(ctx context.Context, request *
 	return r0, r1
 }
 
-type mockConstructorTestingTNewClientInterface interface {
+// NewClientInterface creates a new instance of ClientInterface. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewClientInterface(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewClientInterface creates a new instance of ClientInterface. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewClientInterface(t mockConstructorTestingTNewClientInterface) *ClientInterface {
+}) *ClientInterface {
 	mock := &ClientInterface{}
 	mock.Mock.Test(t)
 

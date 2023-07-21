@@ -71,6 +71,8 @@ type ClientInterface interface {
 	GetOPAConfig(ctx context.Context, systemID string) (OPAConfig, error)
 
 	VerifyGitConfiguration(ctx context.Context, request *VerfiyGitConfigRequest) (*VerfiyGitConfigResponse, error)
+
+	DeletePolicy(ctx context.Context, policyName string) (*DeletePolicyResponse, error)
 }
 
 // Client is a client for the Styra APIs.
