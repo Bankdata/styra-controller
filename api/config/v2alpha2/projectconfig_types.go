@@ -19,7 +19,6 @@ package v2alpha2
 import (
 	"sort"
 	"strings"
-	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -86,9 +85,9 @@ type ProjectConfig struct {
 
 // LeaderElectionConfig contains configuration for leader election
 type LeaderElectionConfig struct {
-	LeaseDuration time.Duration `json:"leaseDuration"`
-	RenewDeadline time.Duration `json:"renewDeadline"`
-	RetryPeriod   time.Duration `json:"retryPeriod"`
+	LeaseDuration metav1.Duration `json:"leaseDuration"`
+	RenewDeadline metav1.Duration `json:"renewDeadline"`
+	RetryPeriod   metav1.Duration `json:"retryPeriod"`
 }
 
 // StyraConfig contains configuration for connecting to the Styra DAS apis
