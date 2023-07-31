@@ -223,6 +223,9 @@ type GitRepo struct {
 type Datasource struct {
 	// Path is the path within the system where the datasource should reside.
 	Path string `json:"path"`
+
+	// Description is a description of the datasource
+	Description string `json:"description,omitempty"`
 }
 
 // SystemStatus defines the observed state of System.

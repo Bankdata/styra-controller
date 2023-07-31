@@ -42,7 +42,7 @@ import (
 	ctrlpred "sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	configv2alpha1 "github.com/bankdata/styra-controller/api/config/v2alpha1"
+	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
 	"github.com/bankdata/styra-controller/api/styra/v1beta1"
 	ctrlerr "github.com/bankdata/styra-controller/internal/errors"
 	"github.com/bankdata/styra-controller/internal/fields"
@@ -63,7 +63,7 @@ type SystemReconciler struct {
 	WebhookClient webhook.Client
 	Recorder      record.EventRecorder
 	Metric        *prometheus.GaugeVec
-	Config        *configv2alpha1.ProjectConfig
+	Config        *configv2alpha2.ProjectConfig
 }
 
 //+kubebuilder:rbac:groups=styra.bankdata.dk,resources=systems,verbs=get;list;watch;create;update;patch;delete
@@ -587,7 +587,7 @@ func (r *SystemReconciler) reconcileSubjects(
 
 func createRolebindingSubjects(
 	subjects []v1beta1.Subject,
-	sso *configv2alpha1.SSOConfig,
+	sso *configv2alpha2.SSOConfig,
 ) []*styra.Subject {
 	styraSubjectsByUserID := map[string]struct{}{}
 	styraSubjectsByClaimValue := map[string]struct{}{}
@@ -699,11 +699,12 @@ func (r *SystemReconciler) reconcileDatasources(
 		id := path.Join("systems", system.Status.ID, ssds.Path)
 		expectedByID[id] = ssds
 		ds, ok := existingByID[id]
-		if !ok || ds.Category != "rest" {
+		if !ok || ds.Category != "rest" || ds.Description != ssds.Description {
 			log := log.WithValues("datasourceID", id)
 			log.Info("Creating or updating datasource")
 			_, err := r.Styra.UpsertDatasource(ctx, id, &styra.UpsertDatasourceRequest{
-				Category: "rest",
+				Category:    "rest",
+				Description: ssds.Description,
 			})
 			if err != nil {
 				return ctrl.Result{}, ctrlerr.Wrap(err, "Could not create or update datasource").

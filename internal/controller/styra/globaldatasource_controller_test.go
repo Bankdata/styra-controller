@@ -21,14 +21,14 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	configv2alpha1 "github.com/bankdata/styra-controller/api/config/v2alpha1"
+	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
 	styrav1alpha1 "github.com/bankdata/styra-controller/api/styra/v1alpha1"
 	"github.com/bankdata/styra-controller/pkg/ptr"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
 type specToUpdateTest struct {
-	cfg      *configv2alpha1.ProjectConfig
+	cfg      *configv2alpha2.ProjectConfig
 	ds       *styrav1alpha1.GlobalDatasource
 	expected *styra.UpsertDatasourceRequest
 }
@@ -36,7 +36,7 @@ type specToUpdateTest struct {
 var _ = DescribeTable("globalDatasourceSpecToUpdate", func(test specToUpdateTest) {
 	cfg := test.cfg
 	if cfg == nil {
-		cfg = &configv2alpha1.ProjectConfig{}
+		cfg = &configv2alpha2.ProjectConfig{}
 	}
 	r := &GlobalDatasourceReconciler{Config: cfg}
 	Expect(r.specToUpdate(test.ds)).To(Equal(test.expected))
@@ -54,8 +54,8 @@ var _ = DescribeTable("globalDatasourceSpecToUpdate", func(test specToUpdateTest
 	}),
 
 	Entry("using default git credentials", specToUpdateTest{
-		cfg: &configv2alpha1.ProjectConfig{
-			GitCredentials: []*configv2alpha1.GitCredential{
+		cfg: &configv2alpha2.ProjectConfig{
+			GitCredentials: []*configv2alpha2.GitCredential{
 				{User: "test-user", Password: "test-pw"},
 			},
 		},
@@ -70,8 +70,8 @@ var _ = DescribeTable("globalDatasourceSpecToUpdate", func(test specToUpdateTest
 	}),
 
 	Entry("using credentials from secret", specToUpdateTest{
-		cfg: &configv2alpha1.ProjectConfig{
-			GitCredentials: []*configv2alpha1.GitCredential{
+		cfg: &configv2alpha2.ProjectConfig{
+			GitCredentials: []*configv2alpha2.GitCredential{
 				{User: "test-user", Password: "test-pw"},
 			},
 		},
@@ -92,8 +92,8 @@ var _ = DescribeTable("globalDatasourceSpecToUpdate", func(test specToUpdateTest
 	}),
 
 	Entry("setting all fields", specToUpdateTest{
-		cfg: &configv2alpha1.ProjectConfig{
-			GitCredentials: []*configv2alpha1.GitCredential{
+		cfg: &configv2alpha2.ProjectConfig{
+			GitCredentials: []*configv2alpha2.GitCredential{
 				{User: "test-user", Password: "test-pw"},
 			},
 		},
@@ -128,7 +128,7 @@ var _ = DescribeTable("globalDatasourceSpecToUpdate", func(test specToUpdateTest
 )
 
 type needsUpdateTest struct {
-	cfg      *configv2alpha1.ProjectConfig
+	cfg      *configv2alpha2.ProjectConfig
 	gds      *styrav1alpha1.GlobalDatasource
 	dc       *styra.DatasourceConfig
 	expected bool
@@ -137,7 +137,7 @@ type needsUpdateTest struct {
 var _ = DescribeTable("needsUpdate", func(test needsUpdateTest) {
 	cfg := test.cfg
 	if cfg == nil {
-		cfg = &configv2alpha1.ProjectConfig{}
+		cfg = &configv2alpha2.ProjectConfig{}
 	}
 	r := &GlobalDatasourceReconciler{Config: cfg}
 	Expect(r.needsUpdate(test.gds, test.dc)).To(Equal(test.expected))
@@ -201,8 +201,8 @@ var _ = DescribeTable("needsUpdate", func(test needsUpdateTest) {
 		expected: false,
 	}),
 	Entry("git credentials from default", needsUpdateTest{
-		cfg: &configv2alpha1.ProjectConfig{
-			GitCredentials: []*configv2alpha1.GitCredential{
+		cfg: &configv2alpha2.ProjectConfig{
+			GitCredentials: []*configv2alpha2.GitCredential{
 				{User: "test-user", Password: "test-pw"},
 			},
 		},
@@ -219,8 +219,8 @@ var _ = DescribeTable("needsUpdate", func(test needsUpdateTest) {
 		expected: true,
 	}),
 	Entry("git credentials from default in sync", needsUpdateTest{
-		cfg: &configv2alpha1.ProjectConfig{
-			GitCredentials: []*configv2alpha1.GitCredential{
+		cfg: &configv2alpha2.ProjectConfig{
+			GitCredentials: []*configv2alpha2.GitCredential{
 				{User: "test-user", Password: "test-pw"},
 			},
 		},
