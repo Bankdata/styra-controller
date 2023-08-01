@@ -75,4 +75,4 @@ to deploy the styra-controller for testing purposes see
 
 ## Security
 
-For more information about the security policy of the project see [SECURITY.md](SECURITY.md).
+For more information about the security policy of the project see [SECURITY.md](SECURITY.md)

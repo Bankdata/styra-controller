@@ -51,6 +51,13 @@ var _ = Describe("SystemReconciler.Reconcile", Label("integration"), func() {
 			},
 		}, nil).Once()
 
+		styraClientMock.On("DeletePolicy", mock.Anything, "systems/default_test/rules").Return(&styra.DeletePolicyResponse{
+			StatusCode: http.StatusOK,
+		}, nil).Once()
+		styraClientMock.On("DeletePolicy", mock.Anything, "systems/default_test/test").Return(&styra.DeletePolicyResponse{
+			StatusCode: http.StatusOK,
+		}, nil).Once()
+
 		styraClientMock.On("UpdateSystem", mock.Anything, "default_test", &styra.UpdateSystemRequest{
 			SystemConfig: &styra.SystemConfig{
 				Name:     key.String(),
@@ -189,6 +196,7 @@ discovery:
 			var (
 				getSystem          int
 				createSystem       int
+				deletePolicy       int
 				rolebindingsListed int
 				createRoleBinding  int
 				getOPAConfig       int
@@ -199,6 +207,8 @@ discovery:
 					getSystem++
 				case "CreateSystem":
 					createSystem++
+				case "DeletePolicy":
+					deletePolicy++
 				case "ListRoleBindingsV2":
 					rolebindingsListed++
 				case "CreateRoleBinding":
@@ -209,6 +219,7 @@ discovery:
 			}
 			return getSystem == 2 &&
 				createSystem == 1 &&
+				deletePolicy == 2 &&
 				rolebindingsListed == 3 &&
 				createRoleBinding == 1 &&
 				getOPAConfig == 3

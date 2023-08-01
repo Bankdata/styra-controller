@@ -253,6 +253,9 @@ func (r *SystemReconciler) reconcile(
 				if err != nil {
 					return ctrl.Result{}, err
 				}
+				if err := r.deleteDefaultPolicies(ctx, log, res.SystemConfig.ID); err != nil {
+					return ctrl.Result{}, err
+				}
 				if err := r.reconcileID(ctx, log, system, res.SystemConfig.ID); err != nil {
 					return ctrl.Result{}, err
 				}
@@ -263,6 +266,9 @@ func (r *SystemReconciler) reconcile(
 	} else {
 		res, err := r.createSystem(ctx, log, system)
 		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if err := r.deleteDefaultPolicies(ctx, log, res.SystemConfig.ID); err != nil {
 			return ctrl.Result{}, err
 		}
 		if err := r.reconcileID(ctx, log, system, res.SystemConfig.ID); err != nil {
@@ -456,6 +462,27 @@ func (r *SystemReconciler) reconcileCredentials(
 
 	log.Info("Reconciled credentials")
 	return ctrl.Result{}, nil
+}
+
+func (r *SystemReconciler) deleteDefaultPolicies(ctx context.Context, log logr.Logger, systemID string) error {
+	log.Info("Deleting default policies")
+
+	rulesPolicyName := fmt.Sprintf("systems/%s/rules", systemID)
+	testPolicyName := fmt.Sprintf("systems/%s/test", systemID)
+
+	if _, err := r.Styra.DeletePolicy(ctx, rulesPolicyName); err != nil {
+		return ctrlerr.Wrap(err, "Could not delete default policy").
+			WithEvent("ErrorDeleteDefaultPolicy").
+			WithSystemCondition(v1beta1.ConditionTypeCreatedInStyra)
+	}
+
+	if _, err := r.Styra.DeletePolicy(ctx, testPolicyName); err != nil {
+		return ctrlerr.Wrap(err, "Could not delete default policy").
+			WithEvent("ErrorDeleteDefaultPolicy").
+			WithSystemCondition(v1beta1.ConditionTypeCreatedInStyra)
+	}
+
+	return nil
 }
 
 func (r *SystemReconciler) reconcileID(ctx context.Context, log logr.Logger, system *v1beta1.System, id string) error {
