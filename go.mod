@@ -9,7 +9,7 @@ require (
 	github.com/golangci/golangci-lint v1.54.2
 	github.com/google/uuid v1.3.1
 	github.com/goreleaser/goreleaser v1.20.0
-	github.com/onsi/ginkgo/v2 v2.11.0
+	github.com/onsi/ginkgo/v2 v2.12.0
 	github.com/onsi/gomega v1.27.10
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.16.0
