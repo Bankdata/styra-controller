@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.3.1
 	github.com/goreleaser/goreleaser v1.21.2
 	github.com/onsi/ginkgo/v2 v2.13.0
-	github.com/onsi/gomega v1.27.10
+	github.com/onsi/gomega v1.28.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.16.0
 	github.com/stretchr/testify v1.8.4
