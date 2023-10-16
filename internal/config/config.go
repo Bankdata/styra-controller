@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
@@ -52,8 +53,10 @@ func OptionsFromConfig(cfg *v2alpha2.ProjectConfig, scheme *runtime.Scheme) mana
 	o := manager.Options{
 		Scheme:                 scheme,
 		HealthProbeBindAddress: healthProbeBindAddress,
-		MetricsBindAddress:     metricsBindAddress,
 		WebhookServer:          webhook.NewServer(webhook.Options{Port: webhookPort}),
+		Metrics: metricsserver.Options{
+			BindAddress: metricsBindAddress,
+		},
 	}
 
 	if cfg.LeaderElection != nil {
