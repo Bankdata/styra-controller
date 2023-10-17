@@ -208,6 +208,27 @@ func main() {
 		}
 	}
 
+	libraryReconciler := &controllers.LibraryReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		Config: ctrlConfig,
+		Styra:  styraClient,
+	}
+	if ctrlConfig.NotificationWebhook != nil {
+		libraryReconciler.WebhookClient = webhook.New(ctrlConfig.NotificationWebhook.Address)
+	}
+
+	if err = libraryReconciler.SetupWithManager(mgr); err != nil {
+		log.Error(err, "unable to create controller", "controller", "Library")
+		os.Exit(1)
+	}
+
+	if !ctrlConfig.DisableCRDWebhooks {
+		if err = (&styrav1alpha1.Library{}).SetupWebhookWithManager(mgr); err != nil {
+			log.Error(err, "unable to create webhook", "webhook", "Library")
+			os.Exit(1)
+		}
+	}
 	//+kubebuilder:scaffold:builder
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		log.Error(err, "unable to set up health check")

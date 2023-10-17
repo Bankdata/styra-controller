@@ -1,3 +1,19 @@
+/*
+Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package styra
 
 import (
@@ -20,7 +36,6 @@ import (
 )
 
 var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"), func() {
-
 	ginkgo.It("should reconcile", func() {
 		spec := styrav1beta1.SystemSpec{
 			DeletionProtection: ptr.Bool(false),
@@ -838,6 +853,7 @@ discovery:
 		}, timeout, interval).Should(gomega.BeTrue())
 
 		resetMock(&styraClientMock.Mock)
+		resetMock(&webhookMock.Mock)
 
 		ginkgo.By("Setting a datasource")
 
@@ -1193,6 +1209,7 @@ discovery:
 			return k8serrors.IsNotFound(err)
 		}, timeout, interval).Should(gomega.BeTrue())
 
+		resetMock(&styraClientMock.Mock)
 		styraClientMock.AssertExpectations(ginkgo.GinkgoT())
 	})
 })

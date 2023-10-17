@@ -63,4 +63,17 @@ resources:
   kind: ProjectConfig
   path: github.com/bankdata/styra-controller/api/config/v2alpha2
   version: v2alpha2
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: bankdata.dk
+  group: styra
+  kind: Library
+  path: github.com/bankdata/styra-controller/api/styra/v1alpha1
+  version: v1alpha1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 version: "3"

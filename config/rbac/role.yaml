@@ -64,6 +64,32 @@ rules:
 - apiGroups:
   - styra.bankdata.dk
   resources:
+  - libraries
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - styra.bankdata.dk
+  resources:
+  - libraries/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - styra.bankdata.dk
+  resources:
+  - libraries/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - styra.bankdata.dk
+  resources:
   - systems
   verbs:
   - create
