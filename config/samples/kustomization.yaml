@@ -6,4 +6,5 @@ resources:
 - test_v1_object.yaml
 - config_v2alpha1_projectconfig.yaml
 - config_v2alpha2_projectconfig.yaml
+- styra_v1alpha1_library.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

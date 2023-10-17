@@ -141,6 +141,24 @@ var _ = ginkgo.BeforeSuite(func() {
 	err = globalDatasourceReconciler.SetupWithManager(k8sManager)
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
+	libraryReconciler := &styractrls.LibraryReconciler{
+		Config: &configv2alpha2.ProjectConfig{
+			SSO: &configv2alpha2.SSOConfig{
+				IdentityProvider: "AzureAD Bankdata",
+				JWTGroupsClaim:   "groups",
+			},
+			GitCredentials: []*configv2alpha2.GitCredential{
+				{User: "test-user", Password: "test-secret"},
+			},
+		},
+		Client:        k8sClient,
+		Styra:         styraClientMock,
+		WebhookClient: webhookMock,
+	}
+
+	err = libraryReconciler.SetupWithManager(k8sManager)
+	Expect(err).NotTo(HaveOccurred())
+
 	managerCtx, managerCancel = context.WithCancel(context.Background())
 	go func() {
 		defer ginkgo.GinkgoRecover()

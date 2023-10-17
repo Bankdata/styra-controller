@@ -76,7 +76,7 @@ lint: golangci-lint ## Run linters
 
 .PHONY: test
 test: ginkgo manifests generate lint envtest generate-mocks ## Run all tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r --coverprofile cover.out
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r -p --coverprofile cover.out
 
 .PHONY: test-unit
 test-unit: ginkgo manifests generate lint generate-mocks ## Run unit tests.
@@ -84,7 +84,7 @@ test-unit: ginkgo manifests generate lint generate-mocks ## Run unit tests.
 
 .PHONY: test-integration ## Run integration tests.
 test-integration: ginkgo manifests generate lint envtest generate-mocks ## Run integration tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r --label-filter "integration" --coverprofile cover.out
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r -p --label-filter "integration" --output-interceptor-mode=none
 
 .PHONY: kind-create
 kind-create: kind ## Create kind cluster

@@ -1,0 +1,125 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.13.0
+  name: libraries.styra.bankdata.dk
+spec:
+  group: styra.bankdata.dk
+  names:
+    kind: Library
+    listKind: LibraryList
+    plural: libraries
+    singular: library
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Library is the Schema for the libraries API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: LibrarySpec defines the desired state of Library
+            properties:
+              datasources:
+                description: Datasources is the list of datasources in the Library
+                items:
+                  description: LibraryDatasource contains metadata of a datasource,
+                    stored in a library
+                  properties:
+                    description:
+                      description: Description is a description of the datasource
+                      type: string
+                    path:
+                      description: Path is the path within the system where the datasource
+                        should reside.
+                      type: string
+                  required:
+                  - path
+                  type: object
+                type: array
+              description:
+                description: Description is the description of the Library
+                type: string
+              name:
+                description: Name is the name the Library will have in Styra DAS
+                type: string
+              sourceControl:
+                description: SourceControl is the sourcecontrol configuration for
+                  the Library
+                properties:
+                  libraryOrigin:
+                    description: GitRepo defines the Git configurations a library
+                      can be defined by
+                    properties:
+                      commit:
+                        description: Commit is used to point to a specific commit
+                          SHA. This takes precedence over `Reference` if both are
+                          specified.
+                        type: string
+                      path:
+                        description: Path is the path in the git repo where the policies
+                          are located.
+                        type: string
+                      reference:
+                        description: Reference is used to point to a tag or branch.
+                          This will be ignored if `Commit` is specified.
+                        type: string
+                      url:
+                        description: URL is the URL of the git repo.
+                        type: string
+                    required:
+                    - url
+                    type: object
+                required:
+                - libraryOrigin
+                type: object
+              subjects:
+                description: Subjects is the list of subjects which should have access
+                  to the system.
+                items:
+                  description: LibrarySubject represents a subject which has been
+                    granted access to the Library. The subject is assigned to the
+                    LibraryViewer role.
+                  properties:
+                    kind:
+                      description: Kind is the LibrarySubjectKind of the subject.
+                      enum:
+                      - user
+                      - group
+                      type: string
+                    name:
+                      description: Name is the name of the subject. The meaning of
+                        this field depends on the SubjectKind.
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
+            required:
+            - datasources
+            - description
+            - name
+            - sourceControl
+            type: object
+          status:
+            description: LibraryStatus defines the observed state of Library
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

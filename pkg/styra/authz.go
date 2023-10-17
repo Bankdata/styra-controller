@@ -40,6 +40,9 @@ const (
 
 	// RoleSystemPolicyEditor is the Styra SystemPolicyEditor role.
 	RoleSystemPolicyEditor Role = "SystemPolicyEditor"
+
+	// RoleLibraryViewer is the Styra LibraryViewer role.
+	RoleLibraryViewer Role = "LibraryViewer"
 )
 
 // RoleBindingKind is the kind of the role binding.
@@ -49,6 +52,9 @@ const (
 	// RoleBindingKindSystem is a RoleBindingKind used when the role is for a
 	// System.
 	RoleBindingKindSystem RoleBindingKind = "system"
+	// RoleBindingKindLibrary is a RoleBindingKind used when the role is for a
+	// Library.
+	RoleBindingKindLibrary RoleBindingKind = "library"
 )
 
 // SubjectKind is the kind of a subject.

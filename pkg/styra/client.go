@@ -62,6 +62,9 @@ type ClientInterface interface {
 
 	DeleteDatasource(ctx context.Context, id string) (*DeleteDatasourceResponse, error)
 
+	GetLibrary(ctx context.Context, id string) (*GetLibraryResponse, error)
+	UpsertLibrary(ctx context.Context, id string, reqBody *UpsertLibraryRequest) (*UpsertLibraryResponse, error)
+
 	UpdateSystem(ctx context.Context, id string, request *UpdateSystemRequest) (*UpdateSystemResponse, error)
 
 	DeleteSystem(ctx context.Context, id string) (*DeleteSystemResponse, error)
