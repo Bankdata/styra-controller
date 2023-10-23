@@ -115,6 +115,7 @@ type LibraryStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:scope=Cluster
 
 // Library is the Schema for the libraries API
 type Library struct {

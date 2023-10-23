@@ -12,7 +12,7 @@ spec:
     listKind: LibraryList
     plural: libraries
     singular: library
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1alpha1
     schema:
