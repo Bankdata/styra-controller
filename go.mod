@@ -17,9 +17,9 @@ require (
 	github.com/vektra/mockery/v2 v2.35.2
 	go.uber.org/zap v1.26.0
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.29.0-alpha.1
+	k8s.io/api v0.29.0-alpha.2
 	k8s.io/apimachinery v0.29.0-alpha.2
-	k8s.io/client-go v0.29.0-alpha.1
+	k8s.io/client-go v0.29.0-alpha.2
 	sigs.k8s.io/controller-runtime v0.16.2
 	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20230307042619-c304e7ec2ee7
 	sigs.k8s.io/controller-tools v0.13.0
@@ -153,7 +153,7 @@ require (
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/elliotchance/orderedmap/v2 v2.2.0 // indirect
-	github.com/emicklei/go-restful/v3 v3.10.1 // indirect
+	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/esimonov/ifshort v1.0.4 // indirect
 	github.com/ettle/strcase v0.1.1 // indirect
