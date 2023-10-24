@@ -25,13 +25,13 @@ import (
 	"io"
 	"net/http"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
-var _ = Describe("ListRoleBindingsV2", func() {
+var _ = ginkgo.Describe("ListRoleBindingsV2", func() {
 
 	type test struct {
 		responseCode             int
@@ -41,13 +41,13 @@ var _ = Describe("ListRoleBindingsV2", func() {
 		expectStyraErr           bool
 	}
 
-	DescribeTable("ListRoleBindingsV2", func(test test) {
+	ginkgo.DescribeTable("ListRoleBindingsV2", func(test test) {
 		c := newTestClient(func(r *http.Request) *http.Response {
 			bs, err := io.ReadAll(r.Body)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(bs).To(Equal([]byte("")))
-			Expect(r.Method).To(Equal(http.MethodGet))
-			Expect(r.URL.String()).To(Equal(fmt.Sprintf(
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(bs).To(gomega.Equal([]byte("")))
+			gomega.Expect(r.Method).To(gomega.Equal(http.MethodGet))
+			gomega.Expect(r.URL.String()).To(gomega.Equal(fmt.Sprintf(
 				"http://test.com/v2/authz/rolebindings?resource_id=%s&resource_kind=%s&role_id=%s",
 				test.listRoleBindingsV2Params.ResourceID,
 				test.listRoleBindingsV2Params.ResourceKind,
@@ -63,17 +63,17 @@ var _ = Describe("ListRoleBindingsV2", func() {
 
 		res, err := c.ListRoleBindingsV2(context.Background(), test.listRoleBindingsV2Params)
 		if test.expectStyraErr {
-			Expect(res).To(BeNil())
+			gomega.Expect(res).To(gomega.BeNil())
 			target := &styra.HTTPError{}
-			Expect(errors.As(err, &target)).To(BeTrue())
+			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(res.StatusCode).To(Equal(test.responseCode))
-			Expect(res.Rolebindings).To(Equal(test.expectedResponse.Rolebindings))
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			gomega.Expect(res.StatusCode).To(gomega.Equal(test.responseCode))
+			gomega.Expect(res.Rolebindings).To(gomega.Equal(test.expectedResponse.Rolebindings))
 		}
 	},
 
-		Entry("something", test{
+		ginkgo.Entry("something", test{
 			responseCode: http.StatusOK,
 			responseBody: `{
 						"request_id": "string",
@@ -107,7 +107,7 @@ var _ = Describe("ListRoleBindingsV2", func() {
 			},
 		}),
 
-		Entry("styra http error", test{
+		ginkgo.Entry("styra http error", test{
 			listRoleBindingsV2Params: &styra.ListRoleBindingsV2Params{
 				ResourceKind: "ResourceKind",
 				ResourceID:   "ResourceID",
@@ -119,7 +119,7 @@ var _ = Describe("ListRoleBindingsV2", func() {
 	)
 })
 
-var _ = Describe("CreateRolebinding", func() {
+var _ = ginkgo.Describe("CreateRolebinding", func() {
 
 	type test struct {
 		responseCode             int
@@ -129,17 +129,17 @@ var _ = Describe("CreateRolebinding", func() {
 		expectStyraErr           bool
 	}
 
-	DescribeTable("CreateRolebinding", func(test test) {
+	ginkgo.DescribeTable("CreateRolebinding", func(test test) {
 		c := newTestClient(func(r *http.Request) *http.Response {
 			bs, err := io.ReadAll(r.Body)
-			Expect(err).NotTo(HaveOccurred())
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 			var b bytes.Buffer
-			Expect(json.NewEncoder(&b).Encode(test.createRoleBindingRequest)).To(Succeed())
-			Expect(bs).To(Equal(b.Bytes()))
+			gomega.Expect(json.NewEncoder(&b).Encode(test.createRoleBindingRequest)).To(gomega.Succeed())
+			gomega.Expect(bs).To(gomega.Equal(b.Bytes()))
 
-			Expect(r.Method).To(Equal(http.MethodPost))
-			Expect(r.URL.String()).To(Equal("http://test.com/v2/authz/rolebindings"))
+			gomega.Expect(r.Method).To(gomega.Equal(http.MethodPost))
+			gomega.Expect(r.URL.String()).To(gomega.Equal("http://test.com/v2/authz/rolebindings"))
 
 			return &http.Response{
 				Header:     make(http.Header),
@@ -150,17 +150,17 @@ var _ = Describe("CreateRolebinding", func() {
 
 		res, err := c.CreateRoleBinding(context.Background(), test.createRoleBindingRequest)
 		if test.expectStyraErr {
-			Expect(res).To(BeNil())
+			gomega.Expect(res).To(gomega.BeNil())
 			target := &styra.HTTPError{}
-			Expect(errors.As(err, &target)).To(BeTrue())
+			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(res.StatusCode).To(Equal(test.responseCode))
-			Expect(res.Rolebinding).To(Equal(test.expectedResponse.Rolebinding))
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			gomega.Expect(res.StatusCode).To(gomega.Equal(test.responseCode))
+			gomega.Expect(res.Rolebinding).To(gomega.Equal(test.expectedResponse.Rolebinding))
 		}
 	},
 
-		Entry("something", test{
+		ginkgo.Entry("something", test{
 			responseCode: http.StatusOK,
 			responseBody: `{
 				"rolebinding": {
@@ -207,14 +207,14 @@ var _ = Describe("CreateRolebinding", func() {
 			},
 		}),
 
-		Entry("styra http error", test{
+		ginkgo.Entry("styra http error", test{
 			responseCode:   http.StatusInternalServerError,
 			expectStyraErr: true,
 		}),
 	)
 })
 
-var _ = Describe("UpdateRoleBindingSubjects", func() {
+var _ = ginkgo.Describe("UpdateRoleBindingSubjects", func() {
 
 	type test struct {
 		id                               string
@@ -225,15 +225,15 @@ var _ = Describe("UpdateRoleBindingSubjects", func() {
 		expectStyraErr                   bool
 	}
 
-	DescribeTable("UpdateRoleBindingSubjects", func(test test) {
+	ginkgo.DescribeTable("UpdateRoleBindingSubjects", func(test test) {
 		c := newTestClient(func(r *http.Request) *http.Response {
 			bs, err := io.ReadAll(r.Body)
-			Expect(err).NotTo(HaveOccurred())
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 			var b bytes.Buffer
-			Expect(json.NewEncoder(&b).Encode(test.updateRoleBindingSubjectsRequest)).To(Succeed())
-			Expect(bs).To(Equal(b.Bytes()))
-			Expect(r.Method).To(Equal(http.MethodPost))
-			Expect(r.URL.String()).To(Equal("http://test.com/v2/authz/rolebindings/" + test.id + "/subjects"))
+			gomega.Expect(json.NewEncoder(&b).Encode(test.updateRoleBindingSubjectsRequest)).To(gomega.Succeed())
+			gomega.Expect(bs).To(gomega.Equal(b.Bytes()))
+			gomega.Expect(r.Method).To(gomega.Equal(http.MethodPost))
+			gomega.Expect(r.URL.String()).To(gomega.Equal("http://test.com/v2/authz/rolebindings/" + test.id + "/subjects"))
 
 			return &http.Response{
 				Header:     make(http.Header),
@@ -244,17 +244,17 @@ var _ = Describe("UpdateRoleBindingSubjects", func() {
 
 		res, err := c.UpdateRoleBindingSubjects(context.Background(), test.id, test.updateRoleBindingSubjectsRequest)
 		if test.expectStyraErr {
-			Expect(res).To(BeNil())
+			gomega.Expect(res).To(gomega.BeNil())
 			target := &styra.HTTPError{}
-			Expect(errors.As(err, &target)).To(BeTrue())
+			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(res.StatusCode).To(Equal(test.responseCode))
-			Expect(res.Body).To(Equal(test.expectedBody))
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			gomega.Expect(res.StatusCode).To(gomega.Equal(test.responseCode))
+			gomega.Expect(res.Body).To(gomega.Equal(test.expectedBody))
 		}
 	},
 
-		Entry("something", test{
+		ginkgo.Entry("something", test{
 			id:           "rolebindingId",
 			responseCode: http.StatusOK,
 			responseBody: `expected response from styra api`,
@@ -269,14 +269,14 @@ var _ = Describe("UpdateRoleBindingSubjects", func() {
 			expectedBody: []byte(`expected response from styra api`)},
 		),
 
-		Entry("styra http error", test{
+		ginkgo.Entry("styra http error", test{
 			responseCode:   http.StatusNotFound,
 			expectStyraErr: true,
 		}),
 	)
 })
 
-var _ = Describe("DeleteRoleBindingV2", func() {
+var _ = ginkgo.Describe("DeleteRoleBindingV2", func() {
 
 	type test struct {
 		id             string
@@ -285,11 +285,11 @@ var _ = Describe("DeleteRoleBindingV2", func() {
 		expectStyraErr bool
 	}
 
-	DescribeTable("DeleteRoleBindingV2",
+	ginkgo.DescribeTable("DeleteRoleBindingV2",
 		func(test test) {
 			c := newTestClient(func(r *http.Request) *http.Response {
-				Expect(r.Method).To(Equal(http.MethodDelete))
-				Expect(r.URL.String()).To(Equal(fmt.Sprintf("http://test.com/v2/authz/rolebindings/%s", test.id)))
+				gomega.Expect(r.Method).To(gomega.Equal(http.MethodDelete))
+				gomega.Expect(r.URL.String()).To(gomega.Equal(fmt.Sprintf("http://test.com/v2/authz/rolebindings/%s", test.id)))
 
 				return &http.Response{
 					Header:     make(http.Header),
@@ -299,29 +299,29 @@ var _ = Describe("DeleteRoleBindingV2", func() {
 			})
 			res, err := c.DeleteRoleBindingV2(context.Background(), test.id)
 			if test.expectStyraErr {
-				Expect(res).To(BeNil())
+				gomega.Expect(res).To(gomega.BeNil())
 				target := &styra.HTTPError{}
-				Expect(errors.As(err, &target)).To(BeTrue())
+				gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 			} else {
-				Expect(err).ToNot(HaveOccurred())
-				Expect(res.StatusCode).To(Equal(test.responseCode))
-				Expect(res.Body).To(Equal([]byte(test.responseBody)))
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+				gomega.Expect(res.StatusCode).To(gomega.Equal(test.responseCode))
+				gomega.Expect(res.Body).To(gomega.Equal([]byte(test.responseBody)))
 			}
 		},
 
-		Entry("success", test{
+		ginkgo.Entry("success", test{
 			id:           "rolebindingId",
 			responseCode: http.StatusOK,
 			responseBody: `{"request_id":"test"}`,
 		}),
 
-		Entry("not found", test{
+		ginkgo.Entry("not found", test{
 			id:           "rolebindingId",
 			responseCode: http.StatusNotFound,
 			responseBody: `{"request_id":"test"}`,
 		}),
 
-		Entry("styra http error", test{
+		ginkgo.Entry("styra http error", test{
 			id:             "rolebindingId",
 			responseCode:   http.StatusInternalServerError,
 			responseBody:   `{"request_id":"test"}`,
@@ -330,22 +330,22 @@ var _ = Describe("DeleteRoleBindingV2", func() {
 	)
 })
 
-var _ = DescribeTable("SubjectsAreEqual",
+var _ = ginkgo.DescribeTable("SubjectsAreEqual",
 	func(as []*styra.Subject, bs []*styra.Subject, expected bool) {
-		Ω(styra.SubjectsAreEqual(as, bs)).To(Equal(expected))
+		gomega.Ω(styra.SubjectsAreEqual(as, bs)).To(gomega.Equal(expected))
 	},
 
-	Entry("returns false if not same length",
+	ginkgo.Entry("returns false if not same length",
 		[]*styra.Subject{{ID: "test@test.dk", Kind: "user"}},
 		nil,
 		false),
 
-	Entry("returns true if subjects are equal only user",
+	ginkgo.Entry("returns true if subjects are equal only user",
 		[]*styra.Subject{{ID: "test@test.dk", Kind: "user"}},
 		[]*styra.Subject{{ID: "test@test.dk", Kind: "user"}},
 		true),
 
-	Entry("returns true if subjects are equal",
+	ginkgo.Entry("returns true if subjects are equal",
 		[]*styra.Subject{
 			{ID: "test@test.dk", Kind: "user"},
 			{
@@ -362,7 +362,7 @@ var _ = DescribeTable("SubjectsAreEqual",
 		},
 		true),
 
-	Entry("returns false if ClaimConfig value changes",
+	ginkgo.Entry("returns false if ClaimConfig value changes",
 		[]*styra.Subject{
 			{ID: "test@test.dk", Kind: "user"},
 			{
@@ -379,7 +379,7 @@ var _ = DescribeTable("SubjectsAreEqual",
 		},
 		false),
 
-	Entry("returns false if ClaimConfig key changes",
+	ginkgo.Entry("returns false if ClaimConfig key changes",
 		[]*styra.Subject{
 			{ID: "test@test.dk", Kind: "user"},
 			{
@@ -396,7 +396,7 @@ var _ = DescribeTable("SubjectsAreEqual",
 		},
 		false),
 
-	Entry("returns false if ClaimConfig IdentityProvider changes",
+	ginkgo.Entry("returns false if ClaimConfig IdentityProvider changes",
 		[]*styra.Subject{
 			{ID: "test@test.dk", Kind: "user"},
 			{
@@ -413,7 +413,7 @@ var _ = DescribeTable("SubjectsAreEqual",
 		},
 		false),
 
-	Entry("returns true despite order of subjects",
+	ginkgo.Entry("returns true despite order of subjects",
 		[]*styra.Subject{
 			{
 				Kind:        "claim",

@@ -24,8 +24,8 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr/testr"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 )
 
 type roundTripFunc func(req *http.Request) *http.Response
@@ -43,7 +43,7 @@ func NewTestClient(f roundTripFunc, url string) Client {
 	}
 }
 
-var _ = Describe("Succeed to update datasource", func() {
+var _ = ginkgo.Describe("Succeed to update datasource", func() {
 
 	systemID := "id_system"
 	datasourceID := "systems/id_system/test_datasource"
@@ -53,16 +53,16 @@ var _ = Describe("Succeed to update datasource", func() {
 	//expected body of call to webhook
 	expectedBody := "{\"datasourceId\":\"systems/id_system/test_datasource\",\"systemId\":\"id_system\"}"
 
-	It("should return nil as error", func() {
+	ginkgo.It("should return nil as error", func() {
 
 		roundTripFunc := func(r *http.Request) *http.Response {
-			Expect(r.URL.String()).To(Equal("http://localhost:8080/v1/datasources/webhook"))
-			Expect(r.Method).To(Equal(http.MethodPost))
+			gomega.Expect(r.URL.String()).To(gomega.Equal("http://localhost:8080/v1/datasources/webhook"))
+			gomega.Expect(r.Method).To(gomega.Equal(http.MethodPost))
 
 			body, _ := r.GetBody()
 			bodyBytes, _ := io.ReadAll(body)
 			actualBody := string(bodyBytes)
-			Expect(actualBody).To(BeEquivalentTo(expectedBody))
+			gomega.Expect(actualBody).To(gomega.BeEquivalentTo(expectedBody))
 
 			return &http.Response{
 				Header:     make(http.Header),
@@ -75,11 +75,11 @@ var _ = Describe("Succeed to update datasource", func() {
 
 		err := c.DatasourceChanged(context.Background(), testlogger, systemID, datasourceID)
 
-		Expect(err).To(BeNil())
+		gomega.Expect(err).To(gomega.BeNil())
 	})
 })
 
-var _ = Describe("Fail to update datasource", func() {
+var _ = ginkgo.Describe("Fail to update datasource", func() {
 
 	systemID := "id_system"
 	datasourceID := "systems/id_system/test_datasource"
@@ -89,16 +89,16 @@ var _ = Describe("Fail to update datasource", func() {
 	//expected body of call to PDG
 	expectedBody := "{\"datasourceId\":\"systems/id_system/test_datasource\",\"systemId\":\"id_system\"}"
 
-	It("should return an error", func() {
+	ginkgo.It("should return an error", func() {
 
 		roundTripFunc := func(r *http.Request) *http.Response {
-			Expect(r.URL.String()).To(Equal("http://localhost:8080/v1/datasources/webhook"))
-			Expect(r.Method).To(Equal(http.MethodPost))
+			gomega.Expect(r.URL.String()).To(gomega.Equal("http://localhost:8080/v1/datasources/webhook"))
+			gomega.Expect(r.Method).To(gomega.Equal(http.MethodPost))
 
 			body, _ := r.GetBody()
 			bodyBytes, _ := io.ReadAll(body)
 			actualBody := string(bodyBytes)
-			Expect(actualBody).To(BeEquivalentTo(expectedBody))
+			gomega.Expect(actualBody).To(gomega.BeEquivalentTo(expectedBody))
 
 			return &http.Response{
 				Header:     make(http.Header),
@@ -111,6 +111,6 @@ var _ = Describe("Fail to update datasource", func() {
 
 		err := c.DatasourceChanged(context.Background(), testlogger, systemID, datasourceID)
 
-		Expect(err.Error()).To(BeEquivalentTo("response status code is 403, request body is forbidden"))
+		gomega.Expect(err.Error()).To(gomega.BeEquivalentTo("response status code is 403, request body is forbidden"))
 	})
 })

@@ -17,8 +17,8 @@ limitations under the License.
 package styra
 
 import (
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
@@ -33,27 +33,27 @@ type specToUpdateTest struct {
 	expected *styra.UpsertDatasourceRequest
 }
 
-var _ = DescribeTable("globalDatasourceSpecToUpdate", func(test specToUpdateTest) {
+var _ = ginkgo.DescribeTable("globalDatasourceSpecToUpdate", func(test specToUpdateTest) {
 	cfg := test.cfg
 	if cfg == nil {
 		cfg = &configv2alpha2.ProjectConfig{}
 	}
 	r := &GlobalDatasourceReconciler{Config: cfg}
-	Expect(r.specToUpdate(test.ds)).To(Equal(test.expected))
+	gomega.Expect(r.specToUpdate(test.ds)).To(gomega.Equal(test.expected))
 },
-	Entry("ds is nil", specToUpdateTest{
+	ginkgo.Entry("ds is nil", specToUpdateTest{
 		ds:       nil,
 		expected: nil,
 	}),
 
-	Entry("zero value", specToUpdateTest{
+	ginkgo.Entry("zero value", specToUpdateTest{
 		ds: &styrav1alpha1.GlobalDatasource{},
 		expected: &styra.UpsertDatasourceRequest{
 			Enabled: true,
 		},
 	}),
 
-	Entry("using default git credentials", specToUpdateTest{
+	ginkgo.Entry("using default git credentials", specToUpdateTest{
 		cfg: &configv2alpha2.ProjectConfig{
 			GitCredentials: []*configv2alpha2.GitCredential{
 				{User: "test-user", Password: "test-pw"},
@@ -69,7 +69,7 @@ var _ = DescribeTable("globalDatasourceSpecToUpdate", func(test specToUpdateTest
 		},
 	}),
 
-	Entry("using credentials from secret", specToUpdateTest{
+	ginkgo.Entry("using credentials from secret", specToUpdateTest{
 		cfg: &configv2alpha2.ProjectConfig{
 			GitCredentials: []*configv2alpha2.GitCredential{
 				{User: "test-user", Password: "test-pw"},
@@ -91,7 +91,7 @@ var _ = DescribeTable("globalDatasourceSpecToUpdate", func(test specToUpdateTest
 		},
 	}),
 
-	Entry("setting all fields", specToUpdateTest{
+	ginkgo.Entry("setting all fields", specToUpdateTest{
 		cfg: &configv2alpha2.ProjectConfig{
 			GitCredentials: []*configv2alpha2.GitCredential{
 				{User: "test-user", Password: "test-pw"},
@@ -134,37 +134,37 @@ type needsUpdateTest struct {
 	expected bool
 }
 
-var _ = DescribeTable("needsUpdate", func(test needsUpdateTest) {
+var _ = ginkgo.DescribeTable("needsUpdate", func(test needsUpdateTest) {
 	cfg := test.cfg
 	if cfg == nil {
 		cfg = &configv2alpha2.ProjectConfig{}
 	}
 	r := &GlobalDatasourceReconciler{Config: cfg}
-	Expect(r.needsUpdate(test.gds, test.dc)).To(Equal(test.expected))
+	gomega.Expect(r.needsUpdate(test.gds, test.dc)).To(gomega.Equal(test.expected))
 },
-	Entry("nil nil", needsUpdateTest{
+	ginkgo.Entry("nil nil", needsUpdateTest{
 		gds:      nil,
 		dc:       nil,
 		expected: false,
 	}),
-	Entry("nil gds not nil dc", needsUpdateTest{
+	ginkgo.Entry("nil gds not nil dc", needsUpdateTest{
 		gds:      nil,
 		dc:       &styra.DatasourceConfig{},
 		expected: false,
 	}),
-	Entry("nil dc not nil gds", needsUpdateTest{
+	ginkgo.Entry("nil dc not nil gds", needsUpdateTest{
 		gds:      &styrav1alpha1.GlobalDatasource{},
 		dc:       nil,
 		expected: true,
 	}),
-	Entry("not nil", needsUpdateTest{
+	ginkgo.Entry("not nil", needsUpdateTest{
 		gds: &styrav1alpha1.GlobalDatasource{},
 		dc: &styra.DatasourceConfig{
 			Enabled: true,
 		},
 		expected: false,
 	}),
-	Entry("name but no credentials", needsUpdateTest{
+	ginkgo.Entry("name but no credentials", needsUpdateTest{
 		gds: &styrav1alpha1.GlobalDatasource{
 			ObjectMeta: metav1.ObjectMeta{Name: "test"},
 		},
@@ -173,7 +173,7 @@ var _ = DescribeTable("needsUpdate", func(test needsUpdateTest) {
 		},
 		expected: false,
 	}),
-	Entry("git credentials in secret", needsUpdateTest{
+	ginkgo.Entry("git credentials in secret", needsUpdateTest{
 		gds: &styrav1alpha1.GlobalDatasource{
 			ObjectMeta: metav1.ObjectMeta{Name: "test"},
 			Spec: styrav1alpha1.GlobalDatasourceSpec{
@@ -186,7 +186,7 @@ var _ = DescribeTable("needsUpdate", func(test needsUpdateTest) {
 		},
 		expected: true,
 	}),
-	Entry("git credentials in secret in sync", needsUpdateTest{
+	ginkgo.Entry("git credentials in secret in sync", needsUpdateTest{
 		gds: &styrav1alpha1.GlobalDatasource{
 			ObjectMeta: metav1.ObjectMeta{Name: "test"},
 			Spec: styrav1alpha1.GlobalDatasourceSpec{
@@ -200,7 +200,7 @@ var _ = DescribeTable("needsUpdate", func(test needsUpdateTest) {
 		},
 		expected: false,
 	}),
-	Entry("git credentials from default", needsUpdateTest{
+	ginkgo.Entry("git credentials from default", needsUpdateTest{
 		cfg: &configv2alpha2.ProjectConfig{
 			GitCredentials: []*configv2alpha2.GitCredential{
 				{User: "test-user", Password: "test-pw"},
@@ -218,7 +218,7 @@ var _ = DescribeTable("needsUpdate", func(test needsUpdateTest) {
 		},
 		expected: true,
 	}),
-	Entry("git credentials from default in sync", needsUpdateTest{
+	ginkgo.Entry("git credentials from default in sync", needsUpdateTest{
 		cfg: &configv2alpha2.ProjectConfig{
 			GitCredentials: []*configv2alpha2.GitCredential{
 				{User: "test-user", Password: "test-pw"},
@@ -234,7 +234,7 @@ var _ = DescribeTable("needsUpdate", func(test needsUpdateTest) {
 		},
 		expected: false,
 	}),
-	Entry("everything out of sync", needsUpdateTest{
+	ginkgo.Entry("everything out of sync", needsUpdateTest{
 		gds: &styrav1alpha1.GlobalDatasource{
 			ObjectMeta: metav1.ObjectMeta{Name: "test"},
 			Spec: styrav1alpha1.GlobalDatasourceSpec{
@@ -252,7 +252,7 @@ var _ = DescribeTable("needsUpdate", func(test needsUpdateTest) {
 		dc:       &styra.DatasourceConfig{},
 		expected: true,
 	}),
-	Entry("everything in sync", needsUpdateTest{
+	ginkgo.Entry("everything in sync", needsUpdateTest{
 		gds: &styrav1alpha1.GlobalDatasource{
 			ObjectMeta: metav1.ObjectMeta{Name: "test"},
 			Spec: styrav1alpha1.GlobalDatasourceSpec{

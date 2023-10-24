@@ -20,8 +20,8 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -31,15 +31,15 @@ import (
 	"github.com/bankdata/styra-controller/pkg/ptr"
 )
 
-var _ = Describe("System", Label("integration"), func() {
+var _ = ginkgo.Describe("System", ginkgo.Label("integration"), func() {
 	var ss *v1beta1.System
 	var key = types.NamespacedName{
 		Name:      uuid.NewString(),
 		Namespace: "default",
 	}
 
-	BeforeEach(func() {
-		if !Label("integration").MatchesLabelFilter(GinkgoLabelFilter()) {
+	ginkgo.BeforeEach(func() {
+		if !ginkgo.Label("integration").MatchesLabelFilter(ginkgo.GinkgoLabelFilter()) {
 			return
 		}
 
@@ -50,54 +50,54 @@ var _ = Describe("System", Label("integration"), func() {
 			},
 		}
 
-		Ω(k8sClient.Create(ctx, ss)).To(Succeed())
+		gomega.Ω(k8sClient.Create(ctx, ss)).To(gomega.Succeed())
 	})
 
-	AfterEach(func() {
-		if !Label("integration").MatchesLabelFilter(GinkgoLabelFilter()) {
+	ginkgo.AfterEach(func() {
+		if !ginkgo.Label("integration").MatchesLabelFilter(ginkgo.GinkgoLabelFilter()) {
 			return
 		}
 
-		Ω(k8sClient.Delete(ctx, ss)).To(Succeed())
+		gomega.Ω(k8sClient.Delete(ctx, ss)).To(gomega.Succeed())
 	})
 
-	Describe("Default", func() {
-		Describe("GitRepo.default", func() {
-			It("should set defaults for missing values", func() {
+	ginkgo.Describe("Default", func() {
+		ginkgo.Describe("GitRepo.default", func() {
+			ginkgo.It("should set defaults for missing values", func() {
 				ss.Spec.SourceControl = &v1beta1.SourceControl{}
 
-				Ω(k8sClient.Update(ctx, ss)).To(Succeed())
-				Ω(ss.Spec.SourceControl).NotTo(BeNil())
-				Ω(ss.Spec.SourceControl.Origin.Reference).To(Equal("refs/heads/master"))
+				gomega.Ω(k8sClient.Update(ctx, ss)).To(gomega.Succeed())
+				gomega.Ω(ss.Spec.SourceControl).NotTo(gomega.BeNil())
+				gomega.Ω(ss.Spec.SourceControl.Origin.Reference).To(gomega.Equal("refs/heads/master"))
 			})
 
-			It("should not set a default part 1", func() {
+			ginkgo.It("should not set a default part 1", func() {
 				ss.Spec.SourceControl = &v1beta1.SourceControl{
 					Origin: v1beta1.GitRepo{
 						Commit: "commitsha",
 					},
 				}
 
-				Ω(k8sClient.Update(ctx, ss)).To(Succeed())
-				Ω(ss.Spec.SourceControl).NotTo(BeNil())
-				Ω(ss.Spec.SourceControl.Origin.Reference).To(Equal(""))
-				Ω(ss.Spec.SourceControl.Origin.Commit).To(Equal("commitsha"))
+				gomega.Ω(k8sClient.Update(ctx, ss)).To(gomega.Succeed())
+				gomega.Ω(ss.Spec.SourceControl).NotTo(gomega.BeNil())
+				gomega.Ω(ss.Spec.SourceControl.Origin.Reference).To(gomega.Equal(""))
+				gomega.Ω(ss.Spec.SourceControl.Origin.Commit).To(gomega.Equal("commitsha"))
 			})
 
-			It("should not set a default part 2", func() {
+			ginkgo.It("should not set a default part 2", func() {
 				ss.Spec.SourceControl = &v1beta1.SourceControl{
 					Origin: v1beta1.GitRepo{
 						Reference: "reference",
 					},
 				}
 
-				Ω(k8sClient.Update(ctx, ss)).To(Succeed())
-				Ω(ss.Spec.SourceControl).NotTo(BeNil())
-				Ω(ss.Spec.SourceControl.Origin.Reference).To(Equal("reference"))
-				Ω(ss.Spec.SourceControl.Origin.Commit).To(Equal(""))
+				gomega.Ω(k8sClient.Update(ctx, ss)).To(gomega.Succeed())
+				gomega.Ω(ss.Spec.SourceControl).NotTo(gomega.BeNil())
+				gomega.Ω(ss.Spec.SourceControl.Origin.Reference).To(gomega.Equal("reference"))
+				gomega.Ω(ss.Spec.SourceControl.Origin.Commit).To(gomega.Equal(""))
 			})
 
-			It("should not set a default part 3", func() {
+			ginkgo.It("should not set a default part 3", func() {
 				ss.Spec.SourceControl = &v1beta1.SourceControl{
 					Origin: v1beta1.GitRepo{
 						Commit:    "commitsha",
@@ -105,26 +105,26 @@ var _ = Describe("System", Label("integration"), func() {
 					},
 				}
 
-				Ω(k8sClient.Update(ctx, ss)).To(Succeed())
-				Ω(ss.Spec.SourceControl).NotTo(BeNil())
-				Ω(ss.Spec.SourceControl.Origin.Reference).To(Equal("reference"))
-				Ω(ss.Spec.SourceControl.Origin.Commit).To(Equal("commitsha"))
+				gomega.Ω(k8sClient.Update(ctx, ss)).To(gomega.Succeed())
+				gomega.Ω(ss.Spec.SourceControl).NotTo(gomega.BeNil())
+				gomega.Ω(ss.Spec.SourceControl.Origin.Reference).To(gomega.Equal("reference"))
+				gomega.Ω(ss.Spec.SourceControl.Origin.Commit).To(gomega.Equal("commitsha"))
 			})
 		})
 	})
 
-	Describe("Validate", func() {
-		Describe("SystemSpec.validateDecisionMappingNames", func() {
-			It("should validate that names are mutually exclusive", func() {
-				By("providing unique names we dont get an error")
+	ginkgo.Describe("Validate", func() {
+		ginkgo.Describe("SystemSpec.validateDecisionMappingNames", func() {
+			ginkgo.It("should validate that names are mutually exclusive", func() {
+				ginkgo.By("providing unique names we dont get an error")
 				ss.Spec.DecisionMappings = []v1beta1.DecisionMapping{
 					{},
 					{Name: "test1"},
 					{Name: "test2"},
 				}
-				Ω(k8sClient.Update(ctx, ss)).To(Succeed())
+				gomega.Ω(k8sClient.Update(ctx, ss)).To(gomega.Succeed())
 
-				By("having the same names we get errors")
+				ginkgo.By("having the same names we get errors")
 				ss.Spec.DecisionMappings = []v1beta1.DecisionMapping{
 					{},
 					{},
@@ -134,9 +134,9 @@ var _ = Describe("System", Label("integration"), func() {
 					{Name: "test2"},
 				}
 				err := k8sClient.Update(ctx, ss)
-				Ω(err).To(HaveOccurred())
+				gomega.Ω(err).To(gomega.HaveOccurred())
 				var sErr *apierrors.StatusError
-				Ω(errors.As(err, &sErr)).To(BeTrue())
+				gomega.Ω(errors.As(err, &sErr)).To(gomega.BeTrue())
 				path := field.NewPath("spec").Child("decisionMappings")
 				expErrs := field.ErrorList{
 					field.Duplicate(path.Index(0).Child("name"), ""),
@@ -145,18 +145,18 @@ var _ = Describe("System", Label("integration"), func() {
 					field.Duplicate(path.Index(4).Child("name"), "test"),
 				}
 				causes := sErr.ErrStatus.Details.Causes
-				Ω(len(causes)).To(Equal(len(expErrs)))
+				gomega.Ω(len(causes)).To(gomega.Equal(len(expErrs)))
 				for i, expErr := range expErrs {
-					Ω(string(causes[i].Type)).To(Equal(string(expErr.Type)))
-					Ω(causes[i].Message).To(Equal(expErr.ErrorBody()))
-					Ω(causes[i].Field).To(Equal(expErr.Field))
+					gomega.Ω(string(causes[i].Type)).To(gomega.Equal(string(expErr.Type)))
+					gomega.Ω(causes[i].Message).To(gomega.Equal(expErr.ErrorBody()))
+					gomega.Ω(causes[i].Field).To(gomega.Equal(expErr.Field))
 				}
 			})
 		})
 
-		Describe("DecisionMapping.validateColumnKeys", func() {
-			It("should validate that keys are mutually exclusive", func() {
-				By("providing unique keys we dont get an error")
+		ginkgo.Describe("DecisionMapping.validateColumnKeys", func() {
+			ginkgo.It("should validate that keys are mutually exclusive", func() {
+				ginkgo.By("providing unique keys we dont get an error")
 				ss.Spec.DecisionMappings = []v1beta1.DecisionMapping{
 					{
 						Columns: []v1beta1.ColumnMapping{
@@ -166,9 +166,9 @@ var _ = Describe("System", Label("integration"), func() {
 						},
 					},
 				}
-				Ω(k8sClient.Update(ctx, ss)).To(Succeed())
+				gomega.Ω(k8sClient.Update(ctx, ss)).To(gomega.Succeed())
 
-				By("reusing keys we get errors")
+				ginkgo.By("reusing keys we get errors")
 				ss.Spec.DecisionMappings = []v1beta1.DecisionMapping{
 					{
 						Columns: []v1beta1.ColumnMapping{
@@ -182,9 +182,9 @@ var _ = Describe("System", Label("integration"), func() {
 					},
 				}
 				err := k8sClient.Update(ctx, ss)
-				Ω(err).To(HaveOccurred())
+				gomega.Ω(err).To(gomega.HaveOccurred())
 				var sErr *apierrors.StatusError
-				Ω(errors.As(err, &sErr)).To(BeTrue())
+				gomega.Ω(errors.As(err, &sErr)).To(gomega.BeTrue())
 				path := field.NewPath("spec").Child("decisionMappings").
 					Index(0).Child("columns")
 				expErrs := field.ErrorList{
@@ -194,49 +194,49 @@ var _ = Describe("System", Label("integration"), func() {
 					field.Duplicate(path.Index(4).Child("key"), "test"),
 				}
 				causes := sErr.ErrStatus.Details.Causes
-				Ω(len(causes)).To(Equal(len(expErrs)))
+				gomega.Ω(len(causes)).To(gomega.Equal(len(expErrs)))
 				for i, expErr := range expErrs {
-					Ω(string(causes[i].Type)).To(Equal(string(expErr.Type)))
-					Ω(causes[i].Message).To(Equal(expErr.ErrorBody()))
-					Ω(causes[i].Field).To(Equal(expErr.Field))
+					gomega.Ω(string(causes[i].Type)).To(gomega.Equal(string(expErr.Type)))
+					gomega.Ω(causes[i].Message).To(gomega.Equal(expErr.ErrorBody()))
+					gomega.Ω(causes[i].Field).To(gomega.Equal(expErr.Field))
 				}
 			})
 		})
 
-		Describe("Expected.validate", func() {
-			It("should ensure mutual exclusivity of fields", func() {
-				By("not causing validation violations")
+		ginkgo.Describe("Expected.validate", func() {
+			ginkgo.It("should ensure mutual exclusivity of fields", func() {
+				ginkgo.By("not causing validation violations")
 				ss.Spec.DecisionMappings = []v1beta1.DecisionMapping{}
-				Ω(k8sClient.Update(ctx, ss)).To(Succeed())
+				gomega.Ω(k8sClient.Update(ctx, ss)).To(gomega.Succeed())
 				ss.Spec.DecisionMappings = []v1beta1.DecisionMapping{{}}
-				Ω(k8sClient.Update(ctx, ss)).To(Succeed())
+				gomega.Ω(k8sClient.Update(ctx, ss)).To(gomega.Succeed())
 				ss.Spec.DecisionMappings[0].Allowed = &v1beta1.AllowedMapping{}
-				Ω(k8sClient.Update(ctx, ss)).To(Succeed())
+				gomega.Ω(k8sClient.Update(ctx, ss)).To(gomega.Succeed())
 				ss.Spec.DecisionMappings[0].Allowed = &v1beta1.AllowedMapping{Expected: &v1beta1.Expected{}}
-				Ω(k8sClient.Update(ctx, ss)).To(Succeed())
+				gomega.Ω(k8sClient.Update(ctx, ss)).To(gomega.Succeed())
 				ss.Spec.DecisionMappings[0].Allowed = &v1beta1.AllowedMapping{Expected: &v1beta1.Expected{
 					Boolean: ptr.Bool(true),
 				}}
-				Ω(k8sClient.Update(ctx, ss)).To(Succeed())
+				gomega.Ω(k8sClient.Update(ctx, ss)).To(gomega.Succeed())
 				ss.Spec.DecisionMappings[0].Allowed = &v1beta1.AllowedMapping{Expected: &v1beta1.Expected{
 					String: ptr.String("test"),
 				}}
-				Ω(k8sClient.Update(ctx, ss)).To(Succeed())
+				gomega.Ω(k8sClient.Update(ctx, ss)).To(gomega.Succeed())
 				ss.Spec.DecisionMappings[0].Allowed = &v1beta1.AllowedMapping{Expected: &v1beta1.Expected{
 					Integer: ptr.Int(0),
 				}}
-				Ω(k8sClient.Update(ctx, ss)).To(Succeed())
+				gomega.Ω(k8sClient.Update(ctx, ss)).To(gomega.Succeed())
 
-				By("setting all fields")
+				ginkgo.By("setting all fields")
 				ss.Spec.DecisionMappings[0].Allowed = &v1beta1.AllowedMapping{Expected: &v1beta1.Expected{
 					Boolean: ptr.Bool(true),
 					String:  ptr.String("test"),
 					Integer: ptr.Int(0),
 				}}
 				err := k8sClient.Update(ctx, ss)
-				Ω(err).To(HaveOccurred())
+				gomega.Ω(err).To(gomega.HaveOccurred())
 				var sErr *apierrors.StatusError
-				Ω(errors.As(err, &sErr)).To(BeTrue())
+				gomega.Ω(errors.As(err, &sErr)).To(gomega.BeTrue())
 				path := field.NewPath("spec").Child("decisionMappings").
 					Index(0).Child("allowed").Child("expected")
 				msg := "only one of boolean, string or int should be set"
@@ -246,71 +246,71 @@ var _ = Describe("System", Label("integration"), func() {
 					field.Forbidden(path.Child("string"), msg),
 				}
 				causes := sErr.ErrStatus.Details.Causes
-				Ω(len(causes)).To(Equal(len(expErrs)))
+				gomega.Ω(len(causes)).To(gomega.Equal(len(expErrs)))
 				for i, expErr := range expErrs {
-					Ω(string(causes[i].Type)).To(Equal(string(expErr.Type)))
-					Ω(causes[i].Message).To(Equal(expErr.ErrorBody()))
-					Ω(causes[i].Field).To(Equal(expErr.Field))
+					gomega.Ω(string(causes[i].Type)).To(gomega.Equal(string(expErr.Type)))
+					gomega.Ω(causes[i].Message).To(gomega.Equal(expErr.ErrorBody()))
+					gomega.Ω(causes[i].Field).To(gomega.Equal(expErr.Field))
 				}
 
-				By("setting boolean and string")
+				ginkgo.By("setting boolean and string")
 				ss.Spec.DecisionMappings[0].Allowed = &v1beta1.AllowedMapping{Expected: &v1beta1.Expected{
 					Boolean: ptr.Bool(true),
 					String:  ptr.String("test"),
 				}}
 				err = k8sClient.Update(ctx, ss)
-				Ω(err).To(HaveOccurred())
-				Ω(errors.As(err, &sErr)).To(BeTrue())
+				gomega.Ω(err).To(gomega.HaveOccurred())
+				gomega.Ω(errors.As(err, &sErr)).To(gomega.BeTrue())
 				expErrs = field.ErrorList{
 					field.Forbidden(path.Child("boolean"), msg),
 					field.Forbidden(path.Child("string"), msg),
 				}
 				causes = sErr.ErrStatus.Details.Causes
-				Ω(len(causes)).To(Equal(len(expErrs)))
+				gomega.Ω(len(causes)).To(gomega.Equal(len(expErrs)))
 				for i, expErr := range expErrs {
-					Ω(string(causes[i].Type)).To(Equal(string(expErr.Type)))
-					Ω(causes[i].Message).To(Equal(expErr.ErrorBody()))
-					Ω(causes[i].Field).To(Equal(expErr.Field))
+					gomega.Ω(string(causes[i].Type)).To(gomega.Equal(string(expErr.Type)))
+					gomega.Ω(causes[i].Message).To(gomega.Equal(expErr.ErrorBody()))
+					gomega.Ω(causes[i].Field).To(gomega.Equal(expErr.Field))
 				}
 
-				By("setting boolean and integer")
+				ginkgo.By("setting boolean and integer")
 				ss.Spec.DecisionMappings[0].Allowed = &v1beta1.AllowedMapping{Expected: &v1beta1.Expected{
 					Boolean: ptr.Bool(true),
 					Integer: ptr.Int(0),
 				}}
 				err = k8sClient.Update(ctx, ss)
-				Ω(err).To(HaveOccurred())
-				Ω(errors.As(err, &sErr)).To(BeTrue())
+				gomega.Ω(err).To(gomega.HaveOccurred())
+				gomega.Ω(errors.As(err, &sErr)).To(gomega.BeTrue())
 				expErrs = field.ErrorList{
 					field.Forbidden(path.Child("boolean"), msg),
 					field.Forbidden(path.Child("integer"), msg),
 				}
 				causes = sErr.ErrStatus.Details.Causes
-				Ω(len(causes)).To(Equal(len(expErrs)))
+				gomega.Ω(len(causes)).To(gomega.Equal(len(expErrs)))
 				for i, expErr := range expErrs {
-					Ω(string(causes[i].Type)).To(Equal(string(expErr.Type)))
-					Ω(causes[i].Message).To(Equal(expErr.ErrorBody()))
-					Ω(causes[i].Field).To(Equal(expErr.Field))
+					gomega.Ω(string(causes[i].Type)).To(gomega.Equal(string(expErr.Type)))
+					gomega.Ω(causes[i].Message).To(gomega.Equal(expErr.ErrorBody()))
+					gomega.Ω(causes[i].Field).To(gomega.Equal(expErr.Field))
 				}
 
-				By("setting string and integer")
+				ginkgo.By("setting string and integer")
 				ss.Spec.DecisionMappings[0].Allowed = &v1beta1.AllowedMapping{Expected: &v1beta1.Expected{
 					String:  ptr.String("test"),
 					Integer: ptr.Int(0),
 				}}
 				err = k8sClient.Update(ctx, ss)
-				Ω(err).To(HaveOccurred())
-				Ω(errors.As(err, &sErr)).To(BeTrue())
+				gomega.Ω(err).To(gomega.HaveOccurred())
+				gomega.Ω(errors.As(err, &sErr)).To(gomega.BeTrue())
 				expErrs = field.ErrorList{
 					field.Forbidden(path.Child("integer"), msg),
 					field.Forbidden(path.Child("string"), msg),
 				}
 				causes = sErr.ErrStatus.Details.Causes
-				Ω(len(causes)).To(Equal(len(expErrs)))
+				gomega.Ω(len(causes)).To(gomega.Equal(len(expErrs)))
 				for i, expErr := range expErrs {
-					Ω(string(causes[i].Type)).To(Equal(string(expErr.Type)))
-					Ω(causes[i].Message).To(Equal(expErr.ErrorBody()))
-					Ω(causes[i].Field).To(Equal(expErr.Field))
+					gomega.Ω(string(causes[i].Type)).To(gomega.Equal(string(expErr.Type)))
+					gomega.Ω(causes[i].Message).To(gomega.Equal(expErr.ErrorBody()))
+					gomega.Ω(causes[i].Field).To(gomega.Equal(expErr.Field))
 				}
 			})
 		})

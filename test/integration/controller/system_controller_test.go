@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 	"github.com/stretchr/testify/mock"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -19,9 +19,9 @@ import (
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
-var _ = Describe("SystemReconciler.Reconcile", Label("integration"), func() {
+var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"), func() {
 
-	It("should reconcile", func() {
+	ginkgo.It("should reconcile", func() {
 		spec := styrav1beta1.SystemSpec{
 			DeletionProtection: ptr.Bool(false),
 		}
@@ -41,7 +41,7 @@ var _ = Describe("SystemReconciler.Reconcile", Label("integration"), func() {
 
 		ctx := context.Background()
 
-		By("Creating the system")
+		ginkgo.By("Creating the system")
 
 		styraClientMock.On("CreateSystem", mock.Anything, mock.Anything).Return(&styra.CreateSystemResponse{
 			StatusCode: http.StatusOK,
@@ -149,9 +149,9 @@ var _ = Describe("SystemReconciler.Reconcile", Label("integration"), func() {
 			SystemType: "custom",
 		}, nil).Once()
 
-		Expect(k8sClient.Create(ctx, toCreate)).To(Succeed())
+		gomega.Expect(k8sClient.Create(ctx, toCreate)).To(gomega.Succeed())
 
-		Eventually(func() bool {
+		gomega.Eventually(func() bool {
 			fetched := &styrav1beta1.System{}
 			if err := k8sClient.Get(ctx, key, fetched); err != nil {
 				return false
@@ -160,15 +160,15 @@ var _ = Describe("SystemReconciler.Reconcile", Label("integration"), func() {
 				fetched.Status.ID != "" &&
 				fetched.Status.Phase == styrav1beta1.SystemPhaseCreated &&
 				fetched.Status.Ready
-		}, timeout, interval).Should(BeTrue())
+		}, timeout, interval).Should(gomega.BeTrue())
 
-		Eventually(func() bool {
+		gomega.Eventually(func() bool {
 			fetched := &corev1.Secret{}
 			key := types.NamespacedName{Name: fmt.Sprintf("%s-opa-token", key.Name), Namespace: key.Namespace}
 			return k8sClient.Get(ctx, key, fetched) == nil && string(fetched.Data["token"]) == "opa-token-123"
-		}, timeout, interval).Should(BeTrue())
+		}, timeout, interval).Should(gomega.BeTrue())
 
-		Eventually(func() bool {
+		gomega.Eventually(func() bool {
 			fetched := &corev1.ConfigMap{}
 			key := types.NamespacedName{Name: fmt.Sprintf("%s-opa", key.Name), Namespace: key.Namespace}
 			return k8sClient.Get(ctx, key, fetched) == nil && string(fetched.Data["opa-conf.yaml"]) == `services:
@@ -190,9 +190,9 @@ discovery:
   prefix: /systems/default_test
   service: styra
 `
-		}, timeout, interval).Should(BeTrue())
+		}, timeout, interval).Should(gomega.BeTrue())
 
-		Eventually(func() bool {
+		gomega.Eventually(func() bool {
 			var (
 				getSystem          int
 				createSystem       int
@@ -223,14 +223,14 @@ discovery:
 				rolebindingsListed == 3 &&
 				createRoleBinding == 1 &&
 				getOPAConfig == 3
-		}, timeout, interval).Should(BeTrue())
+		}, timeout, interval).Should(gomega.BeTrue())
 
 		resetMock(&styraClientMock.Mock)
 
-		By("Setting a Local Plane in System")
+		ginkgo.By("Setting a Local Plane in System")
 
 		toUpdate := &styrav1beta1.System{}
-		Expect(k8sClient.Get(ctx, key, toUpdate)).To(Succeed())
+		gomega.Expect(k8sClient.Get(ctx, key, toUpdate)).To(gomega.Succeed())
 
 		toUpdate.Spec.LocalPlane = &styrav1beta1.LocalPlane{
 			Name: "default_local_plane",
@@ -315,9 +315,9 @@ discovery:
 			SystemType: "custom",
 		}, nil).Once()
 
-		Expect(k8sClient.Update(ctx, toUpdate)).To(Succeed())
+		gomega.Expect(k8sClient.Update(ctx, toUpdate)).To(gomega.Succeed())
 
-		Eventually(func() bool {
+		gomega.Eventually(func() bool {
 			//opa configmap
 			fetched := &corev1.ConfigMap{}
 			key := types.NamespacedName{Name: fmt.Sprintf("%s-opa", key.Name), Namespace: key.Namespace}
@@ -333,9 +333,9 @@ discovery:
   service: styra
 `
 			return fetchSuceeded && fetched.Data["opa-conf.yaml"] == expectedConfigMapContent
-		}, timeout, interval).Should(BeTrue())
+		}, timeout, interval).Should(gomega.BeTrue())
 
-		Eventually(func() bool {
+		gomega.Eventually(func() bool {
 			//slp configmap
 			fetched := &corev1.ConfigMap{}
 			key := types.NamespacedName{Name: fmt.Sprintf("%s-slp", key.Name), Namespace: key.Namespace}
@@ -355,9 +355,9 @@ discovery:
   service: styra
 `
 			return fetchSuceeded && fetched.Data["slp.yaml"] == expectedConfigMapContent
-		}, timeout, interval).Should(BeTrue())
+		}, timeout, interval).Should(gomega.BeTrue())
 
-		Eventually(func() bool {
+		gomega.Eventually(func() bool {
 			var (
 				getSystem          int
 				rolebindingsListed int
@@ -376,16 +376,16 @@ discovery:
 			return getSystem == 3 &&
 				rolebindingsListed == 3 &&
 				getOPAConfig == 3
-		}, timeout, interval).Should(BeTrue())
+		}, timeout, interval).Should(gomega.BeTrue())
 
 		resetMock(&styraClientMock.Mock)
 
-		By("Updating decision mappings")
+		ginkgo.By("Updating decision mappings")
 
 		//We set status.conditions as toUpdate is not updated with the
 		//new conditions unless we do this get. So to ensure that
 		//toUpdate is fully updated we do this get.
-		Expect(k8sClient.Get(ctx, key, toUpdate)).To(Succeed())
+		gomega.Expect(k8sClient.Get(ctx, key, toUpdate)).To(gomega.Succeed())
 
 		toUpdate.Spec.DecisionMappings = []styrav1beta1.DecisionMapping{
 			{},
@@ -475,9 +475,9 @@ discovery:
 			SystemType: "custom",
 		}, nil).Once()
 
-		Expect(k8sClient.Update(ctx, toUpdate)).To(Succeed())
+		gomega.Expect(k8sClient.Update(ctx, toUpdate)).To(gomega.Succeed())
 
-		Eventually(func() bool {
+		gomega.Eventually(func() bool {
 			var (
 				getSystem          int
 				updateSystem       int
@@ -501,13 +501,13 @@ discovery:
 				updateSystem == 1 &&
 				listRolebindingsV2 == 1 &&
 				getOPAConfig == 1
-		}, timeout, interval).Should(BeTrue())
+		}, timeout, interval).Should(gomega.BeTrue())
 
 		resetMock(&styraClientMock.Mock)
 
-		By("Adding users")
+		ginkgo.By("Adding users")
 
-		Expect(k8sClient.Get(ctx, key, toUpdate)).To(Succeed())
+		gomega.Expect(k8sClient.Get(ctx, key, toUpdate)).To(gomega.Succeed())
 
 		toUpdate.Spec.Subjects = []styrav1beta1.Subject{
 			{Kind: styrav1beta1.SubjectKindUser, Name: "test1@test.com"},
@@ -577,9 +577,9 @@ discovery:
 			SystemType: "custom",
 		}, nil).Once()
 
-		Expect(k8sClient.Update(ctx, toUpdate)).To(Succeed())
+		gomega.Expect(k8sClient.Update(ctx, toUpdate)).To(gomega.Succeed())
 
-		Eventually(func() bool {
+		gomega.Eventually(func() bool {
 			var (
 				getSystem                 int
 				getUser                   int
@@ -610,12 +610,12 @@ discovery:
 				listRolebindingsV2 == 1 &&
 				updateRoleBindingSubjects == 1 &&
 				getOPAConfig == 1
-		}, timeout, interval).Should(BeTrue())
+		}, timeout, interval).Should(gomega.BeTrue())
 
 		resetMock(&styraClientMock.Mock)
 
-		By("Adding groups")
-		Expect(k8sClient.Get(ctx, key, toUpdate)).To(Succeed())
+		ginkgo.By("Adding groups")
+		gomega.Expect(k8sClient.Get(ctx, key, toUpdate)).To(gomega.Succeed())
 
 		toUpdate.Spec.Subjects = []styrav1beta1.Subject{
 			{Kind: styrav1beta1.SubjectKindUser, Name: "test1@test.com"},
@@ -691,9 +691,9 @@ discovery:
 			SystemType: "custom",
 		}, nil).Once()
 
-		Expect(k8sClient.Update(ctx, toUpdate)).To(Succeed())
+		gomega.Expect(k8sClient.Update(ctx, toUpdate)).To(gomega.Succeed())
 
-		Eventually(func() bool {
+		gomega.Eventually(func() bool {
 			var (
 				getSystem                 int
 				getUser                   int
@@ -720,13 +720,13 @@ discovery:
 				listRolebindingsV2 == 1 &&
 				updateRoleBindingSubjects == 1 &&
 				getOPAConfig == 1
-		}, timeout, interval).Should(BeTrue())
+		}, timeout, interval).Should(gomega.BeTrue())
 
 		resetMock(&styraClientMock.Mock)
 
-		By("Removing subjects and reconciling a user with excess priviledges")
+		ginkgo.By("Removing subjects and reconciling a user with excess priviledges")
 
-		Expect(k8sClient.Get(ctx, key, toUpdate)).To(Succeed())
+		gomega.Expect(k8sClient.Get(ctx, key, toUpdate)).To(gomega.Succeed())
 
 		toUpdate.Spec.Subjects = []styrav1beta1.Subject{}
 
@@ -810,9 +810,9 @@ discovery:
 			SystemType: "custom",
 		}, nil).Once()
 
-		Expect(k8sClient.Update(ctx, toUpdate)).To(Succeed())
+		gomega.Expect(k8sClient.Update(ctx, toUpdate)).To(gomega.Succeed())
 
-		Eventually(func() bool {
+		gomega.Eventually(func() bool {
 			var (
 				getSystem                 int
 				listRolebindingsV2        int
@@ -835,13 +835,13 @@ discovery:
 				listRolebindingsV2 == 1 &&
 				updateRoleBindingSubjects == 2 &&
 				getOPAConfig == 1
-		}, timeout, interval).Should(BeTrue())
+		}, timeout, interval).Should(gomega.BeTrue())
 
 		resetMock(&styraClientMock.Mock)
 
-		By("Setting a datasource")
+		ginkgo.By("Setting a datasource")
 
-		Expect(k8sClient.Get(ctx, key, toUpdate)).To(Succeed())
+		gomega.Expect(k8sClient.Get(ctx, key, toUpdate)).To(gomega.Succeed())
 
 		toUpdate.Spec.Datasources = []styrav1beta1.Datasource{{Path: "test"}}
 
@@ -901,8 +901,8 @@ discovery:
 			"systems/default_test/test",
 		).Return(nil).Once()
 
-		Expect(k8sClient.Update(ctx, toUpdate)).To(Succeed())
-		Eventually(func() bool {
+		gomega.Expect(k8sClient.Update(ctx, toUpdate)).To(gomega.Succeed())
+		gomega.Eventually(func() bool {
 			var (
 				getSystem          int
 				listRolebindingsV2 int
@@ -935,14 +935,14 @@ discovery:
 				upsertDatasource == 1 &&
 				getOPAConfig == 1 &&
 				datasourceChanged == 1
-		}, timeout, interval).Should(BeTrue())
+		}, timeout, interval).Should(gomega.BeTrue())
 
 		resetMock(&styraClientMock.Mock)
 		resetMock(&webhookMock.Mock)
 
-		By("Setting credentialsSecretName")
+		ginkgo.By("Setting credentialsSecretName")
 
-		Expect(k8sClient.Get(ctx, key, toUpdate)).To(Succeed())
+		gomega.Expect(k8sClient.Get(ctx, key, toUpdate)).To(gomega.Succeed())
 
 		secret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -954,7 +954,7 @@ discovery:
 				"secret": []byte("git-password"),
 			},
 		}
-		Expect(k8sClient.Create(ctx, secret)).To(Succeed())
+		gomega.Expect(k8sClient.Create(ctx, secret)).To(gomega.Succeed())
 
 		toUpdate.Spec.SourceControl = &styrav1beta1.SourceControl{
 			Origin: styrav1beta1.GitRepo{
@@ -1084,9 +1084,9 @@ discovery:
 			SystemType: "custom",
 		}, nil).Once()
 
-		Expect(k8sClient.Update(ctx, toUpdate)).To(Succeed())
+		gomega.Expect(k8sClient.Update(ctx, toUpdate)).To(gomega.Succeed())
 
-		Eventually(func() bool {
+		gomega.Eventually(func() bool {
 			//check if conditions are correct
 			fetched := &styrav1beta1.System{}
 			key := types.NamespacedName{Name: toUpdate.Name, Namespace: toUpdate.Namespace}
@@ -1146,9 +1146,9 @@ discovery:
 				opaConfigMapUpdated == metav1.ConditionTrue &&
 				slpConfigMapUpdated == metav1.ConditionTrue &&
 				systemConfigUpdated == metav1.ConditionTrue
-		}, timeout, interval).Should(BeTrue())
+		}, timeout, interval).Should(gomega.BeTrue())
 
-		Eventually(func() bool {
+		gomega.Eventually(func() bool {
 			var (
 				getSystem          int
 				createUpdateSecret int
@@ -1175,24 +1175,24 @@ discovery:
 				updateSystem == 1 &&
 				listRolebindingsV2 == 1 &&
 				getOPAConfig == 1
-		}, timeout, interval).Should(BeTrue())
+		}, timeout, interval).Should(gomega.BeTrue())
 
 		resetMock(&styraClientMock.Mock)
 
-		By("Deleting the system")
+		ginkgo.By("Deleting the system")
 
 		styraClientMock.On("DeleteSystem", mock.Anything, "default_test").Return(&styra.DeleteSystemResponse{
 			StatusCode: http.StatusOK,
 		}, nil)
 
-		Expect(k8sClient.Delete(ctx, toCreate)).To(Succeed())
+		gomega.Expect(k8sClient.Delete(ctx, toCreate)).To(gomega.Succeed())
 
-		Eventually(func() bool {
+		gomega.Eventually(func() bool {
 			fetched := &styrav1beta1.System{}
 			err := k8sClient.Get(ctx, key, fetched)
 			return k8serrors.IsNotFound(err)
-		}, timeout, interval).Should(BeTrue())
+		}, timeout, interval).Should(gomega.BeTrue())
 
-		styraClientMock.AssertExpectations(GinkgoT())
+		styraClientMock.AssertExpectations(ginkgo.GinkgoT())
 	})
 })

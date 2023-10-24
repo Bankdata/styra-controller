@@ -24,13 +24,13 @@ import (
 	"io"
 	"net/http"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
-var _ = Describe("GetSystem", func() {
+var _ = ginkgo.Describe("GetSystem", func() {
 	type test struct {
 		systemID       string
 		responseCode   int
@@ -39,13 +39,13 @@ var _ = Describe("GetSystem", func() {
 		expectStyraErr bool
 	}
 
-	DescribeTable("GetSystem", func(test test) {
+	ginkgo.DescribeTable("GetSystem", func(test test) {
 		c := newTestClient(func(r *http.Request) *http.Response {
 			bs, err := io.ReadAll(r.Body)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(bs).To(Equal([]byte("")))
-			Expect(r.Method).To(Equal(http.MethodGet))
-			Expect(r.URL.String()).To(Equal("http://test.com/v1/systems/" + test.systemID))
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(bs).To(gomega.Equal([]byte("")))
+			gomega.Expect(r.Method).To(gomega.Equal(http.MethodGet))
+			gomega.Expect(r.URL.String()).To(gomega.Equal("http://test.com/v1/systems/" + test.systemID))
 
 			return &http.Response{
 				Header:     make(http.Header),
@@ -56,17 +56,17 @@ var _ = Describe("GetSystem", func() {
 
 		res, err := c.GetSystem(context.Background(), test.systemID)
 		if test.expectStyraErr {
-			Expect(res).To(BeNil())
+			gomega.Expect(res).To(gomega.BeNil())
 			target := &styra.HTTPError{}
-			Expect(errors.As(err, &target)).To(BeTrue())
+			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(res.StatusCode).To(Equal(test.responseCode))
-			Expect(res.SystemConfig).To(Equal(test.expected200))
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			gomega.Expect(res.StatusCode).To(gomega.Equal(test.responseCode))
+			gomega.Expect(res.SystemConfig).To(gomega.Equal(test.expected200))
 		}
 	},
 
-		Entry("something", test{
+		ginkgo.Entry("something", test{
 			systemID:     "systemID",
 			responseCode: http.StatusOK,
 			responseBody: `{
@@ -115,14 +115,14 @@ var _ = Describe("GetSystem", func() {
 			},
 		}),
 
-		Entry("styra http error", test{
+		ginkgo.Entry("styra http error", test{
 			responseCode:   http.StatusInternalServerError,
 			expectStyraErr: true,
 		}),
 	)
 })
 
-var _ = Describe("UpdateSystem", func() {
+var _ = ginkgo.Describe("UpdateSystem", func() {
 
 	type test struct {
 		responseCode         int
@@ -133,17 +133,17 @@ var _ = Describe("UpdateSystem", func() {
 		expectStyraErr       bool
 	}
 
-	DescribeTable("UpdateSystem", func(test test) {
+	ginkgo.DescribeTable("UpdateSystem", func(test test) {
 		c := newTestClient(func(r *http.Request) *http.Response {
 			bs, err := io.ReadAll(r.Body)
-			Expect(err).NotTo(HaveOccurred())
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 			var b bytes.Buffer
-			Expect(json.NewEncoder(&b).Encode(test.request)).To(Succeed())
-			Expect(bs).To(Equal(b.Bytes()))
+			gomega.Expect(json.NewEncoder(&b).Encode(test.request)).To(gomega.Succeed())
+			gomega.Expect(bs).To(gomega.Equal(b.Bytes()))
 
-			Expect(r.Method).To(Equal(http.MethodPut))
-			Expect(r.URL.String()).To(Equal("http://test.com/v1/systems/" + test.id))
+			gomega.Expect(r.Method).To(gomega.Equal(http.MethodPut))
+			gomega.Expect(r.URL.String()).To(gomega.Equal("http://test.com/v1/systems/" + test.id))
 
 			return &http.Response{
 				Header:     make(http.Header),
@@ -154,17 +154,17 @@ var _ = Describe("UpdateSystem", func() {
 
 		res, err := c.UpdateSystem(context.Background(), test.id, test.request)
 		if test.expectStyraErr {
-			Expect(res).To(BeNil())
+			gomega.Expect(res).To(gomega.BeNil())
 			target := &styra.HTTPError{}
-			Expect(errors.As(err, &target)).To(BeTrue())
+			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(res.StatusCode).To(Equal(test.responseCode))
-			Expect(res.SystemConfig).To(Equal(test.expectedSystemConfig))
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			gomega.Expect(res.StatusCode).To(gomega.Equal(test.responseCode))
+			gomega.Expect(res.SystemConfig).To(gomega.Equal(test.expectedSystemConfig))
 		}
 	},
 
-		Entry("something", test{
+		ginkgo.Entry("something", test{
 			responseCode: http.StatusOK,
 			responseBody: `{
 					"result": {
@@ -190,14 +190,14 @@ var _ = Describe("UpdateSystem", func() {
 			},
 		}),
 
-		Entry("styra http error", test{
+		ginkgo.Entry("styra http error", test{
 			responseCode:   http.StatusInternalServerError,
 			expectStyraErr: true,
 		}),
 	)
 })
 
-var _ = Describe("CreateSystem", func() {
+var _ = ginkgo.Describe("CreateSystem", func() {
 
 	type test struct {
 		responseCode         int
@@ -207,17 +207,17 @@ var _ = Describe("CreateSystem", func() {
 		expectStyraErr       bool
 	}
 
-	DescribeTable("CreateSystem", func(test test) {
+	ginkgo.DescribeTable("CreateSystem", func(test test) {
 		c := newTestClient(func(r *http.Request) *http.Response {
 			bs, err := io.ReadAll(r.Body)
-			Expect(err).NotTo(HaveOccurred())
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 			var b bytes.Buffer
-			Expect(json.NewEncoder(&b).Encode(test.request)).To(Succeed())
-			Expect(bs).To(Equal(b.Bytes()))
+			gomega.Expect(json.NewEncoder(&b).Encode(test.request)).To(gomega.Succeed())
+			gomega.Expect(bs).To(gomega.Equal(b.Bytes()))
 
-			Expect(r.Method).To(Equal(http.MethodPost))
-			Expect(r.URL.String()).To(Equal("http://test.com/v1/systems"))
+			gomega.Expect(r.Method).To(gomega.Equal(http.MethodPost))
+			gomega.Expect(r.URL.String()).To(gomega.Equal("http://test.com/v1/systems"))
 
 			return &http.Response{
 				Header:     make(http.Header),
@@ -228,17 +228,17 @@ var _ = Describe("CreateSystem", func() {
 
 		res, err := c.CreateSystem(context.Background(), test.request)
 		if test.expectStyraErr {
-			Expect(res).To(BeNil())
+			gomega.Expect(res).To(gomega.BeNil())
 			target := &styra.HTTPError{}
-			Expect(errors.As(err, &target)).To(BeTrue())
+			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(res.StatusCode).To(Equal(test.responseCode))
-			Expect(res.SystemConfig).To(Equal(test.expectedSystemConfig))
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			gomega.Expect(res.StatusCode).To(gomega.Equal(test.responseCode))
+			gomega.Expect(res.SystemConfig).To(gomega.Equal(test.expectedSystemConfig))
 		}
 	},
 
-		Entry("something", test{
+		ginkgo.Entry("something", test{
 			responseCode: http.StatusOK,
 			responseBody: `{
 					"result": {
@@ -263,14 +263,14 @@ var _ = Describe("CreateSystem", func() {
 			},
 		}),
 
-		Entry("styra http error", test{
+		ginkgo.Entry("styra http error", test{
 			responseCode:   http.StatusInternalServerError,
 			expectStyraErr: true,
 		}),
 	)
 })
 
-var _ = Describe("DeleteSystem", func() {
+var _ = ginkgo.Describe("DeleteSystem", func() {
 
 	type test struct {
 		systemID       string
@@ -280,13 +280,13 @@ var _ = Describe("DeleteSystem", func() {
 		expectStyraErr bool
 	}
 
-	DescribeTable("DeleteSystem", func(test test) {
+	ginkgo.DescribeTable("DeleteSystem", func(test test) {
 		c := newTestClient(func(r *http.Request) *http.Response {
 			bs, err := io.ReadAll(r.Body)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(bs).To(Equal([]byte("")))
-			Expect(r.Method).To(Equal(http.MethodDelete))
-			Expect(r.URL.String()).To(Equal("http://test.com/v1/systems/" + test.systemID))
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(bs).To(gomega.Equal([]byte("")))
+			gomega.Expect(r.Method).To(gomega.Equal(http.MethodDelete))
+			gomega.Expect(r.URL.String()).To(gomega.Equal("http://test.com/v1/systems/" + test.systemID))
 
 			return &http.Response{
 				Header:     make(http.Header),
@@ -297,43 +297,43 @@ var _ = Describe("DeleteSystem", func() {
 
 		res, err := c.DeleteSystem(context.Background(), test.systemID)
 		if test.expectStyraErr {
-			Expect(res).To(BeNil())
+			gomega.Expect(res).To(gomega.BeNil())
 			target := &styra.HTTPError{}
-			Expect(errors.As(err, &target)).To(BeTrue())
+			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(res.StatusCode).To(Equal(test.responseCode))
-			Expect(res.Body).To(Equal(test.expectedBody))
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			gomega.Expect(res.StatusCode).To(gomega.Equal(test.responseCode))
+			gomega.Expect(res.Body).To(gomega.Equal(test.expectedBody))
 		}
 	},
 
-		Entry("something", test{
+		ginkgo.Entry("something", test{
 			systemID:     "systemId",
 			responseCode: http.StatusOK,
 			responseBody: `expected response from styra api`,
 			expectedBody: []byte(`expected response from styra api`)},
 		),
 
-		Entry("styra http error", test{
+		ginkgo.Entry("styra http error", test{
 			responseCode:   http.StatusInternalServerError,
 			expectStyraErr: true,
 		}),
 	)
 })
 
-var _ = Describe("DecisionMappingsEquals", func() {
-	It("returns true if both are nil", func() {
-		Expect(styra.DecisionMappingsEquals(nil, nil)).To(BeTrue())
+var _ = ginkgo.Describe("DecisionMappingsEquals", func() {
+	ginkgo.It("returns true if both are nil", func() {
+		gomega.Expect(styra.DecisionMappingsEquals(nil, nil)).To(gomega.BeTrue())
 	})
 
-	It("returns false if one is nil", func() {
+	ginkgo.It("returns false if one is nil", func() {
 		expected := styra.DecisionMappingsEquals(map[string]styra.DecisionMapping{}, nil)
-		Expect(expected).To(BeFalse())
+		gomega.Expect(expected).To(gomega.BeFalse())
 		expected = styra.DecisionMappingsEquals(nil, map[string]styra.DecisionMapping{})
-		Expect(expected).To(BeFalse())
+		gomega.Expect(expected).To(gomega.BeFalse())
 	})
 
-	It("treats columns slice as a map sorted on their Key", func() {
+	ginkgo.It("treats columns slice as a map sorted on their Key", func() {
 		expected := styra.DecisionMappingsEquals(
 			map[string]styra.DecisionMapping{
 				"test": {Columns: []styra.DecisionMappingColumn{
@@ -348,6 +348,6 @@ var _ = Describe("DecisionMappingsEquals", func() {
 				}},
 			},
 		)
-		Expect(expected).To(BeTrue())
+		gomega.Expect(expected).To(gomega.BeTrue())
 	})
 })

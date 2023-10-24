@@ -24,13 +24,13 @@ import (
 	"io"
 	"net/http"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
-var _ = Describe("CreateUpdateSecret", func() {
+var _ = ginkgo.Describe("CreateUpdateSecret", func() {
 	type test struct {
 		secretID                   string
 		responseCode               int
@@ -39,15 +39,15 @@ var _ = Describe("CreateUpdateSecret", func() {
 		expectStyraErr             bool
 	}
 
-	DescribeTable("CreateUpdateSecret", func(test test) {
+	ginkgo.DescribeTable("CreateUpdateSecret", func(test test) {
 		c := newTestClient(func(r *http.Request) *http.Response {
 			bs, err := io.ReadAll(r.Body)
-			Expect(err).NotTo(HaveOccurred())
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 			var b bytes.Buffer
-			Expect(json.NewEncoder(&b).Encode(test.createUpdateSecretsRequest)).To(Succeed())
-			Expect(bs).To(Equal((b.Bytes())))
-			Expect(r.Method).To(Equal(http.MethodPut))
-			Expect(r.URL.String()).To(Equal("http://test.com/v1/secrets/" + test.secretID))
+			gomega.Expect(json.NewEncoder(&b).Encode(test.createUpdateSecretsRequest)).To(gomega.Succeed())
+			gomega.Expect(bs).To(gomega.Equal((b.Bytes())))
+			gomega.Expect(r.Method).To(gomega.Equal(http.MethodPut))
+			gomega.Expect(r.URL.String()).To(gomega.Equal("http://test.com/v1/secrets/" + test.secretID))
 
 			return &http.Response{
 				Header:     make(http.Header),
@@ -58,16 +58,16 @@ var _ = Describe("CreateUpdateSecret", func() {
 
 		res, err := c.CreateUpdateSecret(context.Background(), test.secretID, test.createUpdateSecretsRequest)
 		if test.expectStyraErr {
-			Expect(res).To(BeNil())
+			gomega.Expect(res).To(gomega.BeNil())
 			target := &styra.HTTPError{}
-			Expect(errors.As(err, &target)).To(BeTrue())
+			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(res.StatusCode).To(Equal(test.responseCode))
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			gomega.Expect(res.StatusCode).To(gomega.Equal(test.responseCode))
 		}
 
 	},
-		Entry("something", test{
+		ginkgo.Entry("something", test{
 			secretID:     "name",
 			responseCode: http.StatusOK,
 			responseBody: `{"test"}`,
@@ -78,7 +78,7 @@ var _ = Describe("CreateUpdateSecret", func() {
 			},
 		}),
 
-		Entry("styra http error", test{
+		ginkgo.Entry("styra http error", test{
 			responseCode:   http.StatusInternalServerError,
 			expectStyraErr: true,
 		}),

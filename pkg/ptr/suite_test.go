@@ -19,11 +19,11 @@ package ptr_test
 import (
 	"testing"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 )
 
 func TestPtr(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "pkg/ptr")
+	gomega.RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "pkg/ptr")
 }
