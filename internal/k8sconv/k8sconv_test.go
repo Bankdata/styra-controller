@@ -17,14 +17,14 @@ limitations under the License.
 package k8sconv_test
 
 import (
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 
 	"github.com/bankdata/styra-controller/internal/k8sconv"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
-var _ = Describe("OpaConfToK8sOPAConfigMap", func() {
+var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMap", func() {
 
 	type test struct {
 		opaconf           styra.OPAConfig
@@ -32,15 +32,15 @@ var _ = Describe("OpaConfToK8sOPAConfigMap", func() {
 		expectedCMContent string
 	}
 
-	DescribeTable("OpaConfToK8sOPAConfigMap", func(test test) {
+	ginkgo.DescribeTable("OpaConfToK8sOPAConfigMap", func(test test) {
 		cm, err := k8sconv.OpaConfToK8sOPAConfigMap(test.opaconf, test.slpURL)
 
-		Expect(err).To(BeNil())
+		gomega.Expect(err).To(gomega.BeNil())
 
-		Expect(cm.Data["opa-conf.yaml"]).To(Equal(test.expectedCMContent))
+		gomega.Expect(cm.Data["opa-conf.yaml"]).To(gomega.Equal(test.expectedCMContent))
 	},
 
-		Entry("success", test{
+		ginkgo.Entry("success", test{
 			opaconf: styra.OPAConfig{
 				HostURL:    "styra-host-url-123",
 				Token:      "opa-token-123",
@@ -62,22 +62,22 @@ discovery:
 	)
 })
 
-var _ = Describe("OpaConfToK8sSLPConfigMap", func() {
+var _ = ginkgo.Describe("OpaConfToK8sSLPConfigMap", func() {
 
 	type test struct {
 		opaconf           styra.OPAConfig
 		expectedCMContent string
 	}
 
-	DescribeTable("OpaConfToK8sOPAConfigMap", func(test test) {
+	ginkgo.DescribeTable("OpaConfToK8sOPAConfigMap", func(test test) {
 		cm, err := k8sconv.OpaConfToK8sSLPConfigMap(test.opaconf)
 
-		Expect(err).To(BeNil())
+		gomega.Expect(err).To(gomega.BeNil())
 
-		Expect(cm.Data["slp.yaml"]).To(Equal(test.expectedCMContent))
+		gomega.Expect(cm.Data["slp.yaml"]).To(gomega.Equal(test.expectedCMContent))
 	},
 
-		Entry("success", test{
+		ginkgo.Entry("success", test{
 			opaconf: styra.OPAConfig{
 				HostURL:    "styra-host-url-123",
 				Token:      "opa-token-123",
@@ -102,22 +102,22 @@ discovery:
 	)
 })
 
-var _ = Describe("OpaConfToK8sOPAConfigMapNoSLP", func() {
+var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapNoSLP", func() {
 
 	type test struct {
 		opaconf           styra.OPAConfig
 		expectedCMContent string
 	}
 
-	DescribeTable("OpaConfToK8sOPAConfigMapNoSLP", func(test test) {
+	ginkgo.DescribeTable("OpaConfToK8sOPAConfigMapNoSLP", func(test test) {
 		cm, err := k8sconv.OpaConfToK8sOPAConfigMapNoSLP(test.opaconf)
 
-		Expect(err).To(BeNil())
+		gomega.Expect(err).To(gomega.BeNil())
 
-		Expect(cm.Data["opa-conf.yaml"]).To(Equal(test.expectedCMContent))
+		gomega.Expect(cm.Data["opa-conf.yaml"]).To(gomega.Equal(test.expectedCMContent))
 	},
 
-		Entry("success", test{
+		ginkgo.Entry("success", test{
 			opaconf: styra.OPAConfig{
 				HostURL:    "styra-host-url-123",
 				Token:      "opa-token-123",

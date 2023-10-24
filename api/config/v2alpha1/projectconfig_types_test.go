@@ -17,8 +17,8 @@ limitations under the License.
 package v2alpha1_test
 
 import (
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
@@ -26,18 +26,18 @@ import (
 	"github.com/bankdata/styra-controller/api/config/v2alpha1"
 )
 
-var _ = Describe("ProjectConfig", func() {
-	DescribeTable("GetGitCredentialForRepo",
+var _ = ginkgo.Describe("ProjectConfig", func() {
+	ginkgo.DescribeTable("GetGitCredentialForRepo",
 		func(gitCredentials []*v2alpha1.GitCredential, repo string, expected *v2alpha1.GitCredential) {
 			c := &v2alpha1.ProjectConfig{
 				GitCredentials: gitCredentials,
 			}
-			Ω(c.GetGitCredentialForRepo(repo)).To(Equal(expected))
+			gomega.Ω(c.GetGitCredentialForRepo(repo)).To(gomega.Equal(expected))
 		},
 
-		Entry("returns nil if the list of credentials is empty", nil, "test", nil),
+		ginkgo.Entry("returns nil if the list of credentials is empty", nil, "test", nil),
 
-		Entry("finds matching credential",
+		ginkgo.Entry("finds matching credential",
 			[]*v2alpha1.GitCredential{
 				{
 					User:       "",
@@ -52,7 +52,7 @@ var _ = Describe("ProjectConfig", func() {
 				RepoPrefix: "https://github.com/bankdata",
 			},
 		),
-		Entry("returns longest matching credential",
+		ginkgo.Entry("returns longest matching credential",
 			[]*v2alpha1.GitCredential{
 				{
 					User:       "",
@@ -74,8 +74,8 @@ var _ = Describe("ProjectConfig", func() {
 		),
 	)
 
-	Describe("unmarshalling", func() {
-		It("correctly unmarshals all fields", func() {
+	ginkgo.Describe("unmarshalling", func() {
+		ginkgo.It("correctly unmarshals all fields", func() {
 			validConfig := []byte(`
 apiVersion: config.bankdata.dk/v2alpha1
 kind: ProjectConfig
@@ -107,36 +107,36 @@ systemUserRoles:
   - SystemViewer
 `)
 			scheme := runtime.NewScheme()
-			Ω(v2alpha1.AddToScheme(scheme)).Should(Succeed())
+			gomega.Ω(v2alpha1.AddToScheme(scheme)).Should(gomega.Succeed())
 			decoder := serializer.NewCodecFactory(scheme).UniversalDeserializer()
 			var c v2alpha1.ProjectConfig
 			_, _, err := decoder.Decode(validConfig, nil, &c)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(c.ControllerClass).Should(Equal("class"))
-			Ω(c.DeletionProtectionDefault).Should(BeTrue())
-			Ω(c.DisableCRDWebhooks).Should(BeTrue())
-			Ω(c.EnableMigrations).Should(BeTrue())
-			Ω(len(c.GitCredentials)).Should(Equal(1))
-			Ω(c.GitCredentials[0].User).Should(Equal("my-git-user"))
-			Ω(c.GitCredentials[0].Password).Should(Equal("my-git-password"))
-			Ω(c.GitCredentials[0].RepoPrefix).Should(Equal("https://github.com/my-org"))
-			Ω(c.LogLevel).Should(Equal(42))
-			Ω(c.NotificationWebhook).ShouldNot(BeNil())
-			Ω(c.NotificationWebhook.Address).Should(Equal("https://webhook.com"))
-			Ω(c.Sentry).ShouldNot(BeNil())
-			Ω(c.Sentry.Debug).Should(BeTrue())
-			Ω(c.Sentry.DSN).Should(Equal("https://sentry.com"))
-			Ω(c.Sentry.Environment).Should(Equal("test"))
-			Ω(c.Sentry.HTTPSProxy).Should(Equal("https://proxy.com"))
-			Ω(c.SSO).ShouldNot(BeNil())
-			Ω(c.SSO.IdentityProvider).Should(Equal("my-provider"))
-			Ω(c.SSO.JWTGroupsClaim).Should(Equal("groups"))
-			Ω(c.Styra.Address).Should(Equal("https://styra.com"))
-			Ω(c.Styra.Token).Should(Equal("token"))
-			Ω(c.SystemPrefix).Should(Equal("prefix"))
-			Ω(c.SystemSuffix).Should(Equal("suffix"))
-			Ω(len(c.SystemUserRoles)).Should(Equal(1))
-			Ω(c.SystemUserRoles[0]).Should(Equal("SystemViewer"))
+			gomega.Ω(err).ShouldNot(gomega.HaveOccurred())
+			gomega.Ω(c.ControllerClass).Should(gomega.Equal("class"))
+			gomega.Ω(c.DeletionProtectionDefault).Should(gomega.BeTrue())
+			gomega.Ω(c.DisableCRDWebhooks).Should(gomega.BeTrue())
+			gomega.Ω(c.EnableMigrations).Should(gomega.BeTrue())
+			gomega.Ω(len(c.GitCredentials)).Should(gomega.Equal(1))
+			gomega.Ω(c.GitCredentials[0].User).Should(gomega.Equal("my-git-user"))
+			gomega.Ω(c.GitCredentials[0].Password).Should(gomega.Equal("my-git-password"))
+			gomega.Ω(c.GitCredentials[0].RepoPrefix).Should(gomega.Equal("https://github.com/my-org"))
+			gomega.Ω(c.LogLevel).Should(gomega.Equal(42))
+			gomega.Ω(c.NotificationWebhook).ShouldNot(gomega.BeNil())
+			gomega.Ω(c.NotificationWebhook.Address).Should(gomega.Equal("https://webhook.com"))
+			gomega.Ω(c.Sentry).ShouldNot(gomega.BeNil())
+			gomega.Ω(c.Sentry.Debug).Should(gomega.BeTrue())
+			gomega.Ω(c.Sentry.DSN).Should(gomega.Equal("https://sentry.com"))
+			gomega.Ω(c.Sentry.Environment).Should(gomega.Equal("test"))
+			gomega.Ω(c.Sentry.HTTPSProxy).Should(gomega.Equal("https://proxy.com"))
+			gomega.Ω(c.SSO).ShouldNot(gomega.BeNil())
+			gomega.Ω(c.SSO.IdentityProvider).Should(gomega.Equal("my-provider"))
+			gomega.Ω(c.SSO.JWTGroupsClaim).Should(gomega.Equal("groups"))
+			gomega.Ω(c.Styra.Address).Should(gomega.Equal("https://styra.com"))
+			gomega.Ω(c.Styra.Token).Should(gomega.Equal("token"))
+			gomega.Ω(c.SystemPrefix).Should(gomega.Equal("prefix"))
+			gomega.Ω(c.SystemSuffix).Should(gomega.Equal("suffix"))
+			gomega.Ω(len(c.SystemUserRoles)).Should(gomega.Equal(1))
+			gomega.Ω(c.SystemUserRoles[0]).Should(gomega.Equal("SystemViewer"))
 		})
 	})
 })

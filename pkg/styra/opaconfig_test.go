@@ -23,13 +23,13 @@ import (
 	"io"
 	"net/http"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
-var _ = Describe("GetOPAConfig", func() {
+var _ = ginkgo.Describe("GetOPAConfig", func() {
 
 	type test struct {
 		responseBody    string
@@ -38,10 +38,10 @@ var _ = Describe("GetOPAConfig", func() {
 		expectStyraErr  bool
 	}
 
-	DescribeTable("GetOPAConfig", func(test test) {
+	ginkgo.DescribeTable("GetOPAConfig", func(test test) {
 		c := newTestClient(func(r *http.Request) *http.Response {
-			Expect(r.URL.String()).To(Equal("http://test.com/v1/systems/test_id/assets/opa-config"))
-			Expect(r.Method).To(Equal(http.MethodGet))
+			gomega.Expect(r.URL.String()).To(gomega.Equal("http://test.com/v1/systems/test_id/assets/opa-config"))
+			gomega.Expect(r.Method).To(gomega.Equal(http.MethodGet))
 			return &http.Response{
 				Header:     make(http.Header),
 				StatusCode: test.responseCode,
@@ -51,16 +51,16 @@ var _ = Describe("GetOPAConfig", func() {
 
 		opaconf, err := c.GetOPAConfig(context.Background(), "test_id")
 		if test.expectStyraErr {
-			Expect(opaconf).To(Equal(styra.OPAConfig{}))
+			gomega.Expect(opaconf).To(gomega.Equal(styra.OPAConfig{}))
 			target := &styra.HTTPError{}
-			Expect(errors.As(err, &target)).To(BeTrue())
+			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(opaconf).To(Equal(test.expectedOPAConf))
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			gomega.Expect(opaconf).To(gomega.Equal(test.expectedOPAConf))
 		}
 	},
 
-		Entry("success", test{
+		ginkgo.Entry("success", test{
 			responseBody: `
 discovery:
   name: discovery-123
@@ -86,7 +86,7 @@ services:
 			},
 			responseCode: http.StatusOK,
 		}),
-		Entry("styra http error", test{
+		ginkgo.Entry("styra http error", test{
 			responseCode:   http.StatusInternalServerError,
 			expectStyraErr: true,
 		}),

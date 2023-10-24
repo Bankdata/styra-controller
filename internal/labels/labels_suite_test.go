@@ -19,11 +19,11 @@ package labels_test
 import (
 	"testing"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 )
 
 func TestLabels(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "internal/labels")
+	gomega.RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "internal/labels")
 }

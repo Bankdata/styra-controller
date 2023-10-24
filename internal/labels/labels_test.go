@@ -17,8 +17,8 @@ limitations under the License.
 package labels_test
 
 import (
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -26,31 +26,31 @@ import (
 	"github.com/bankdata/styra-controller/internal/labels"
 )
 
-var _ = Describe("SetManagedBy", func() {
-	It("should set the managed-by label", func() {
+var _ = ginkgo.Describe("SetManagedBy", func() {
+	ginkgo.It("should set the managed-by label", func() {
 		o := testv1.Object{}
 		labels.SetManagedBy(&o)
-		Ω(o.Labels["app.kubernetes.io/managed-by"]).To(Equal("styra-controller"))
+		gomega.Ω(o.Labels["app.kubernetes.io/managed-by"]).To(gomega.Equal("styra-controller"))
 	})
 })
 
-var _ = DescribeTable("HasManagedBy",
+var _ = ginkgo.DescribeTable("HasManagedBy",
 	func(o client.Object, expected bool) {
-		Ω(labels.HasManagedBy(o)).To(Equal(expected))
+		gomega.Ω(labels.HasManagedBy(o)).To(gomega.Equal(expected))
 	},
-	Entry(
+	ginkgo.Entry(
 		"should return false if labels is nil",
 		&testv1.Object{},
 		false,
 	),
-	Entry(
+	ginkgo.Entry(
 		"should return false if label is set to something unexpected",
 		&testv1.Object{ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{
 			"app.kubernetes.io/managed-by": "something-unexpected",
 		}}},
 		false,
 	),
-	Entry(
+	ginkgo.Entry(
 		"should return true if label is set as expected",
 		&testv1.Object{ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{
 			"app.kubernetes.io/managed-by": "styra-controller",
@@ -59,29 +59,29 @@ var _ = DescribeTable("HasManagedBy",
 	),
 )
 
-var _ = DescribeTable("ControllerClassMatches",
+var _ = ginkgo.DescribeTable("ControllerClassMatches",
 	func(o client.Object, class string, expected bool) {
-		Ω(labels.ControllerClassMatches(o, class)).To(Equal(expected))
+		gomega.Ω(labels.ControllerClassMatches(o, class)).To(gomega.Equal(expected))
 	},
-	Entry(
+	ginkgo.Entry(
 		"should return false if labels is nil and class is non-empty",
 		&testv1.Object{},
 		"test",
 		false,
 	),
-	Entry(
+	ginkgo.Entry(
 		"should return true if labels is nil and class empty",
 		&testv1.Object{},
 		"",
 		true,
 	),
-	Entry(
+	ginkgo.Entry(
 		"should return true if label is missing but class is empty",
 		&testv1.Object{ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{}}},
 		"",
 		true,
 	),
-	Entry(
+	ginkgo.Entry(
 		"should return true if label value matches",
 		&testv1.Object{ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{
 			"styra-controller/class": "test",

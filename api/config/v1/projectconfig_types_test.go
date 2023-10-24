@@ -17,8 +17,8 @@ limitations under the License.
 package v1_test
 
 import (
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 
 	//nolint:staticcheck // issue https://github.com/Bankdata/styra-controller/issues/82
 	cfg "sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
@@ -27,9 +27,9 @@ import (
 	"github.com/bankdata/styra-controller/api/config/v2alpha1"
 )
 
-var _ = Describe("ProjectConfig", func() {
-	Describe("ToV2Alpha1", func() {
-		It("converts to v2alpha1", func() {
+var _ = ginkgo.Describe("ProjectConfig", func() {
+	ginkgo.Describe("ToV2Alpha1", func() {
+		ginkgo.It("converts to v2alpha1", func() {
 			v1cfg := &v1.ProjectConfig{
 				//nolint:staticcheck // issue https://github.com/Bankdata/styra-controller/issues/82
 				ControllerManagerConfigurationSpec: cfg.ControllerManagerConfigurationSpec{
@@ -102,7 +102,7 @@ var _ = Describe("ProjectConfig", func() {
 				},
 			}
 
-			Ω(v1cfg.ToV2Alpha1()).To(Equal(expected))
+			gomega.Ω(v1cfg.ToV2Alpha1()).To(gomega.Equal(expected))
 		})
 	})
 })

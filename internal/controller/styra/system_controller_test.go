@@ -17,23 +17,23 @@ limitations under the License.
 package styra
 
 import (
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 
 	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
 	styrav1beta1 "github.com/bankdata/styra-controller/api/styra/v1beta1"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
-var _ = DescribeTable("createRolebindingSubjects",
+var _ = ginkgo.DescribeTable("createRolebindingSubjects",
 	func(subjects []styrav1beta1.Subject, expectedSubject []*styra.Subject) {
-		Ω(createRolebindingSubjects(subjects, &configv2alpha2.SSOConfig{
+		gomega.Ω(createRolebindingSubjects(subjects, &configv2alpha2.SSOConfig{
 			IdentityProvider: "BDAD",
 			JWTGroupsClaim:   "groups",
-		})).To(Equal(expectedSubject))
+		})).To(gomega.Equal(expectedSubject))
 	},
 
-	Entry("returns same adgroup",
+	ginkgo.Entry("returns same adgroup",
 		[]styrav1beta1.Subject{{Kind: "group", Name: "ADTEST"}},
 		[]*styra.Subject{{
 			Kind: "claim",
@@ -45,7 +45,7 @@ var _ = DescribeTable("createRolebindingSubjects",
 		}},
 	),
 
-	Entry("defaults empty kind value to user",
+	ginkgo.Entry("defaults empty kind value to user",
 		[]styrav1beta1.Subject{
 			{Kind: "user", Name: "test1@test.dk"},
 			{Name: "test2@test.dk"},
@@ -69,7 +69,7 @@ var _ = DescribeTable("createRolebindingSubjects",
 		},
 	),
 
-	Entry("does not return duplicates adgroups",
+	ginkgo.Entry("does not return duplicates adgroups",
 		[]styrav1beta1.Subject{
 			{Kind: "group", Name: "ADTEST"},
 			{Kind: "group", Name: "ADTEST1"},
@@ -94,7 +94,7 @@ var _ = DescribeTable("createRolebindingSubjects",
 		},
 	),
 
-	Entry("does not return duplicates users and groups",
+	ginkgo.Entry("does not return duplicates users and groups",
 		[]styrav1beta1.Subject{
 			{Kind: "user", Name: "test@test.dk"},
 			{Kind: "user", Name: "test@test.dk"},
