@@ -19,11 +19,11 @@ package v2alpha1_test
 import (
 	"testing"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 )
 
 func TestV2Alpha1(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "api/config/v2alpha1")
+	gomega.RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "api/config/v2alpha1")
 }

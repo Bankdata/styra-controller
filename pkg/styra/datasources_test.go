@@ -24,13 +24,13 @@ import (
 	"io"
 	"net/http"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
-var _ = Describe("GetDatasource", func() {
+var _ = ginkgo.Describe("GetDatasource", func() {
 	type test struct {
 		datasourceID             string
 		responseCode             int
@@ -39,10 +39,10 @@ var _ = Describe("GetDatasource", func() {
 		expectStyraErr           bool
 	}
 
-	DescribeTable("GetDatasource", func(test test) {
+	ginkgo.DescribeTable("GetDatasource", func(test test) {
 		c := newTestClient(func(r *http.Request) *http.Response {
-			Expect(r.Method).To(Equal(http.MethodGet))
-			Expect(r.URL.String()).To(Equal("http://test.com/v1/datasources/" + test.datasourceID))
+			gomega.Expect(r.Method).To(gomega.Equal(http.MethodGet))
+			gomega.Expect(r.URL.String()).To(gomega.Equal("http://test.com/v1/datasources/" + test.datasourceID))
 
 			return &http.Response{
 				Header:     make(http.Header),
@@ -53,18 +53,18 @@ var _ = Describe("GetDatasource", func() {
 
 		res, err := c.GetDatasource(context.Background(), test.datasourceID)
 		if test.expectStyraErr {
-			Expect(res).To(BeNil())
+			gomega.Expect(res).To(gomega.BeNil())
 			target := &styra.HTTPError{}
-			Expect(errors.As(err, &target)).To(BeTrue())
+			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(res.StatusCode).To(Equal(test.responseCode))
-			Expect(res.DatasourceConfig).To(Equal(test.expectedDatasourceConfig))
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			gomega.Expect(res.StatusCode).To(gomega.Equal(test.responseCode))
+			gomega.Expect(res.DatasourceConfig).To(gomega.Equal(test.expectedDatasourceConfig))
 		}
 
 	},
 
-		Entry("happy path", test{
+		ginkgo.Entry("happy path", test{
 			datasourceID: "test",
 			responseCode: http.StatusOK,
 			responseBody: `
@@ -94,7 +94,7 @@ var _ = Describe("GetDatasource", func() {
 			},
 		}),
 
-		Entry("unexpected status code", test{
+		ginkgo.Entry("unexpected status code", test{
 			datasourceID:   "test",
 			responseCode:   http.StatusInternalServerError,
 			expectStyraErr: true,
@@ -102,7 +102,7 @@ var _ = Describe("GetDatasource", func() {
 	)
 })
 
-var _ = Describe("UpsertDatasource", func() {
+var _ = ginkgo.Describe("UpsertDatasource", func() {
 
 	type test struct {
 		datasourceID            string
@@ -113,15 +113,15 @@ var _ = Describe("UpsertDatasource", func() {
 		expectStyraErr          bool
 	}
 
-	DescribeTable("UpsertDatasource", func(test test) {
+	ginkgo.DescribeTable("UpsertDatasource", func(test test) {
 		c := newTestClient(func(r *http.Request) *http.Response {
 			bs, err := io.ReadAll(r.Body)
-			Expect(err).NotTo(HaveOccurred())
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 			var b bytes.Buffer
-			Expect(json.NewEncoder(&b).Encode(test.upsertDatasourceRequest)).To(Succeed())
-			Expect(bs).To(Equal(b.Bytes()))
-			Expect(r.Method).To(Equal(http.MethodPut))
-			Expect(r.URL.String()).To(Equal("http://test.com/v1/datasources/" + test.datasourceID))
+			gomega.Expect(json.NewEncoder(&b).Encode(test.upsertDatasourceRequest)).To(gomega.Succeed())
+			gomega.Expect(bs).To(gomega.Equal(b.Bytes()))
+			gomega.Expect(r.Method).To(gomega.Equal(http.MethodPut))
+			gomega.Expect(r.URL.String()).To(gomega.Equal("http://test.com/v1/datasources/" + test.datasourceID))
 
 			return &http.Response{
 				Header:     make(http.Header),
@@ -132,17 +132,17 @@ var _ = Describe("UpsertDatasource", func() {
 
 		res, err := c.UpsertDatasource(context.Background(), test.datasourceID, test.upsertDatasourceRequest)
 		if test.expectStyraErr {
-			Expect(res).To(BeNil())
+			gomega.Expect(res).To(gomega.BeNil())
 			target := &styra.HTTPError{}
-			Expect(errors.As(err, &target)).To(BeTrue())
+			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(res.StatusCode).To(Equal(test.responseCode))
-			Expect(res.Body).To(Equal(test.expectedBody))
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			gomega.Expect(res.StatusCode).To(gomega.Equal(test.responseCode))
+			gomega.Expect(res.Body).To(gomega.Equal(test.expectedBody))
 		}
 	},
 
-		Entry("something", test{
+		ginkgo.Entry("something", test{
 			datasourceID: "datasourceID",
 			responseCode: http.StatusOK,
 			responseBody: `expected response from styra api`,
@@ -152,7 +152,7 @@ var _ = Describe("UpsertDatasource", func() {
 			expectedBody: []byte(`expected response from styra api`)},
 		),
 
-		Entry("styra http error", test{
+		ginkgo.Entry("styra http error", test{
 			datasourceID:   "datasourceID",
 			responseCode:   http.StatusInternalServerError,
 			expectStyraErr: true,
@@ -160,7 +160,7 @@ var _ = Describe("UpsertDatasource", func() {
 	)
 })
 
-var _ = Describe("DeleteDatasource", func() {
+var _ = ginkgo.Describe("DeleteDatasource", func() {
 
 	type test struct {
 		datasourceID   string
@@ -170,13 +170,13 @@ var _ = Describe("DeleteDatasource", func() {
 		expectStyraErr bool
 	}
 
-	DescribeTable("DeleteDatasource", func(test test) {
+	ginkgo.DescribeTable("DeleteDatasource", func(test test) {
 		c := newTestClient(func(r *http.Request) *http.Response {
 			bs, err := io.ReadAll(r.Body)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(bs).To(Equal([]byte("")))
-			Expect(r.Method).To(Equal(http.MethodDelete))
-			Expect(r.URL.String()).To(Equal("http://test.com/v1/datasources/" + test.datasourceID))
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(bs).To(gomega.Equal([]byte("")))
+			gomega.Expect(r.Method).To(gomega.Equal(http.MethodDelete))
+			gomega.Expect(r.URL.String()).To(gomega.Equal("http://test.com/v1/datasources/" + test.datasourceID))
 
 			return &http.Response{
 				Header:     make(http.Header),
@@ -187,24 +187,24 @@ var _ = Describe("DeleteDatasource", func() {
 
 		res, err := c.DeleteDatasource(context.Background(), test.datasourceID)
 		if test.expectStyraErr {
-			Expect(res).To(BeNil())
+			gomega.Expect(res).To(gomega.BeNil())
 			target := &styra.HTTPError{}
-			Expect(errors.As(err, &target)).To(BeTrue())
+			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(res.StatusCode).To(Equal(test.responseCode))
-			Expect(res.Body).To(Equal(test.expectedBody))
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			gomega.Expect(res.StatusCode).To(gomega.Equal(test.responseCode))
+			gomega.Expect(res.Body).To(gomega.Equal(test.expectedBody))
 		}
 	},
 
-		Entry("something", test{
+		ginkgo.Entry("something", test{
 			datasourceID: "datasourceID",
 			responseCode: http.StatusOK,
 			responseBody: `expected response from styra api`,
 			expectedBody: []byte(`expected response from styra api`)},
 		),
 
-		Entry("styra http error", test{
+		ginkgo.Entry("styra http error", test{
 			datasourceID:   "datasourceID",
 			responseCode:   http.StatusInternalServerError,
 			expectStyraErr: true,

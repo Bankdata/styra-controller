@@ -6,8 +6,8 @@ import (
 	"path"
 
 	"github.com/google/uuid"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 	"github.com/stretchr/testify/mock"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,9 +17,9 @@ import (
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
-var _ = Describe("GlobalDatasourceReconciler", func() {
-	Describe("Reconcile", Label("integration"), func() {
-		It("reconciles GlobalDatasource", func() {
+var _ = ginkgo.Describe("GlobalDatasourceReconciler", func() {
+	ginkgo.Describe("Reconcile", ginkgo.Label("integration"), func() {
+		ginkgo.It("reconciles GlobalDatasource", func() {
 			key := types.NamespacedName{Name: uuid.NewString()}
 
 			toCreate := &styrav1alpha1.GlobalDatasource{
@@ -35,7 +35,7 @@ var _ = Describe("GlobalDatasourceReconciler", func() {
 
 			ctx := context.Background()
 
-			By("creating the datasource")
+			ginkgo.By("creating the datasource")
 
 			styraClientMock.On(
 				"CreateUpdateSecret",
@@ -71,17 +71,17 @@ var _ = Describe("GlobalDatasourceReconciler", func() {
 				},
 			).Return(&styra.UpsertDatasourceResponse{}, nil)
 
-			Ω(k8sClient.Create(ctx, toCreate)).To(Succeed())
+			gomega.Ω(k8sClient.Create(ctx, toCreate)).To(gomega.Succeed())
 
-			Eventually(func() bool {
+			gomega.Eventually(func() bool {
 				var gds styrav1alpha1.GlobalDatasource
 				if err := k8sClient.Get(ctx, key, &gds); err != nil {
 					return false
 				}
 				return true
-			}, timeout, interval).Should(BeTrue())
+			}, timeout, interval).Should(gomega.BeTrue())
 
-			Eventually(func() bool {
+			gomega.Eventually(func() bool {
 				var (
 					createUpdateSecret int
 					getDatasource      int
@@ -100,14 +100,14 @@ var _ = Describe("GlobalDatasourceReconciler", func() {
 				return createUpdateSecret == 1 &&
 					getDatasource == 1 &&
 					upsertDatasource == 1
-			}, timeout, interval).Should(BeTrue())
+			}, timeout, interval).Should(gomega.BeTrue())
 
-			styraClientMock.AssertExpectations(GinkgoT())
+			styraClientMock.AssertExpectations(ginkgo.GinkgoT())
 			resetMock(&styraClientMock.Mock)
 
-			By("using a git credential from a secret")
+			ginkgo.By("using a git credential from a secret")
 
-			Ω(k8sClient.Create(ctx, &v1.Secret{
+			gomega.Ω(k8sClient.Create(ctx, &v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      key.Name,
 					Namespace: "default",
@@ -116,12 +116,12 @@ var _ = Describe("GlobalDatasourceReconciler", func() {
 					"name":   []byte("test-user-2"),
 					"secret": []byte("test-secret-2"),
 				},
-			})).To(Succeed())
+			})).To(gomega.Succeed())
 
-			Eventually(func() bool {
+			gomega.Eventually(func() bool {
 				var s v1.Secret
 				return k8sClient.Get(ctx, types.NamespacedName{Name: key.Name, Namespace: "default"}, &s) == nil
-			}, timeout, interval).Should(BeTrue())
+			}, timeout, interval).Should(gomega.BeTrue())
 
 			styraClientMock.On(
 				"CreateUpdateSecret",
@@ -156,9 +156,9 @@ var _ = Describe("GlobalDatasourceReconciler", func() {
 				Namespace: "default",
 			}
 
-			Ω(k8sClient.Update(ctx, toCreate)).To(Succeed())
+			gomega.Ω(k8sClient.Update(ctx, toCreate)).To(gomega.Succeed())
 
-			Eventually(func() bool {
+			gomega.Eventually(func() bool {
 				var (
 					createUpdateSecret int
 					getDatasource      int
@@ -172,9 +172,9 @@ var _ = Describe("GlobalDatasourceReconciler", func() {
 					}
 				}
 				return createUpdateSecret == 1 && getDatasource == 1
-			}, timeout, interval).Should(BeTrue())
+			}, timeout, interval).Should(gomega.BeTrue())
 
-			styraClientMock.AssertExpectations(GinkgoT())
+			styraClientMock.AssertExpectations(ginkgo.GinkgoT())
 		})
 	})
 })

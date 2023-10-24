@@ -22,8 +22,8 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 
 	"github.com/stretchr/testify/mock"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -59,9 +59,9 @@ const (
 )
 
 func TestAPIs(t *testing.T) {
-	RegisterFailHandler(Fail)
+	gomega.RegisterFailHandler(ginkgo.Fail)
 
-	RunSpecs(t, "test/integration/controller")
+	ginkgo.RunSpecs(t, "test/integration/controller")
 }
 
 func resetMock(m *mock.Mock) {
@@ -69,34 +69,34 @@ func resetMock(m *mock.Mock) {
 	m.ExpectedCalls = nil
 }
 
-var _ = BeforeSuite(func() {
-	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+var _ = ginkgo.BeforeSuite(func() {
+	logf.SetLogger(zap.New(zap.WriteTo(ginkgo.GinkgoWriter), zap.UseDevMode(true)))
 
-	if !Label("integration").MatchesLabelFilter(GinkgoLabelFilter()) {
+	if !ginkgo.Label("integration").MatchesLabelFilter(ginkgo.GinkgoLabelFilter()) {
 		return
 	}
 
-	By("bootstrapping test environment")
+	ginkgo.By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
 		ErrorIfCRDPathMissing: true,
 	}
 
 	cfg, err := testEnv.Start()
-	Expect(err).NotTo(HaveOccurred())
-	Expect(cfg).NotTo(BeNil())
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	gomega.Expect(cfg).NotTo(gomega.BeNil())
 
 	err = styrav1alpha1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	err = styrav1beta1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
-	Expect(err).NotTo(HaveOccurred())
-	Expect(k8sClient).NotTo(BeNil())
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	gomega.Expect(k8sClient).NotTo(gomega.BeNil())
 
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:         scheme.Scheme,
@@ -105,7 +105,7 @@ var _ = BeforeSuite(func() {
 			BindAddress: "0",
 		},
 	})
-	Expect(err).NotTo(HaveOccurred())
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	styraClientMock = &styraclientmock.ClientInterface{}
 	webhookMock = &webhookmocks.Client{}
@@ -126,7 +126,7 @@ var _ = BeforeSuite(func() {
 	}
 
 	err = systemReconciler.SetupWithManager(k8sManager)
-	Expect(err).NotTo(HaveOccurred())
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	globalDatasourceReconciler := &styractrls.GlobalDatasourceReconciler{
 		Config: &configv2alpha2.ProjectConfig{
@@ -139,26 +139,26 @@ var _ = BeforeSuite(func() {
 	}
 
 	err = globalDatasourceReconciler.SetupWithManager(k8sManager)
-	Expect(err).NotTo(HaveOccurred())
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	managerCtx, managerCancel = context.WithCancel(context.Background())
 	go func() {
-		defer GinkgoRecover()
+		defer ginkgo.GinkgoRecover()
 		err = k8sManager.Start(managerCtx)
-		Expect(err).NotTo(HaveOccurred())
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	}()
 })
 
-var _ = AfterSuite(func() {
+var _ = ginkgo.AfterSuite(func() {
 	if testing.Short() {
 		return
 	}
-	By("tearing down the test environment")
+	ginkgo.By("tearing down the test environment")
 	if managerCancel != nil {
 		managerCancel()
 	}
 	if testEnv != nil {
 		err := testEnv.Stop()
-		Expect(err).NotTo(HaveOccurred())
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	}
 })

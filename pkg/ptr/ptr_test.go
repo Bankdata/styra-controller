@@ -17,29 +17,29 @@ limitations under the License.
 package ptr_test
 
 import (
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 
 	"github.com/bankdata/styra-controller/pkg/ptr"
 )
 
-var _ = Describe("Bool", func() {
-	It("should return a pointer to the boolean", func() {
-		Expect(*ptr.Bool(true)).To(BeTrue())
-		Expect(*ptr.Bool(false)).To(BeFalse())
+var _ = ginkgo.Describe("Bool", func() {
+	ginkgo.It("should return a pointer to the boolean", func() {
+		gomega.Expect(*ptr.Bool(true)).To(gomega.BeTrue())
+		gomega.Expect(*ptr.Bool(false)).To(gomega.BeFalse())
 	})
 })
 
-var _ = Describe("String", func() {
-	It("should return a pointer to the string", func() {
-		Expect(*ptr.String("")).To(Equal(""))
-		Expect(*ptr.String("test")).To(Equal("test"))
+var _ = ginkgo.Describe("String", func() {
+	ginkgo.It("should return a pointer to the string", func() {
+		gomega.Expect(*ptr.String("")).To(gomega.Equal(""))
+		gomega.Expect(*ptr.String("test")).To(gomega.Equal("test"))
 	})
 })
 
-var _ = Describe("Int", func() {
-	It("should return a pointer to the int", func() {
-		Expect(*ptr.Int(0)).To(Equal(0))
-		Expect(*ptr.Int(42)).To(Equal(42))
+var _ = ginkgo.Describe("Int", func() {
+	ginkgo.It("should return a pointer to the int", func() {
+		gomega.Expect(*ptr.Int(0)).To(gomega.Equal(0))
+		gomega.Expect(*ptr.Int(42)).To(gomega.Equal(42))
 	})
 })

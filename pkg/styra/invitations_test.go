@@ -25,13 +25,13 @@ import (
 	"net/http"
 	"strconv"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
-var _ = Describe("CreateInvitation", func() {
+var _ = ginkgo.Describe("CreateInvitation", func() {
 
 	type test struct {
 		email                   bool
@@ -42,15 +42,16 @@ var _ = Describe("CreateInvitation", func() {
 		expectStyraErr          bool
 	}
 
-	DescribeTable("CreateInvitation", func(test test) {
+	ginkgo.DescribeTable("CreateInvitation", func(test test) {
 		c := newTestClient(func(r *http.Request) *http.Response {
 			bs, err := io.ReadAll(r.Body)
-			Expect(err).NotTo(HaveOccurred())
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 			var b bytes.Buffer
-			Expect(json.NewEncoder(&b).Encode(test.createInvitationRequest)).To(Succeed())
-			Expect(bs).To(Equal(b.Bytes()))
-			Expect(r.Method).To(Equal(http.MethodPost))
-			Expect(r.URL.String()).To(Equal("http://test.com/v1/invitations?email=" + strconv.FormatBool(test.email)))
+			gomega.Expect(json.NewEncoder(&b).Encode(test.createInvitationRequest)).To(gomega.Succeed())
+			gomega.Expect(bs).To(gomega.Equal(b.Bytes()))
+			gomega.Expect(r.Method).To(gomega.Equal(http.MethodPost))
+			gomega.Expect(r.URL.String()).To(gomega.Equal("http://test.com/v1/invitations?email=" +
+				strconv.FormatBool(test.email)))
 
 			return &http.Response{
 				Header:     make(http.Header),
@@ -61,16 +62,16 @@ var _ = Describe("CreateInvitation", func() {
 
 		res, err := c.CreateInvitation(context.Background(), test.email, test.name)
 		if test.expectStyraErr {
-			Expect(res).To(BeNil())
+			gomega.Expect(res).To(gomega.BeNil())
 			target := &styra.HTTPError{}
-			Expect(errors.As(err, &target)).To(BeTrue())
+			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(res.StatusCode).To(Equal(test.responseCode))
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			gomega.Expect(res.StatusCode).To(gomega.Equal(test.responseCode))
 		}
 	},
 
-		Entry("something", test{
+		ginkgo.Entry("something", test{
 			name:         "name",
 			responseCode: http.StatusOK,
 			responseBody: `{
@@ -84,7 +85,7 @@ var _ = Describe("CreateInvitation", func() {
 			},
 		}),
 
-		Entry("styra http error", test{
+		ginkgo.Entry("styra http error", test{
 			name: "name",
 			createInvitationRequest: &styra.CreateInvitationRequest{
 				UserID: "name",

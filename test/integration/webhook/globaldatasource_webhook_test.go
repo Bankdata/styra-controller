@@ -21,8 +21,8 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -40,47 +40,47 @@ func newGlobalDatasource() *v1alpha1.GlobalDatasource {
 	}
 }
 
-var _ = Describe("GlobalDatasource", Label("integration"), func() {
+var _ = ginkgo.Describe("GlobalDatasource", ginkgo.Label("integration"), func() {
 
-	Describe("Default", Label("integration"), func() {
-		It("should set the enabled true", func() {
+	ginkgo.Describe("Default", ginkgo.Label("integration"), func() {
+		ginkgo.It("should set the enabled true", func() {
 			gds := newGlobalDatasource()
 			ctx := context.Background()
-			Ω(k8sClient.Create(ctx, gds)).To(Succeed())
-			Ω(gds.Spec.Enabled).NotTo(BeNil())
-			Ω(*gds.Spec.Enabled).To(BeTrue())
-			Ω(k8sClient.Delete(ctx, gds)).To(Succeed())
+			gomega.Ω(k8sClient.Create(ctx, gds)).To(gomega.Succeed())
+			gomega.Ω(gds.Spec.Enabled).NotTo(gomega.BeNil())
+			gomega.Ω(*gds.Spec.Enabled).To(gomega.BeTrue())
+			gomega.Ω(k8sClient.Delete(ctx, gds)).To(gomega.Succeed())
 		})
 
-		It("sets default reference", func() {
+		ginkgo.It("sets default reference", func() {
 			gds := newGlobalDatasource()
 			ctx := context.Background()
-			Ω(k8sClient.Create(ctx, gds)).To(Succeed())
-			Ω(gds.Spec.Reference).To(Equal("refs/heads/master"))
-			Ω(k8sClient.Delete(ctx, gds)).To(Succeed())
+			gomega.Ω(k8sClient.Create(ctx, gds)).To(gomega.Succeed())
+			gomega.Ω(gds.Spec.Reference).To(gomega.Equal("refs/heads/master"))
+			gomega.Ω(k8sClient.Delete(ctx, gds)).To(gomega.Succeed())
 		})
 
-		It("doesn't set default reference if commit is set", func() {
+		ginkgo.It("doesn't set default reference if commit is set", func() {
 			gds := newGlobalDatasource()
 			ctx := context.Background()
 			gds.Spec.Commit = "test"
-			Ω(k8sClient.Create(ctx, gds)).To(Succeed())
-			Ω(gds.Spec.Reference).To(Equal(""))
-			Ω(k8sClient.Delete(ctx, gds)).To(Succeed())
+			gomega.Ω(k8sClient.Create(ctx, gds)).To(gomega.Succeed())
+			gomega.Ω(gds.Spec.Reference).To(gomega.Equal(""))
+			gomega.Ω(k8sClient.Delete(ctx, gds)).To(gomega.Succeed())
 		})
 	})
 
-	Describe("Validate", func() {
-		Context("category is git/rego", func() {
-			It("enforces that commit/reference is mutual exclusive", func() {
+	ginkgo.Describe("Validate", func() {
+		ginkgo.Context("category is git/rego", func() {
+			ginkgo.It("enforces that commit/reference is mutual exclusive", func() {
 				gds := newGlobalDatasource()
 				ctx := context.Background()
 				gds.Spec.Reference = "test-reference"
 				gds.Spec.Commit = "test-commit"
 				err := k8sClient.Create(ctx, gds)
-				Ω(err).To(HaveOccurred())
+				gomega.Ω(err).To(gomega.HaveOccurred())
 				var sErr *apierrors.StatusError
-				Ω(errors.As(err, &sErr)).To(BeTrue())
+				gomega.Ω(errors.As(err, &sErr)).To(gomega.BeTrue())
 				expErrs := field.ErrorList{
 					field.Invalid(
 						field.NewPath("spec").Child("reference"),
@@ -89,22 +89,22 @@ var _ = Describe("GlobalDatasource", Label("integration"), func() {
 					),
 				}
 				causes := sErr.ErrStatus.Details.Causes
-				Ω(len(causes)).To(Equal(len(expErrs)))
+				gomega.Ω(len(causes)).To(gomega.Equal(len(expErrs)))
 				for i, expErr := range expErrs {
-					Ω(string(causes[i].Type)).To(Equal(string(expErr.Type)))
-					Ω(causes[i].Message).To(Equal(expErr.ErrorBody()))
-					Ω(causes[i].Field).To(Equal(expErr.Field))
+					gomega.Ω(string(causes[i].Type)).To(gomega.Equal(string(expErr.Type)))
+					gomega.Ω(causes[i].Message).To(gomega.Equal(expErr.ErrorBody()))
+					gomega.Ω(causes[i].Field).To(gomega.Equal(expErr.Field))
 				}
 			})
 
-			It("requires url to be set", func() {
+			ginkgo.It("requires url to be set", func() {
 				gds := newGlobalDatasource()
 				ctx := context.Background()
 				gds.Spec.URL = ""
 				err := k8sClient.Create(ctx, gds)
-				Ω(err).To(HaveOccurred())
+				gomega.Ω(err).To(gomega.HaveOccurred())
 				var sErr *apierrors.StatusError
-				Ω(errors.As(err, &sErr)).To(BeTrue())
+				gomega.Ω(errors.As(err, &sErr)).To(gomega.BeTrue())
 				expErrs := field.ErrorList{
 					field.Required(
 						field.NewPath("spec").Child("url"),
@@ -112,11 +112,11 @@ var _ = Describe("GlobalDatasource", Label("integration"), func() {
 					),
 				}
 				causes := sErr.ErrStatus.Details.Causes
-				Ω(len(causes)).To(Equal(len(expErrs)))
+				gomega.Ω(len(causes)).To(gomega.Equal(len(expErrs)))
 				for i, expErr := range expErrs {
-					Ω(string(causes[i].Type)).To(Equal(string(expErr.Type)))
-					Ω(causes[i].Message).To(Equal(expErr.ErrorBody()))
-					Ω(causes[i].Field).To(Equal(expErr.Field))
+					gomega.Ω(string(causes[i].Type)).To(gomega.Equal(string(expErr.Type)))
+					gomega.Ω(causes[i].Message).To(gomega.Equal(expErr.ErrorBody()))
+					gomega.Ω(causes[i].Field).To(gomega.Equal(expErr.Field))
 				}
 			})
 		})

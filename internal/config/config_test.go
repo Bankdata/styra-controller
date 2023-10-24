@@ -17,8 +17,8 @@ limitations under the License.
 package config
 
 import (
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -27,25 +27,25 @@ import (
 	"github.com/bankdata/styra-controller/api/config/v2alpha2"
 )
 
-var _ = DescribeTable("deserialize",
+var _ = ginkgo.DescribeTable("deserialize",
 	func(data []byte, expected *v2alpha2.ProjectConfig, shouldErr bool) {
 		scheme := runtime.NewScheme()
 		err := v2alpha2.AddToScheme(scheme)
-		Ω(err).ShouldNot(HaveOccurred())
+		gomega.Ω(err).ShouldNot(gomega.HaveOccurred())
 		err = v2alpha1.AddToScheme(scheme)
-		Ω(err).ShouldNot(HaveOccurred())
+		gomega.Ω(err).ShouldNot(gomega.HaveOccurred())
 		err = v1.AddToScheme(scheme)
-		Ω(err).ShouldNot(HaveOccurred())
+		gomega.Ω(err).ShouldNot(gomega.HaveOccurred())
 		actual, err := deserialize(data, scheme)
 		if shouldErr {
-			Ω(err).Should(HaveOccurred())
+			gomega.Ω(err).Should(gomega.HaveOccurred())
 		} else {
-			Ω(err).ShouldNot(HaveOccurred())
+			gomega.Ω(err).ShouldNot(gomega.HaveOccurred())
 		}
-		Ω(actual).Should(Equal(expected))
+		gomega.Ω(actual).Should(gomega.Equal(expected))
 	},
 
-	Entry("errors on unexpected api group",
+	ginkgo.Entry("errors on unexpected api group",
 		[]byte(`
 apiVersion: myconfig.bankdata.dk/v1
 kind: ProjectConfig
@@ -56,7 +56,7 @@ styra:
 		true,
 	),
 
-	Entry("can deserialize v1",
+	ginkgo.Entry("can deserialize v1",
 		[]byte(`
 apiVersion: config.bankdata.dk/v1
 kind: ProjectConfig
@@ -70,7 +70,7 @@ styraToken: my-token
 		false,
 	),
 
-	Entry("can deserialize v2alpha1",
+	ginkgo.Entry("can deserialize v2alpha1",
 		[]byte(`
 apiVersion: config.bankdata.dk/v2alpha1
 kind: ProjectConfig
@@ -85,7 +85,7 @@ styra:
 		false,
 	),
 
-	Entry("can deserialize v2alpha2",
+	ginkgo.Entry("can deserialize v2alpha2",
 		[]byte(`
 apiVersion: config.bankdata.dk/v2alpha2
 kind: ProjectConfig
