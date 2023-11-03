@@ -36,7 +36,7 @@ type LibrarySpec struct {
 	SourceControl *SourceControl `json:"sourceControl"`
 
 	// Datasources is the list of datasources in the Library
-	Datasources []LibraryDatasource `json:"datasources"`
+	Datasources []LibraryDatasource `json:"datasources,omitempty"`
 }
 
 // LibraryDatasource contains metadata of a datasource, stored in a library

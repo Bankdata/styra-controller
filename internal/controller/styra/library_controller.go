@@ -304,7 +304,6 @@ func (r *LibraryReconciler) createUsersIfMissing(
 		if subject.IsUser() {
 			log := log.WithValues("user", subject.Name)
 			log.Info("Checking if user exists")
-			fmt.Println("Styra get user 1")
 			res, err := r.Styra.GetUser(ctx, subject.Name)
 			if err != nil {
 				return ctrlerr.Wrap(err, "Could not get user from Styra API")
@@ -312,7 +311,6 @@ func (r *LibraryReconciler) createUsersIfMissing(
 
 			if res.StatusCode == http.StatusNotFound {
 				log.Info("User does not exist in styra. Creating...")
-				fmt.Println("Styra Create Invitation 1")
 				_, err := r.Styra.CreateInvitation(ctx, false, subject.Name)
 				if err != nil {
 					return ctrlerr.Wrap(err, "Could not create user in Styra")
@@ -328,7 +326,6 @@ func (r *LibraryReconciler) deleteIncorrectRoleBindings(
 	log logr.Logger,
 	k8sLib *styrav1alpha1.Library) error {
 	log.Info("Deleting Rolebindings to roles that are not LibraryViewers")
-	fmt.Println("Styra List Rolebindings 1")
 	res, err := r.Styra.ListRoleBindingsV2(ctx, &styra.ListRoleBindingsV2Params{
 		ResourceKind: styra.RoleBindingKindLibrary,
 		ResourceID:   k8sLib.Spec.Name,
@@ -339,7 +336,6 @@ func (r *LibraryReconciler) deleteIncorrectRoleBindings(
 
 	for _, styraRB := range res.Rolebindings {
 		if styraRB.RoleID != styra.Role("LibraryViewer") {
-			fmt.Println("Styra DeleteRolebinding 1")
 			if _, err := r.Styra.DeleteRoleBindingV2(ctx, styraRB.ID); err != nil {
 				return err
 			}
@@ -353,7 +349,6 @@ func (r *LibraryReconciler) createRoleBindingIfMissing(
 	log logr.Logger,
 	role styra.Role,
 	k8sLib *styrav1alpha1.Library) error {
-	fmt.Println("Styra listrolebindings 2")
 	res, err := r.Styra.ListRoleBindingsV2(ctx, &styra.ListRoleBindingsV2Params{
 		ResourceKind: styra.RoleBindingKindLibrary,
 		ResourceID:   k8sLib.Spec.Name,
@@ -383,7 +378,6 @@ func (r *LibraryReconciler) updateRoleBindingIfNeeded(
 	log logr.Logger,
 	role styra.Role,
 	k8sLib *styrav1alpha1.Library) error {
-	fmt.Println("Styra rolebindings 3")
 	res, err := r.Styra.ListRoleBindingsV2(ctx, &styra.ListRoleBindingsV2Params{
 		ResourceKind: styra.RoleBindingKindLibrary,
 		ResourceID:   k8sLib.Spec.Name,
@@ -402,7 +396,6 @@ func (r *LibraryReconciler) updateRoleBindingIfNeeded(
 	for _, rb := range res.Rolebindings {
 		if rb.RoleID == role {
 			if !styra.SubjectsAreEqual(k8sRolebindingSubjects, rb.Subjects) {
-				fmt.Println("Styra update rbs")
 				if err := r.updateRoleBindingSubjects(ctx, log, rb.ID, k8sRolebindingSubjects); err != nil {
 					return err
 				}
@@ -483,7 +476,6 @@ func (r *LibraryReconciler) createRoleBinding(
 ) error {
 	log.Info("Creating rolebinding")
 
-	fmt.Println("Styra create rolebinding 1")
 	if _, err := r.Styra.CreateRoleBinding(ctx, &styra.CreateRoleBindingRequest{
 		ResourceFilter: &styra.ResourceFilter{
 			ID:   k8sLib.Spec.Name,

@@ -110,7 +110,6 @@ spec:
                   type: object
                 type: array
             required:
-            - datasources
             - description
             - name
             - sourceControl
