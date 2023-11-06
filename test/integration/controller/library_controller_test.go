@@ -21,8 +21,8 @@ import (
 	"net/http"
 	"path"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	ginkgo "github.com/onsi/ginkgo/v2"
+	gomega "github.com/onsi/gomega"
 	"github.com/stretchr/testify/mock"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -31,9 +31,9 @@ import (
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
-var _ = Describe("LibraryReconciler", func() {
-	Describe("Reconcile", Label("integration"), func() {
-		It("reconciles Library", func() {
+var _ = ginkgo.Describe("LibraryReconciler", func() {
+	ginkgo.Describe("Reconcile", ginkgo.Label("integration"), func() {
+		ginkgo.It("reconciles Library", func() {
 			key := types.NamespacedName{Name: "uuidewtring", Namespace: "default"}
 			toCreate := &styrav1alpha1.Library{
 				ObjectMeta: metav1.ObjectMeta{
@@ -78,7 +78,7 @@ var _ = Describe("LibraryReconciler", func() {
 				},
 			}
 			ctx := context.Background()
-			By("creating the Library")
+			ginkgo.By("creating the Library")
 
 			styraClientMock.On("CreateUpdateSecret",
 				mock.Anything,
@@ -248,18 +248,18 @@ var _ = Describe("LibraryReconciler", func() {
 				},
 			}, nil).Once()
 
-			Ω(k8sClient.Create(ctx, toCreate)).
-				To(Succeed())
+			gomega.Ω(k8sClient.Create(ctx, toCreate)).
+				To(gomega.Succeed())
 
-			Eventually(func() bool {
+			gomega.Eventually(func() bool {
 				var k8sLib styrav1alpha1.Library
 				if err := k8sClient.Get(ctx, key, &k8sLib); err != nil {
 					return false
 				}
 				return true
-			}, timeout, interval).Should(BeTrue())
+			}, timeout, interval).Should(gomega.BeTrue())
 
-			Eventually(func() bool {
+			gomega.Eventually(func() bool {
 				var (
 					createUpdateSecret int
 					getLibrary         int
@@ -307,9 +307,9 @@ var _ = Describe("LibraryReconciler", func() {
 					getUser == 2 &&
 					createInvitation == 1 &&
 					listRoleBindings == 3
-			}, timeout, interval).Should(BeTrue())
+			}, timeout, interval).Should(gomega.BeTrue())
 
-			styraClientMock.AssertExpectations(GinkgoT())
+			styraClientMock.AssertExpectations(ginkgo.GinkgoT())
 		})
 	})
 })
