@@ -189,10 +189,16 @@ kustomize: ## Download kustomize locally if necessary.
 	GOBIN=$(LOCALBIN) go install -ldflags "-X sigs.k8s.io/kustomize/api/provenance.version=$(KUSTOMIZE_GO_MOD_VERSION)" sigs.k8s.io/kustomize/kustomize/v5
 
 .PHONY: controller-gen
-controller-gen: ## Download controller-gen locally if necessary.
+controller-gen: gopls ## Download controller-gen locally if necessary.
 	test -s $(CONTROLLER_GEN) && \
 	$(CONTROLLER_GEN) --version | grep $(CONTROLLER_GEN_GO_MOD_VERSION) || \
 	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen
+
+.PHONY: gopls
+gopls: 
+	# $(shell go version)
+	GOBIN=$(LOCALBIN) go install golang.org/x/tools/gopls@latest
+
 
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download setup-envtest locally if necessary.
