@@ -454,17 +454,17 @@ func (_m *ClientInterface) UpsertDatasource(ctx context.Context, id string, requ
 	return r0, r1
 }
 
-// UpsertLibrary provides a mock function with given fields: ctx, id, reqBody
-func (_m *ClientInterface) UpsertLibrary(ctx context.Context, id string, reqBody *styra.UpsertLibraryRequest) (*styra.UpsertLibraryResponse, error) {
-	ret := _m.Called(ctx, id, reqBody)
+// UpsertLibrary provides a mock function with given fields: ctx, id, request
+func (_m *ClientInterface) UpsertLibrary(ctx context.Context, id string, request *styra.UpsertLibraryRequest) (*styra.UpsertLibraryResponse, error) {
+	ret := _m.Called(ctx, id, request)
 
 	var r0 *styra.UpsertLibraryResponse
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *styra.UpsertLibraryRequest) (*styra.UpsertLibraryResponse, error)); ok {
-		return rf(ctx, id, reqBody)
+		return rf(ctx, id, request)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, *styra.UpsertLibraryRequest) *styra.UpsertLibraryResponse); ok {
-		r0 = rf(ctx, id, reqBody)
+		r0 = rf(ctx, id, request)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*styra.UpsertLibraryResponse)
@@ -472,7 +472,7 @@ func (_m *ClientInterface) UpsertLibrary(ctx context.Context, id string, reqBody
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, *styra.UpsertLibraryRequest) error); ok {
-		r1 = rf(ctx, id, reqBody)
+		r1 = rf(ctx, id, request)
 	} else {
 		r1 = ret.Error(1)
 	}

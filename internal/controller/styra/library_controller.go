@@ -222,11 +222,11 @@ func (r *LibraryReconciler) reconcileDatasources(ctx context.Context, log logr.L
 		if !exists || ds.Category != "rest" {
 			log := log.WithValues("datasourceID", id)
 			log.Info("Creating or updating datasource")
-			reqBody := &styra.UpsertDatasourceRequest{
+			request := &styra.UpsertDatasourceRequest{
 				Category: "rest",
 				Enabled:  true,
 			}
-			_, err := r.Styra.UpsertDatasource(ctx, id, reqBody)
+			_, err := r.Styra.UpsertDatasource(ctx, id, request)
 			if err != nil {
 				return ctrl.Result{}, ctrlerr.Wrap(err, "Could not create or update library datasource")
 			}

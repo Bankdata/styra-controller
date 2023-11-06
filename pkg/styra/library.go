@@ -119,9 +119,9 @@ func (c *Client) GetLibrary(ctx context.Context, id string) (*GetLibraryResponse
 
 // UpsertLibrary calls the PUT /v1/libraries/{library} endpoint in the
 // Styra API.
-func (c *Client) UpsertLibrary(ctx context.Context, id string, reqBody *UpsertLibraryRequest,
+func (c *Client) UpsertLibrary(ctx context.Context, id string, request *UpsertLibraryRequest,
 ) (*UpsertLibraryResponse, error) {
-	res, err := c.request(ctx, http.MethodPut, fmt.Sprintf("%s/%s", endpointV1Libraries, id), reqBody)
+	res, err := c.request(ctx, http.MethodPut, fmt.Sprintf("%s/%s", endpointV1Libraries, id), request)
 	if err != nil {
 		return nil, err
 	}

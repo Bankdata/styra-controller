@@ -47,11 +47,6 @@ func (r *Library) Default() {
 	if r.Spec.SourceControl.LibraryOrigin.Commit != "" && r.Spec.SourceControl.LibraryOrigin.Reference != "" {
 		r.Spec.SourceControl.LibraryOrigin.Reference = ""
 	}
-
-	if r.Spec.Datasources == nil {
-		r.Spec.Datasources = []LibraryDatasource{}
-	}
-
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
