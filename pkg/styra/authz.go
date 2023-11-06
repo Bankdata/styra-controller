@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 )
 
@@ -239,7 +240,9 @@ func (c *Client) UpdateRoleBindingSubjects(
 	ctx context.Context,
 	id string,
 	request *UpdateRoleBindingSubjectsRequest,
+	log logr.Logger,
 ) (*UpdateRoleBindingSubjectsResponse, error) {
+	log.Info("updating rolebinding")
 	res, err := c.request(ctx, http.MethodPost, fmt.Sprintf("%s/%s/subjects", endpointV2Rolebindings, id), request)
 	if err != nil {
 		return nil, err
