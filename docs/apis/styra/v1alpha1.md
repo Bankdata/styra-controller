@@ -545,6 +545,19 @@ string
 </tr>
 <tr>
 <td>
+<code>subjects</code><br/>
+<em>
+<a href="#styra.bankdata.dk/v1alpha1.LibrarySubject">
+[]LibrarySubject
+</a>
+</em>
+</td>
+<td>
+<p>Subjects is the list of subjects which should have access to the system.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>sourceControl</code><br/>
 <em>
 <a href="#styra.bankdata.dk/v1alpha1.SourceControl">
@@ -703,6 +716,19 @@ string
 </tr>
 <tr>
 <td>
+<code>subjects</code><br/>
+<em>
+<a href="#styra.bankdata.dk/v1alpha1.LibrarySubject">
+[]LibrarySubject
+</a>
+</em>
+</td>
+<td>
+<p>Subjects is the list of subjects which should have access to the system.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>sourceControl</code><br/>
 <em>
 <a href="#styra.bankdata.dk/v1alpha1.SourceControl">
@@ -737,6 +763,73 @@ SourceControl
 <div>
 <p>LibraryStatus defines the observed state of Library</p>
 </div>
+<h3 id="styra.bankdata.dk/v1alpha1.LibrarySubject">LibrarySubject
+</h3>
+<p>
+(<em>Appears on:</em><a href="#styra.bankdata.dk/v1alpha1.LibrarySpec">LibrarySpec</a>)
+</p>
+<div>
+<p>LibrarySubject represents a subject which has been granted access to the Library.
+The subject is assigned to the LibraryViewer role.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>kind</code><br/>
+<em>
+<a href="#styra.bankdata.dk/v1alpha1.LibrarySubjectKind">
+LibrarySubjectKind
+</a>
+</em>
+</td>
+<td>
+<p>Kind is the LibrarySubjectKind of the subject.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>name</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name is the name of the subject. The meaning of this field depends on the
+SubjectKind.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="styra.bankdata.dk/v1alpha1.LibrarySubjectKind">LibrarySubjectKind
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em><a href="#styra.bankdata.dk/v1alpha1.LibrarySubject">LibrarySubject</a>)
+</p>
+<div>
+<p>LibrarySubjectKind represents a kind of a subject.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;group&#34;</p></td>
+<td><p>LibrarySubjectKindGroup is the subject kind group.</p>
+</td>
+</tr><tr><td><p>&#34;user&#34;</p></td>
+<td><p>LibrarySubjectKindUser is the subject kind user.</p>
+</td>
+</tr></tbody>
+</table>
 <h3 id="styra.bankdata.dk/v1alpha1.SourceControl">SourceControl
 </h3>
 <p>
@@ -771,5 +864,5 @@ GitRepo
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>9d2e211</code>.
+on git commit <code>82fb5a0</code>.
 </em></p>

@@ -306,7 +306,8 @@ var _ = ginkgo.Describe("LibraryReconciler", func() {
 					datasourceChanged == 2 &&
 					getUser == 2 &&
 					createInvitation == 1 &&
-					listRoleBindings == 3
+					listRoleBindings == 3 &&
+					createRoleBinding == 1
 			}, timeout, interval).Should(gomega.BeTrue())
 
 			styraClientMock.AssertExpectations(ginkgo.GinkgoT())
