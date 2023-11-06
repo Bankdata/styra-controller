@@ -240,7 +240,6 @@ func (c *Client) UpdateRoleBindingSubjects(
 	id string,
 	request *UpdateRoleBindingSubjectsRequest,
 ) (*UpdateRoleBindingSubjectsResponse, error) {
-	fmt.Println("updating rolebinding")
 	res, err := c.request(ctx, http.MethodPost, fmt.Sprintf("%s/%s/subjects", endpointV2Rolebindings, id), request)
 	if err != nil {
 		return nil, err
