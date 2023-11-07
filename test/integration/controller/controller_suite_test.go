@@ -94,10 +94,10 @@ var _ = ginkgo.BeforeSuite(func() {
 
 	//+kubebuilder:scaffold:scheme
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	/*k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	gomega.Expect(k8sClient).NotTo(gomega.BeNil())
-
+	*/
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:         scheme.Scheme,
 		LeaderElection: false,
@@ -111,10 +111,10 @@ var _ = ginkgo.BeforeSuite(func() {
 	webhookMock = &webhookmocks.Client{}
 
 	systemReconciler := styractrls.SystemReconciler{
-		Client:        k8sClient,
+		Client:        k8sManager.GetClient(),
 		Scheme:        k8sManager.GetScheme(),
-		Styra:         styraClientMock,
-		WebhookClient: webhookMock,
+		Styra:         &styraclientmock.ClientInterface{},
+		WebhookClient: &webhookmocks.Client{},
 		Recorder:      k8sManager.GetEventRecorderFor("system-controller"),
 		Config: &configv2alpha2.ProjectConfig{
 			SystemUserRoles: []string{string(styra.RoleSystemViewer)},
@@ -134,8 +134,8 @@ var _ = ginkgo.BeforeSuite(func() {
 				{User: "test-user", Password: "test-secret"},
 			},
 		},
-		Client: k8sClient,
-		Styra:  styraClientMock,
+		Client: k8sManager.GetClient(),
+		Styra:  &styraclientmock.ClientInterface{},
 	}
 
 	err = globalDatasourceReconciler.SetupWithManager(k8sManager)
@@ -151,9 +151,9 @@ var _ = ginkgo.BeforeSuite(func() {
 				{User: "test-user", Password: "test-secret"},
 			},
 		},
-		Client:        k8sClient,
-		Styra:         styraClientMock,
-		WebhookClient: webhookMock,
+		Client:        k8sManager.GetClient(),
+		Styra:         &styraclientmock.ClientInterface{},
+		WebhookClient: &webhookmocks.Client{},
 	}
 
 	err = libraryReconciler.SetupWithManager(k8sManager)
@@ -165,6 +165,10 @@ var _ = ginkgo.BeforeSuite(func() {
 		err = k8sManager.Start(managerCtx)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	}()
+
+	k8sClient = k8sManager.GetClient()
+	gomega.Expect(k8sClient).ToNot(gomega.BeNil())
+
 })
 
 var _ = ginkgo.AfterSuite(func() {
