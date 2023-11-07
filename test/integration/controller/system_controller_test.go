@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	ginkgo "github.com/onsi/ginkgo/v2"
 	gomega "github.com/onsi/gomega"
@@ -36,8 +37,9 @@ import (
 )
 
 var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"), func() {
-
 	ginkgo.It("should reconcile", func() {
+		fmt.Println("System")
+		time.Sleep(1 * time.Minute)
 		spec := styrav1beta1.SystemSpec{
 			DeletionProtection: ptr.Bool(false),
 		}
