@@ -36,6 +36,7 @@ import (
 )
 
 var _ = ginkgo.Describe("GlobalDatasourceReconciler.Reconcile", ginkgo.Label("integration"), func() {
+	time.Sleep(20 * time.Second)
 	ginkgo.It("reconciles GlobalDatasource", func() {
 		fmt.Println("Global")
 		time.Sleep(1 * time.Minute)
