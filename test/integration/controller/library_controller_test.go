@@ -31,286 +31,284 @@ import (
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
-var _ = ginkgo.Describe("LibraryReconciler", func() {
-	ginkgo.Describe("Reconcile", ginkgo.Label("integration"), func() {
-		ginkgo.It("reconciles Library", func() {
-			key := types.NamespacedName{Name: "uuidewtring", Namespace: "default"}
-			toCreate := &styrav1alpha1.Library{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      key.Name,
-					Namespace: key.Namespace,
-				},
-				Spec: styrav1alpha1.LibrarySpec{
-					Name: key.Name,
-					Subjects: []styrav1alpha1.LibrarySubject{
-						{
-							Kind: styrav1alpha1.LibrarySubjectKindUser,
-							Name: "user1@mail.com",
-						},
-						{
-							// kind
-							Name: "user2@mail.com",
-						},
-						{
-							Kind: styrav1alpha1.LibrarySubjectKindGroup,
-							Name: "testGroup",
-						},
+var _ = ginkgo.Describe("LibraryReconciler.Reconcile", ginkgo.Label("integration"), func() {
+	ginkgo.It("reconciles Library", func() {
+		key := types.NamespacedName{Name: "uuidewtring", Namespace: "default"}
+		toCreate := &styrav1alpha1.Library{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      key.Name,
+				Namespace: key.Namespace,
+			},
+			Spec: styrav1alpha1.LibrarySpec{
+				Name: key.Name,
+				Subjects: []styrav1alpha1.LibrarySubject{
+					{
+						Kind: styrav1alpha1.LibrarySubjectKindUser,
+						Name: "user1@mail.com",
 					},
-					SourceControl: &styrav1alpha1.SourceControl{
-						LibraryOrigin: &styrav1alpha1.GitRepo{
-							Path:      "libraries/library",
-							Reference: "refs/heads/master",
-							Commit:    "commit-sha",
-							URL:       "github.com",
-						},
+					{
+						// kind
+						Name: "user2@mail.com",
 					},
-					Description: "description",
-					Datasources: []styrav1alpha1.LibraryDatasource{
-						{
-							Path:        "oidc/sandbox",
-							Description: "desc",
-						},
-						{
-							Path:        "oidc/sandbox/2",
-							Description: "desc2",
-						},
+					{
+						Kind: styrav1alpha1.LibrarySubjectKindGroup,
+						Name: "testGroup",
 					},
 				},
-			}
-			ctx := context.Background()
-			ginkgo.By("creating the Library")
-
-			styraClientMock.On("CreateUpdateSecret",
-				mock.Anything,
-				path.Join("libraries", key.Name, "git"),
-				&styra.CreateUpdateSecretsRequest{
-					Name:   "test-user",
-					Secret: "test-secret",
+				SourceControl: &styrav1alpha1.SourceControl{
+					LibraryOrigin: &styrav1alpha1.GitRepo{
+						Path:      "libraries/library",
+						Reference: "refs/heads/master",
+						Commit:    "commit-sha",
+						URL:       "github.com",
+					},
 				},
-			).Return(&styra.CreateUpdateSecretResponse{
-				StatusCode: http.StatusOK,
-			}, nil).Once()
-
-			styraClientMock.On("GetLibrary", mock.Anything, key.Name).
-				Return(nil, &styra.HTTPError{StatusCode: http.StatusNotFound}).Once()
-
-			defaultSourceControl := &styra.LibrarySourceControlConfig{
-				LibraryOrigin: &styra.LibraryGitRepoConfig{
-					Commit:      "commit-sha",
-					Credentials: path.Join("libraries", key.Name, "git"),
-					Path:        "libraries/library",
-					Reference:   "refs/heads/master",
-					URL:         "github.com",
+				Description: "description",
+				Datasources: []styrav1alpha1.LibraryDatasource{
+					{
+						Path:        "oidc/sandbox",
+						Description: "desc",
+					},
+					{
+						Path:        "oidc/sandbox/2",
+						Description: "desc2",
+					},
 				},
-			}
+			},
+		}
+		ctx := context.Background()
+		ginkgo.By("creating the Library")
 
-			styraClientMock.On("UpsertLibrary", mock.Anything, key.Name, &styra.UpsertLibraryRequest{
+		styraClientMock.On("CreateUpdateSecret",
+			mock.Anything,
+			path.Join("libraries", key.Name, "git"),
+			&styra.CreateUpdateSecretsRequest{
+				Name:   "test-user",
+				Secret: "test-secret",
+			},
+		).Return(&styra.CreateUpdateSecretResponse{
+			StatusCode: http.StatusOK,
+		}, nil).Once()
+
+		styraClientMock.On("GetLibrary", mock.Anything, key.Name).
+			Return(nil, &styra.HTTPError{StatusCode: http.StatusNotFound}).Once()
+
+		defaultSourceControl := &styra.LibrarySourceControlConfig{
+			LibraryOrigin: &styra.LibraryGitRepoConfig{
+				Commit:      "commit-sha",
+				Credentials: path.Join("libraries", key.Name, "git"),
+				Path:        "libraries/library",
+				Reference:   "refs/heads/master",
+				URL:         "github.com",
+			},
+		}
+
+		styraClientMock.On("UpsertLibrary", mock.Anything, key.Name, &styra.UpsertLibraryRequest{
+			Description:   "description",
+			ReadOnly:      true,
+			SourceControl: defaultSourceControl,
+		}).Return(&styra.UpsertLibraryResponse{}, nil).Once()
+
+		// New reconciliation started
+
+		styraClientMock.On("CreateUpdateSecret",
+			mock.Anything,
+			path.Join("libraries", key.Name, "git"),
+			&styra.CreateUpdateSecretsRequest{
+				Name:   "test-user",
+				Secret: "test-secret",
+			},
+		).Return(&styra.CreateUpdateSecretResponse{
+			StatusCode: http.StatusOK,
+		}, nil).Once()
+
+		styraClientMock.On("GetLibrary", mock.Anything, key.Name).Return(&styra.GetLibraryResponse{
+			Statuscode: http.StatusOK,
+			LibraryEntityExpanded: &styra.LibraryEntityExpanded{
+				DataSources:   []styra.LibraryDatasourceConfig{},
 				Description:   "description",
+				ID:            key.Name,
 				ReadOnly:      true,
 				SourceControl: defaultSourceControl,
-			}).Return(&styra.UpsertLibraryResponse{}, nil).Once()
+			},
+		}, nil).Once()
 
-			// New reconciliation started
+		styraClientMock.On("UpsertDatasource", mock.Anything, path.Join("libraries", key.Name, "oidc/sandbox"),
+			&styra.UpsertDatasourceRequest{
+				Category: "rest",
+				Enabled:  true,
+			}).Return(&styra.UpsertDatasourceResponse{
+			StatusCode: http.StatusOK,
+		}, nil).Once()
 
-			styraClientMock.On("CreateUpdateSecret",
-				mock.Anything,
-				path.Join("libraries", key.Name, "git"),
-				&styra.CreateUpdateSecretsRequest{
-					Name:   "test-user",
-					Secret: "test-secret",
-				},
-			).Return(&styra.CreateUpdateSecretResponse{
+		webhookMock.On(
+			"DatasourceChanged",
+			mock.Anything,
+			mock.Anything,
+			"jwt-library",
+			"",
+		).Return(nil).Once()
+
+		styraClientMock.On("UpsertDatasource", mock.Anything, path.Join("libraries", key.Name, "oidc/sandbox/2"),
+			&styra.UpsertDatasourceRequest{
+				Category: "rest",
+				Enabled:  true,
+			}).Return(&styra.UpsertDatasourceResponse{
+			StatusCode: http.StatusOK,
+		}, nil).Once()
+
+		webhookMock.On(
+			"DatasourceChanged",
+			mock.Anything,
+			mock.Anything,
+			"jwt-library",
+			"",
+		).Return(nil).Once()
+
+		// createUsersIfMissing:
+		styraClientMock.On("GetUser", mock.Anything, "user1@mail.com").
+			Return(&styra.GetUserResponse{
+				StatusCode: http.StatusNotFound,
+			}, nil).Once()
+
+		styraClientMock.On("CreateInvitation", mock.Anything, false, "user1@mail.com").
+			Return(&styra.CreateInvitationResponse{}, nil).Once()
+
+		styraClientMock.On("GetUser", mock.Anything, "user2@mail.com").
+			Return(&styra.GetUserResponse{
 				StatusCode: http.StatusOK,
 			}, nil).Once()
 
-			styraClientMock.On("GetLibrary", mock.Anything, key.Name).Return(&styra.GetLibraryResponse{
-				Statuscode: http.StatusOK,
-				LibraryEntityExpanded: &styra.LibraryEntityExpanded{
-					DataSources:   []styra.LibraryDatasourceConfig{},
-					Description:   "description",
-					ID:            key.Name,
-					ReadOnly:      true,
-					SourceControl: defaultSourceControl,
-				},
-			}, nil).Once()
+		// deleteIncorrectRoleBindings:
+		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
+			ResourceKind: styra.RoleBindingKindLibrary,
+			ResourceID:   toCreate.Spec.Name,
+		}).Return(&styra.ListRoleBindingsV2Response{
+			Rolebindings: []*styra.RoleBindingConfig{},
+		}, nil).Once() //Test deletions also?
 
-			styraClientMock.On("UpsertDatasource", mock.Anything, path.Join("libraries", key.Name, "oidc/sandbox"),
-				&styra.UpsertDatasourceRequest{
-					Category: "rest",
-					Enabled:  true,
-				}).Return(&styra.UpsertDatasourceResponse{
-				StatusCode: http.StatusOK,
-			}, nil).Once()
+		// createRoleBindingIfMissing:
+		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
+			ResourceKind: styra.RoleBindingKindLibrary,
+			ResourceID:   toCreate.Spec.Name,
+		}).Return(&styra.ListRoleBindingsV2Response{
+			Rolebindings: []*styra.RoleBindingConfig{},
+		}, nil).Once()
 
-			webhookMock.On(
-				"DatasourceChanged",
-				mock.Anything,
-				mock.Anything,
-				"jwt-library",
-				"",
-			).Return(nil).Once()
-
-			styraClientMock.On("UpsertDatasource", mock.Anything, path.Join("libraries", key.Name, "oidc/sandbox/2"),
-				&styra.UpsertDatasourceRequest{
-					Category: "rest",
-					Enabled:  true,
-				}).Return(&styra.UpsertDatasourceResponse{
-				StatusCode: http.StatusOK,
-			}, nil).Once()
-
-			webhookMock.On(
-				"DatasourceChanged",
-				mock.Anything,
-				mock.Anything,
-				"jwt-library",
-				"",
-			).Return(nil).Once()
-
-			// createUsersIfMissing:
-			styraClientMock.On("GetUser", mock.Anything, "user1@mail.com").
-				Return(&styra.GetUserResponse{
-					StatusCode: http.StatusNotFound,
-				}, nil).Once()
-
-			styraClientMock.On("CreateInvitation", mock.Anything, false, "user1@mail.com").
-				Return(&styra.CreateInvitationResponse{}, nil).Once()
-
-			styraClientMock.On("GetUser", mock.Anything, "user2@mail.com").
-				Return(&styra.GetUserResponse{
-					StatusCode: http.StatusOK,
-				}, nil).Once()
-
-			// deleteIncorrectRoleBindings:
-			styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
-				ResourceKind: styra.RoleBindingKindLibrary,
-				ResourceID:   toCreate.Spec.Name,
-			}).Return(&styra.ListRoleBindingsV2Response{
-				Rolebindings: []*styra.RoleBindingConfig{},
-			}, nil).Once() //Test deletions also?
-
-			// createRoleBindingIfMissing:
-			styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
-				ResourceKind: styra.RoleBindingKindLibrary,
-				ResourceID:   toCreate.Spec.Name,
-			}).Return(&styra.ListRoleBindingsV2Response{
-				Rolebindings: []*styra.RoleBindingConfig{},
-			}, nil).Once()
-
-			styraClientMock.On("CreateRoleBinding", mock.Anything, &styra.CreateRoleBindingRequest{
-				ResourceFilter: &styra.ResourceFilter{
-					ID:   toCreate.Spec.Name,
-					Kind: styra.RoleBindingKindLibrary,
-				},
-				RoleID: styra.RoleLibraryViewer,
-				Subjects: []*styra.Subject{
-					{
-						ID:   "user1@mail.com",
-						Kind: styra.SubjectKindUser,
-					}, {
-						ID:   "user2@mail.com",
-						Kind: styra.SubjectKindUser,
-					}, {
-						Kind: styra.SubjectKindClaim,
-						ClaimConfig: &styra.ClaimConfig{
-							IdentityProvider: "AzureAD Bankdata",
-							Key:              "groups",
-							Value:            "testGroup",
-						},
+		styraClientMock.On("CreateRoleBinding", mock.Anything, &styra.CreateRoleBindingRequest{
+			ResourceFilter: &styra.ResourceFilter{
+				ID:   toCreate.Spec.Name,
+				Kind: styra.RoleBindingKindLibrary,
+			},
+			RoleID: styra.RoleLibraryViewer,
+			Subjects: []*styra.Subject{
+				{
+					ID:   "user1@mail.com",
+					Kind: styra.SubjectKindUser,
+				}, {
+					ID:   "user2@mail.com",
+					Kind: styra.SubjectKindUser,
+				}, {
+					Kind: styra.SubjectKindClaim,
+					ClaimConfig: &styra.ClaimConfig{
+						IdentityProvider: "AzureAD Bankdata",
+						Key:              "groups",
+						Value:            "testGroup",
 					},
 				},
-			}).Return(&styra.CreateRoleBindingResponse{}, nil).Once()
+			},
+		}).Return(&styra.CreateRoleBindingResponse{}, nil).Once()
 
-			// updateRoleBindingIfNeeded:
-			styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
-				ResourceKind: styra.RoleBindingKindLibrary,
-				ResourceID:   toCreate.Spec.Name,
-			}).Return(&styra.ListRoleBindingsV2Response{
-				Rolebindings: []*styra.RoleBindingConfig{
-					{
-						Subjects: []*styra.Subject{
-							{
-								ID:   "user1@mail.com",
-								Kind: styra.SubjectKindUser,
-							}, {
-								ID:   "user2@mail.com",
-								Kind: styra.SubjectKindUser,
-							}, {
-								Kind: styra.SubjectKindClaim,
-								ClaimConfig: &styra.ClaimConfig{
-									IdentityProvider: "AzureAD Bankdata",
-									Key:              "groups",
-									Value:            "testGroup",
-								},
+		// updateRoleBindingIfNeeded:
+		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
+			ResourceKind: styra.RoleBindingKindLibrary,
+			ResourceID:   toCreate.Spec.Name,
+		}).Return(&styra.ListRoleBindingsV2Response{
+			Rolebindings: []*styra.RoleBindingConfig{
+				{
+					Subjects: []*styra.Subject{
+						{
+							ID:   "user1@mail.com",
+							Kind: styra.SubjectKindUser,
+						}, {
+							ID:   "user2@mail.com",
+							Kind: styra.SubjectKindUser,
+						}, {
+							Kind: styra.SubjectKindClaim,
+							ClaimConfig: &styra.ClaimConfig{
+								IdentityProvider: "AzureAD Bankdata",
+								Key:              "groups",
+								Value:            "testGroup",
 							},
 						},
-						RoleID: "LibraryViewer",
 					},
+					RoleID: "LibraryViewer",
 				},
-			}, nil).Once()
+			},
+		}, nil).Once()
 
-			gomega.Ω(k8sClient.Create(ctx, toCreate)).
-				To(gomega.Succeed())
+		gomega.Ω(k8sClient.Create(ctx, toCreate)).
+			To(gomega.Succeed())
 
-			gomega.Eventually(func() bool {
-				var k8sLib styrav1alpha1.Library
-				if err := k8sClient.Get(ctx, key, &k8sLib); err != nil {
-					return false
+		gomega.Eventually(func() bool {
+			var k8sLib styrav1alpha1.Library
+			if err := k8sClient.Get(ctx, key, &k8sLib); err != nil {
+				return false
+			}
+			return true
+		}, timeout, interval).Should(gomega.BeTrue())
+
+		gomega.Eventually(func() bool {
+			var (
+				createUpdateSecret int
+				getLibrary         int
+				upsertLibrary      int
+				upsertDatasource   int
+				datasourceChanged  int
+				getUser            int
+				createInvitation   int
+				createRoleBinding  int
+				listRoleBindings   int
+			)
+
+			for _, call := range styraClientMock.Calls {
+				switch call.Method {
+				case "CreateUpdateSecret":
+					createUpdateSecret++
+				case "GetLibrary":
+					getLibrary++
+				case "UpsertLibrary":
+					upsertLibrary++
+				case "UpsertDatasource":
+					upsertDatasource++
+				case "GetUser":
+					getUser++
+				case "CreateInvitation":
+					createInvitation++
+				case "CreateRoleBinding":
+					createRoleBinding++
+				case "ListRoleBindingsV2":
+					listRoleBindings++
 				}
-				return true
-			}, timeout, interval).Should(gomega.BeTrue())
+			}
 
-			gomega.Eventually(func() bool {
-				var (
-					createUpdateSecret int
-					getLibrary         int
-					upsertLibrary      int
-					upsertDatasource   int
-					datasourceChanged  int
-					getUser            int
-					createInvitation   int
-					createRoleBinding  int
-					listRoleBindings   int
-				)
-
-				for _, call := range styraClientMock.Calls {
-					switch call.Method {
-					case "CreateUpdateSecret":
-						createUpdateSecret++
-					case "GetLibrary":
-						getLibrary++
-					case "UpsertLibrary":
-						upsertLibrary++
-					case "UpsertDatasource":
-						upsertDatasource++
-					case "GetUser":
-						getUser++
-					case "CreateInvitation":
-						createInvitation++
-					case "CreateRoleBinding":
-						createRoleBinding++
-					case "ListRoleBindingsV2":
-						listRoleBindings++
-					}
+			for _, call := range webhookMock.Calls {
+				switch call.Method {
+				case "DatasourceChanged":
+					datasourceChanged++
 				}
+			}
+			return createUpdateSecret == 2 &&
+				getLibrary == 2 &&
+				upsertLibrary == 1 &&
+				upsertDatasource == 2 &&
+				datasourceChanged == 2 &&
+				getUser == 2 &&
+				createInvitation == 1 &&
+				listRoleBindings == 3 &&
+				createRoleBinding == 1
+		}, timeout, interval).Should(gomega.BeTrue())
 
-				for _, call := range webhookMock.Calls {
-					switch call.Method {
-					case "DatasourceChanged":
-						datasourceChanged++
-					}
-				}
-				return createUpdateSecret == 2 &&
-					getLibrary == 2 &&
-					upsertLibrary == 1 &&
-					upsertDatasource == 2 &&
-					datasourceChanged == 2 &&
-					getUser == 2 &&
-					createInvitation == 1 &&
-					listRoleBindings == 3 &&
-					createRoleBinding == 1
-			}, timeout, interval).Should(gomega.BeTrue())
-
-			styraClientMock.AssertExpectations(ginkgo.GinkgoT())
-		})
+		styraClientMock.AssertExpectations(ginkgo.GinkgoT())
 	})
 })

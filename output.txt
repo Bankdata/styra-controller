@@ -1,0 +1,271 @@
+diff --git a/Makefile b/Makefile
+index 0370c67..ecb6905 100644
+--- a/Makefile
++++ b/Makefile
+@@ -76,15 +76,15 @@ lint: golangci-lint ## Run linters
+ 
+ .PHONY: test
+ test: ginkgo manifests generate lint envtest generate-mocks ## Run all tests.
+-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r -p --output-interceptor-mode=none
++	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r --coverprofile cover.out
+ 
+ .PHONY: test-unit
+ test-unit: ginkgo manifests generate lint generate-mocks ## Run unit tests.
+-	$(GINKGO) -r --label-filter "!integration" --output-interceptor-mode=none
++	$(GINKGO) -r --label-filter "!integration" --coverprofile cover.out
+ 
+ .PHONY: test-integration ## Run integration tests.
+ test-integration: ginkgo manifests generate lint envtest generate-mocks ## Run integration tests.
+-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r -p --label-filter "integration" --output-interceptor-mode=none
++	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r -p --label-filter "integration" --coverprofile cover.out
+ 
+ .PHONY: kind-create
+ kind-create: kind ## Create kind cluster
+diff --git a/api/styra/v1alpha1/library_types.go b/api/styra/v1alpha1/library_types.go
+index ed7bf9b..899dc98 100644
+--- a/api/styra/v1alpha1/library_types.go
++++ b/api/styra/v1alpha1/library_types.go
+@@ -99,7 +99,7 @@ type GitRepo struct {
+ 	URL string `json:"url"`
+ }
+ 
+-// LibrarySecretRef TODO: figure out secrets
++// LibrarySecretRef defines how to access a k8s secret for the library.
+ type LibrarySecretRef struct {
+ 	// Namespace is the namespace where the secret resides.
+ 	Namespace string `json:"namespace"`
+diff --git a/docs/apis/styra/v1alpha1.md b/docs/apis/styra/v1alpha1.md
+index d29c53d..eb11640 100644
+--- a/docs/apis/styra/v1alpha1.md
++++ b/docs/apis/styra/v1alpha1.md
+@@ -642,7 +642,7 @@ string
+ <h3 id="styra.bankdata.dk/v1alpha1.LibrarySecretRef">LibrarySecretRef
+ </h3>
+ <div>
+-<p>LibrarySecretRef TODO: figure out secrets</p>
++<p>LibrarySecretRef defines how to access a k8s secret for the library.</p>
+ </div>
+ <table>
+ <thead>
+@@ -864,5 +864,5 @@ GitRepo
+ <hr/>
+ <p><em>
+ Generated with <code>gen-crd-api-reference-docs</code>
+-on git commit <code>82fb5a0</code>.
++on git commit <code>d1f19e4</code>.
+ </em></p>
+diff --git a/docs/apis/styra/v1beta1.md b/docs/apis/styra/v1beta1.md
+index f4e4528..84e1563 100644
+--- a/docs/apis/styra/v1beta1.md
++++ b/docs/apis/styra/v1beta1.md
+@@ -1172,5 +1172,5 @@ System.</p>
+ <hr/>
+ <p><em>
+ Generated with <code>gen-crd-api-reference-docs</code>
+-on git commit <code>82fb5a0</code>.
++on git commit <code>d1f19e4</code>.
+ </em></p>
+diff --git a/go.mod b/go.mod
+index f336414..b0b3f29 100644
+--- a/go.mod
++++ b/go.mod
+@@ -6,7 +6,7 @@ require (
+ 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
+ 	github.com/getsentry/sentry-go v0.25.0
+ 	github.com/go-logr/logr v1.3.0
+-	github.com/golangci/golangci-lint v1.55.1
++	github.com/golangci/golangci-lint v1.55.2
+ 	github.com/google/uuid v1.4.0
+ 	github.com/goreleaser/goreleaser v1.21.2
+ 	github.com/onsi/ginkgo/v2 v2.13.0
+@@ -115,7 +115,7 @@ require (
+ 	github.com/breml/bidichk v0.2.7 // indirect
+ 	github.com/breml/errchkjson v0.3.6 // indirect
+ 	github.com/buger/jsonparser v1.1.1 // indirect
+-	github.com/butuzov/ireturn v0.2.1 // indirect
++	github.com/butuzov/ireturn v0.2.2 // indirect
+ 	github.com/butuzov/mirror v1.1.0 // indirect
+ 	github.com/caarlos0/ctrlc v1.2.0 // indirect
+ 	github.com/caarlos0/env/v9 v9.0.0 // indirect
+@@ -302,7 +302,7 @@ require (
+ 	github.com/nakabonne/nestif v0.3.1 // indirect
+ 	github.com/nishanths/exhaustive v0.11.0 // indirect
+ 	github.com/nishanths/predeclared v0.2.2 // indirect
+-	github.com/nunnatsa/ginkgolinter v0.14.0 // indirect
++	github.com/nunnatsa/ginkgolinter v0.14.1 // indirect
+ 	github.com/oklog/ulid v1.3.1 // indirect
+ 	github.com/olekukonko/tablewriter v0.0.5 // indirect
+ 	github.com/opencontainers/go-digest v1.0.0 // indirect
+diff --git a/go.sum b/go.sum
+index be71ef7..ca0a174 100644
+--- a/go.sum
++++ b/go.sum
+@@ -272,8 +272,8 @@ github.com/breml/errchkjson v0.3.6 h1:VLhVkqSBH96AvXEyclMR37rZslRrY2kcyq+31HCsVr
+ github.com/breml/errchkjson v0.3.6/go.mod h1:jhSDoFheAF2RSDOlCfhHO9KqhZgAYLyvHe7bRCX8f/U=
+ github.com/buger/jsonparser v1.1.1 h1:2PnMjfWD7wBILjqQbt530v576A/cAbQvEW9gGIpYMUs=
+ github.com/buger/jsonparser v1.1.1/go.mod h1:6RYKKt7H4d4+iWqouImQ9R2FZql3VbhNgx27UK13J/0=
+-github.com/butuzov/ireturn v0.2.1 h1:w5Ks4tnfeFDZskGJ2x1GAkx5gaQV+kdU3NKNr3NEBzY=
+-github.com/butuzov/ireturn v0.2.1/go.mod h1:RfGHUvvAuFFxoHKf4Z8Yxuh6OjlCw1KvR2zM1NFHeBk=
++github.com/butuzov/ireturn v0.2.2 h1:jWI36dxXwVrI+RnXDwux2IZOewpmfv930OuIRfaBUJ0=
++github.com/butuzov/ireturn v0.2.2/go.mod h1:RfGHUvvAuFFxoHKf4Z8Yxuh6OjlCw1KvR2zM1NFHeBk=
+ github.com/butuzov/mirror v1.1.0 h1:ZqX54gBVMXu78QLoiqdwpl2mgmoOJTk7s4p4o+0avZI=
+ github.com/butuzov/mirror v1.1.0/go.mod h1:8Q0BdQU6rC6WILDiBM60DBfvV78OLJmMmixe7GF45AE=
+ github.com/bwesterb/go-ristretto v1.2.3/go.mod h1:fUIoIZaG73pV5biE2Blr2xEzDoMj7NFEuV9ekS419A0=
+@@ -611,8 +611,8 @@ github.com/golangci/go-misc v0.0.0-20220329215616-d24fe342adfe h1:6RGUuS7EGotKx6
+ github.com/golangci/go-misc v0.0.0-20220329215616-d24fe342adfe/go.mod h1:gjqyPShc/m8pEMpk0a3SeagVb0kaqvhscv+i9jI5ZhQ=
+ github.com/golangci/gofmt v0.0.0-20231018234816-f50ced29576e h1:ULcKCDV1LOZPFxGZaA6TlQbiM3J2GCPnkx/bGF6sX/g=
+ github.com/golangci/gofmt v0.0.0-20231018234816-f50ced29576e/go.mod h1:Pm5KhLPA8gSnQwrQ6ukebRcapGb/BG9iUkdaiCcGHJM=
+-github.com/golangci/golangci-lint v1.55.1 h1:DL2j9Eeapg1N3WEkKnQFX5L40SYtjZZJjGVdyEgNrDc=
+-github.com/golangci/golangci-lint v1.55.1/go.mod h1:z00biPRqjo5MISKV1+RWgONf2KvrPDmfqxHpHKB6bI4=
++github.com/golangci/golangci-lint v1.55.2 h1:yllEIsSJ7MtlDBwDJ9IMBkyEUz2fYE0b5B8IUgO1oP8=
++github.com/golangci/golangci-lint v1.55.2/go.mod h1:H60CZ0fuqoTwlTvnbyjhpZPWp7KmsjwV2yupIMiMXbM=
+ github.com/golangci/lint-1 v0.0.0-20191013205115-297bf364a8e0 h1:MfyDlzVjl1hoaPzPD4Gpb/QgoRfSBR0jdhwGyAWwMSA=
+ github.com/golangci/lint-1 v0.0.0-20191013205115-297bf364a8e0/go.mod h1:66R6K6P6VWk9I95jvqGxkqJxVWGFy9XlDwLwVz1RCFg=
+ github.com/golangci/maligned v0.0.0-20180506175553-b1d89398deca h1:kNY3/svz5T29MYHubXix4aDDuE3RWHkPvopM/EDv/MA=
+@@ -949,8 +949,8 @@ github.com/nishanths/exhaustive v0.11.0 h1:T3I8nUGhl/Cwu5Z2hfc92l0e04D2GEW6e0l8p
+ github.com/nishanths/exhaustive v0.11.0/go.mod h1:RqwDsZ1xY0dNdqHho2z6X+bgzizwbLYOWnZbbl2wLB4=
+ github.com/nishanths/predeclared v0.2.2 h1:V2EPdZPliZymNAn79T8RkNApBjMmVKh5XRpLm/w98Vk=
+ github.com/nishanths/predeclared v0.2.2/go.mod h1:RROzoN6TnGQupbC+lqggsOlcgysk3LMK/HI84Mp280c=
+-github.com/nunnatsa/ginkgolinter v0.14.0 h1:XQPNmw+kZz5cC/HbFK3mQutpjzAQv1dHregRA+4CGGg=
+-github.com/nunnatsa/ginkgolinter v0.14.0/go.mod h1:cm2xaqCUCRd7qcP4DqbVvpcyEMkuLM9CF0wY6VASohk=
++github.com/nunnatsa/ginkgolinter v0.14.1 h1:khx0CqR5U4ghsscjJ+lZVthp3zjIFytRXPTaQ/TMiyA=
++github.com/nunnatsa/ginkgolinter v0.14.1/go.mod h1:nY0pafUSst7v7F637e7fymaMlQqI9c0Wka2fGsDkzWg=
+ github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
+ github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
+ github.com/oklog/ulid v1.3.1 h1:EGfNDEx6MqHz8B3uNV6QAib1UR2Lm97sHi3ocA6ESJ4=
+diff --git a/internal/controller/styra/globaldatasource_controller_test.go b/internal/controller/styra/globaldatasource_controller_test.go
+index 4d9de60..7f0a17f 100644
+--- a/internal/controller/styra/globaldatasource_controller_test.go
++++ b/internal/controller/styra/globaldatasource_controller_test.go
+@@ -1,18 +1,18 @@
+-// /*
+-// Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
++/*
++Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+ 
+-// Licensed under the Apache License, Version 2.0 (the "License");
+-// you may not use this file except in compliance with the License.
+-// You may obtain a copy of the License at
++Licensed under the Apache License, Version 2.0 (the "License");
++you may not use this file except in compliance with the License.
++You may obtain a copy of the License at
+ 
+-//     http://www.apache.org/licenses/LICENSE-2.0
++    http://www.apache.org/licenses/LICENSE-2.0
+ 
+-// Unless required by applicable law or agreed to in writing, software
+-// distributed under the License is distributed on an "AS IS" BASIS,
+-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-// See the License for the specific language governing permissions and
+-// limitations under the License.
+-// */
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++*/
+ 
+ package styra
+ 
+diff --git a/internal/controller/styra/library_controller.go b/internal/controller/styra/library_controller.go
+index 38f519e..7356ec1 100644
+--- a/internal/controller/styra/library_controller.go
++++ b/internal/controller/styra/library_controller.go
+@@ -55,9 +55,7 @@ type LibraryReconciler struct {
+ // ensuring that the current state of the Library resource renconciled
+ // towards the desired state.
+ func (r *LibraryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+-
+ 	log := log.FromContext(ctx)
+-
+ 	log.Info("Reconciliation begins")
+ 
+ 	var k8sLib styrav1alpha1.Library
+@@ -162,7 +160,6 @@ func (r *LibraryReconciler) needsUpdate(k8sLib *styrav1alpha1.Library, styraLib
+ 	}
+ 
+ 	specs := k8sLib.Spec
+-
+ 	if styraLib == nil ||
+ 		specs.Name != styraLib.ID ||
+ 		specs.Description != styraLib.Description ||
+@@ -208,7 +205,6 @@ func (r *LibraryReconciler) reconcileDatasources(ctx context.Context, log logr.L
+ 	}
+ 
+ 	expectedByID := map[string]styrav1alpha1.LibraryDatasource{}
+-
+ 	if k8sLib.Spec.Datasources != nil {
+ 		for _, ds := range k8sLib.Spec.Datasources {
+ 			id := path.Join("libraries", k8sLib.Spec.Name, ds.Path)
+@@ -283,7 +279,6 @@ func (r *LibraryReconciler) reconcileSubjects(
+ 	}
+ 
+ 	// Create rolebinding for LibraryViewer if it is missing
+-
+ 	if err := r.createRoleBindingIfMissing(ctx, log, styra.RoleLibraryViewer, k8sLib); err != nil {
+ 		return ctrl.Result{}, err
+ 	}
+@@ -451,6 +446,7 @@ func createLibraryRolebindingSubjects(
+ 			if _, ok := styraSubjectsByClaimValue[subject.Name]; ok {
+ 				continue
+ 			}
++
+ 			styraSubjects = append(styraSubjects, &styra.Subject{
+ 				Kind: styra.SubjectKindClaim,
+ 				ClaimConfig: &styra.ClaimConfig{
+@@ -460,7 +456,6 @@ func createLibraryRolebindingSubjects(
+ 				},
+ 			})
+ 			styraSubjectsByClaimValue[subject.Name] = struct{}{}
+-
+ 		}
+ 	}
+ 
+diff --git a/pkg/styra/library.go b/pkg/styra/library.go
+index e831838..31d362e 100644
+--- a/pkg/styra/library.go
++++ b/pkg/styra/library.go
+@@ -35,7 +35,7 @@ type getLibraryJSONResponse struct {
+ }
+ 
+ // GetLibraryResponse is the response type for calls to the
+-// GET /v1/libraries/{library} endpoint in the Styra API.
++// GET /v1/libraries/{id} endpoint in the Styra API.
+ type GetLibraryResponse struct {
+ 	Statuscode            int
+ 	Body                  []byte
+@@ -73,7 +73,7 @@ type LibraryGitRepoConfig struct {
+ }
+ 
+ // UpsertLibraryRequest is the request body for the
+-// PUT /v1/libraries/{library} endpoint in the Styra API.
++// PUT /v1/libraries/{id} endpoint in the Styra API.
+ type UpsertLibraryRequest struct {
+ 	Description   string                      `json:"description"`
+ 	ReadOnly      bool                        `json:"read_only"`
+@@ -81,13 +81,13 @@ type UpsertLibraryRequest struct {
+ }
+ 
+ // UpsertLibraryResponse is the response body for the
+-// PUT /v1/libraries/{library} endpoint in the Styra API.
++// PUT /v1/libraries/{id} endpoint in the Styra API.
+ type UpsertLibraryResponse struct {
+ 	StatusCode int
+ 	Body       []byte
+ }
+ 
+-// GetLibrary calls the GET /v1/libraries/{library} endpoint in the
++// GetLibrary calls the GET /v1/libraries/{id} endpoint in the
+ // Styra API.
+ func (c *Client) GetLibrary(ctx context.Context, id string) (*GetLibraryResponse, error) {
+ 	res, err := c.request(ctx, http.MethodGet, fmt.Sprintf("%s/%s", endpointV1Libraries, id), nil)
+@@ -117,7 +117,7 @@ func (c *Client) GetLibrary(ctx context.Context, id string) (*GetLibraryResponse
+ 	}, nil
+ }
+ 
+-// UpsertLibrary calls the PUT /v1/libraries/{library} endpoint in the
++// UpsertLibrary calls the PUT /v1/libraries/{id} endpoint in the
+ // Styra API.
+ func (c *Client) UpsertLibrary(ctx context.Context, id string, request *UpsertLibraryRequest,
+ ) (*UpsertLibraryResponse, error) {
