@@ -20,6 +20,7 @@ import (
 	"context"
 	"net/http"
 	"path"
+	"time"
 
 	"github.com/google/uuid"
 	ginkgo "github.com/onsi/ginkgo/v2"
@@ -34,6 +35,7 @@ import (
 )
 
 var _ = ginkgo.Describe("GlobalDatasourceReconciler", func() {
+	time.Sleep(10 * time.Second)
 	ginkgo.Describe("Reconcile", ginkgo.Label("integration"), func() {
 		ginkgo.It("reconciles GlobalDatasource", func() {
 			key := types.NamespacedName{Name: uuid.NewString()}
