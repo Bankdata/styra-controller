@@ -446,7 +446,7 @@ func createLibraryRolebindingSubjects(
 			if _, ok := styraSubjectsByClaimValue[subject.Name]; ok {
 				continue
 			}
-			
+
 			styraSubjects = append(styraSubjects, &styra.Subject{
 				Kind: styra.SubjectKindClaim,
 				ClaimConfig: &styra.ClaimConfig{
