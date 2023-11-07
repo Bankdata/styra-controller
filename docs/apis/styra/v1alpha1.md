@@ -642,7 +642,7 @@ string
 <h3 id="styra.bankdata.dk/v1alpha1.LibrarySecretRef">LibrarySecretRef
 </h3>
 <div>
-<p>LibrarySecretRef TODO: figure out secrets</p>
+<p>LibrarySecretRef defines how to access a k8s secret for the library.</p>
 </div>
 <table>
 <thead>
@@ -864,5 +864,5 @@ GitRepo
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>82fb5a0</code>.
+on git commit <code>d1f19e4</code>.
 </em></p>
