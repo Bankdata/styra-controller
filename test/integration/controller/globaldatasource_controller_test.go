@@ -18,10 +18,8 @@ package styra
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"path"
-	"time"
 
 	"github.com/google/uuid"
 	ginkgo "github.com/onsi/ginkgo/v2"
@@ -36,10 +34,7 @@ import (
 )
 
 var _ = ginkgo.Describe("GlobalDatasourceReconciler.Reconcile", ginkgo.Label("integration"), func() {
-	time.Sleep(20 * time.Second)
 	ginkgo.It("reconciles GlobalDatasource", func() {
-		fmt.Println("Global")
-		time.Sleep(1 * time.Minute)
 		key := types.NamespacedName{Name: uuid.NewString()}
 
 		toCreate := &styrav1alpha1.GlobalDatasource{

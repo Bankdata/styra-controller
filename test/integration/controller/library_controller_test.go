@@ -18,10 +18,8 @@ package styra
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"path"
-	"time"
 
 	ginkgo "github.com/onsi/ginkgo/v2"
 	gomega "github.com/onsi/gomega"
@@ -35,8 +33,6 @@ import (
 
 var _ = ginkgo.Describe("LibraryReconciler.Reconcile", ginkgo.Label("integration"), func() {
 	ginkgo.It("reconciles Library", func() {
-		fmt.Println("Library")
-		time.Sleep(1 * time.Minute)
 
 		key := types.NamespacedName{Name: "uuidewtring", Namespace: "default"}
 		toCreate := &styrav1alpha1.Library{
