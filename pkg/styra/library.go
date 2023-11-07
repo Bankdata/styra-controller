@@ -35,7 +35,7 @@ type getLibraryJSONResponse struct {
 }
 
 // GetLibraryResponse is the response type for calls to the
-// GET /v1/libraries/{library} endpoint in the Styra API.
+// GET /v1/libraries/{id} endpoint in the Styra API.
 type GetLibraryResponse struct {
 	Statuscode            int
 	Body                  []byte
@@ -73,7 +73,7 @@ type LibraryGitRepoConfig struct {
 }
 
 // UpsertLibraryRequest is the request body for the
-// PUT /v1/libraries/{library} endpoint in the Styra API.
+// PUT /v1/libraries/{id} endpoint in the Styra API.
 type UpsertLibraryRequest struct {
 	Description   string                      `json:"description"`
 	ReadOnly      bool                        `json:"read_only"`
@@ -81,13 +81,13 @@ type UpsertLibraryRequest struct {
 }
 
 // UpsertLibraryResponse is the response body for the
-// PUT /v1/libraries/{library} endpoint in the Styra API.
+// PUT /v1/libraries/{id} endpoint in the Styra API.
 type UpsertLibraryResponse struct {
 	StatusCode int
 	Body       []byte
 }
 
-// GetLibrary calls the GET /v1/libraries/{library} endpoint in the
+// GetLibrary calls the GET /v1/libraries/{id} endpoint in the
 // Styra API.
 func (c *Client) GetLibrary(ctx context.Context, id string) (*GetLibraryResponse, error) {
 	res, err := c.request(ctx, http.MethodGet, fmt.Sprintf("%s/%s", endpointV1Libraries, id), nil)
@@ -117,7 +117,7 @@ func (c *Client) GetLibrary(ctx context.Context, id string) (*GetLibraryResponse
 	}, nil
 }
 
-// UpsertLibrary calls the PUT /v1/libraries/{library} endpoint in the
+// UpsertLibrary calls the PUT /v1/libraries/{id} endpoint in the
 // Styra API.
 func (c *Client) UpsertLibrary(ctx context.Context, id string, request *UpsertLibraryRequest,
 ) (*UpsertLibraryResponse, error) {

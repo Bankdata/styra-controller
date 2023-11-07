@@ -99,7 +99,7 @@ type GitRepo struct {
 	URL string `json:"url"`
 }
 
-// LibrarySecretRef TODO: figure out secrets
+// LibrarySecretRef defines how to access a k8s secret for the library.
 type LibrarySecretRef struct {
 	// Namespace is the namespace where the secret resides.
 	Namespace string `json:"namespace"`
