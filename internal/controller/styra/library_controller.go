@@ -55,9 +55,7 @@ type LibraryReconciler struct {
 // ensuring that the current state of the Library resource renconciled
 // towards the desired state.
 func (r *LibraryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-
 	log := log.FromContext(ctx)
-
 	log.Info("Reconciliation begins")
 
 	var k8sLib styrav1alpha1.Library
@@ -162,7 +160,6 @@ func (r *LibraryReconciler) needsUpdate(k8sLib *styrav1alpha1.Library, styraLib 
 	}
 
 	specs := k8sLib.Spec
-
 	if styraLib == nil ||
 		specs.Name != styraLib.ID ||
 		specs.Description != styraLib.Description ||
@@ -208,7 +205,6 @@ func (r *LibraryReconciler) reconcileDatasources(ctx context.Context, log logr.L
 	}
 
 	expectedByID := map[string]styrav1alpha1.LibraryDatasource{}
-
 	if k8sLib.Spec.Datasources != nil {
 		for _, ds := range k8sLib.Spec.Datasources {
 			id := path.Join("libraries", k8sLib.Spec.Name, ds.Path)
@@ -283,7 +279,6 @@ func (r *LibraryReconciler) reconcileSubjects(
 	}
 
 	// Create rolebinding for LibraryViewer if it is missing
-
 	if err := r.createRoleBindingIfMissing(ctx, log, styra.RoleLibraryViewer, k8sLib); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -451,6 +446,7 @@ func createLibraryRolebindingSubjects(
 			if _, ok := styraSubjectsByClaimValue[subject.Name]; ok {
 				continue
 			}
+			
 			styraSubjects = append(styraSubjects, &styra.Subject{
 				Kind: styra.SubjectKindClaim,
 				ClaimConfig: &styra.ClaimConfig{
@@ -460,7 +456,6 @@ func createLibraryRolebindingSubjects(
 				},
 			})
 			styraSubjectsByClaimValue[subject.Name] = struct{}{}
-
 		}
 	}
 
