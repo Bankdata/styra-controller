@@ -23,6 +23,8 @@ import (
 	"path"
 
 	ctrlerr "github.com/bankdata/styra-controller/internal/errors"
+	"github.com/bankdata/styra-controller/internal/predicate"
+	"github.com/bankdata/styra-controller/internal/sentry"
 	"github.com/bankdata/styra-controller/internal/webhook"
 	"github.com/bankdata/styra-controller/pkg/styra"
 	"github.com/go-logr/logr"
@@ -31,6 +33,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -182,13 +185,6 @@ func sameSourceControl(k8sLib *styrav1alpha1.SourceControl, styraLib *styra.Libr
 		k8sLib.LibraryOrigin.Reference == styraLib.LibraryOrigin.Reference &&
 		k8sLib.LibraryOrigin.Commit == styraLib.LibraryOrigin.Commit &&
 		k8sLib.LibraryOrigin.URL == styraLib.LibraryOrigin.URL
-}
-
-// SetupWithManager sets up the controller with the Manager.
-func (r *LibraryReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&styrav1alpha1.Library{}).
-		Complete(r)
 }
 
 func (r *LibraryReconciler) reconcileDatasources(ctx context.Context, log logr.Logger, k8sLib *styrav1alpha1.Library,
@@ -484,4 +480,16 @@ func (r *LibraryReconciler) createRoleBinding(
 
 	log.Info("Created rolebinding")
 	return nil
+}
+
+// SetupWithManager sets up the controller with the Manager.
+func (r *LibraryReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	p, err := predicate.ControllerClass(r.Config.ControllerClass)
+	if err != nil {
+		return err
+	}
+
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&styrav1alpha1.Library{}, builder.WithPredicates(p)).
+		Complete(sentry.Decorate(r))
 }
