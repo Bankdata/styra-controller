@@ -248,6 +248,32 @@ func (_m *ClientInterface) GetDatasource(ctx context.Context, id string) (*styra
 	return r0, r1
 }
 
+// GetLibrary provides a mock function with given fields: ctx, id
+func (_m *ClientInterface) GetLibrary(ctx context.Context, id string) (*styra.GetLibraryResponse, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *styra.GetLibraryResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*styra.GetLibraryResponse, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *styra.GetLibraryResponse); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*styra.GetLibraryResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetOPAConfig provides a mock function with given fields: ctx, systemID
 func (_m *ClientInterface) GetOPAConfig(ctx context.Context, systemID string) (styra.OPAConfig, error) {
 	ret := _m.Called(ctx, systemID)
@@ -420,6 +446,32 @@ func (_m *ClientInterface) UpsertDatasource(ctx context.Context, id string, requ
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, *styra.UpsertDatasourceRequest) error); ok {
+		r1 = rf(ctx, id, request)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UpsertLibrary provides a mock function with given fields: ctx, id, request
+func (_m *ClientInterface) UpsertLibrary(ctx context.Context, id string, request *styra.UpsertLibraryRequest) (*styra.UpsertLibraryResponse, error) {
+	ret := _m.Called(ctx, id, request)
+
+	var r0 *styra.UpsertLibraryResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *styra.UpsertLibraryRequest) (*styra.UpsertLibraryResponse, error)); ok {
+		return rf(ctx, id, request)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, *styra.UpsertLibraryRequest) *styra.UpsertLibraryResponse); ok {
+		r0 = rf(ctx, id, request)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*styra.UpsertLibraryResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, *styra.UpsertLibraryRequest) error); ok {
 		r1 = rf(ctx, id, request)
 	} else {
 		r1 = ret.Error(1)

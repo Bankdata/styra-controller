@@ -1,0 +1,28 @@
+apiVersion: styra.bankdata.dk/v1alpha1
+kind: Library
+metadata:
+  labels:
+    app.kubernetes.io/name: library
+    app.kubernetes.io/instance: library-sample
+    app.kubernetes.io/part-of: styra-controller
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: styra-controller
+  name: my-library
+spec:
+  name: mylibrary
+  description: my library
+  sourceControl:
+    libraryOrigin:
+      url: https://github.com/Bankdata/styra-controller.git
+      reference: refs/heads/master
+      commit: f37cc9d87251921cbe49349235d9b5305c833769
+      path: path
+  datasources:
+    - path: seconds/datasource
+      description: this is the second datasource 
+  subjects:
+    - kind: user
+      name: user1@mail.dk
+    - kind: group
+      name: mygroup
+  

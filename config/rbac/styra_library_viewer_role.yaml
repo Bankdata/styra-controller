@@ -1,0 +1,27 @@
+# permissions for end users to view libraries.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: library-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: styra-controller
+    app.kubernetes.io/part-of: styra-controller
+    app.kubernetes.io/managed-by: kustomize
+  name: library-viewer-role
+rules:
+- apiGroups:
+  - styra.bankdata.dk
+  resources:
+  - libraries
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - styra.bankdata.dk
+  resources:
+  - libraries/status
+  verbs:
+  - get
