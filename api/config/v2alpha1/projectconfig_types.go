@@ -210,8 +210,9 @@ func (c *ProjectConfig) ToV2Alpha2() *v2alpha2.ProjectConfig {
 	}
 
 	if c.NotificationWebhook != nil {
-		v2cfg.NotificationWebhook = &v2alpha2.NotificationWebhookConfig{
-			Address: c.NotificationWebhook.Address,
+		v2cfg.NotificationWebhooks = &v2alpha2.NotificationWebhooksConfig{
+			SystemDatasourceChanged:  c.NotificationWebhook.Address,
+			LibraryDatasourceChanged: "",
 		}
 	}
 

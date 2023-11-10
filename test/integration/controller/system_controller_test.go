@@ -910,7 +910,7 @@ discovery:
 		}, nil).Once()
 
 		webhookMock.On(
-			"DatasourceChanged",
+			"SystemDatasourceChanged",
 			mock.Anything,
 			mock.Anything,
 			"default_test",
@@ -941,7 +941,7 @@ discovery:
 
 			for _, call := range webhookMock.Calls {
 				switch call.Method {
-				case "DatasourceChanged":
+				case "SystemDatasourceChanged":
 					datasourceChanged++
 				}
 			}

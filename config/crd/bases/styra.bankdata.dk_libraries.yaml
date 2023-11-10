@@ -112,7 +112,6 @@ spec:
             required:
             - description
             - name
-            - sourceControl
             type: object
           status:
             description: LibraryStatus defines the observed state of Library

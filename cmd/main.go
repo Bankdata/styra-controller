@@ -175,8 +175,8 @@ func main() {
 		Config:   ctrlConfig,
 	}
 
-	if ctrlConfig.NotificationWebhook != nil {
-		r1.WebhookClient = webhook.New(ctrlConfig.NotificationWebhook.Address)
+	if ctrlConfig.NotificationWebhooks != nil && ctrlConfig.NotificationWebhooks.SystemDatasourceChanged != "" {
+		r1.WebhookClient = webhook.New(ctrlConfig.NotificationWebhooks.SystemDatasourceChanged, "")
 	}
 
 	if err = r1.SetupWithManager(mgr); err != nil {
@@ -214,8 +214,9 @@ func main() {
 		Config: ctrlConfig,
 		Styra:  styraClient,
 	}
-	if ctrlConfig.NotificationWebhook != nil {
-		libraryReconciler.WebhookClient = webhook.New(ctrlConfig.NotificationWebhook.Address)
+
+	if ctrlConfig.NotificationWebhooks != nil && ctrlConfig.NotificationWebhooks.LibraryDatasourceChanged != "" {
+		libraryReconciler.WebhookClient = webhook.New("", ctrlConfig.NotificationWebhooks.LibraryDatasourceChanged)
 	}
 
 	if err = libraryReconciler.SetupWithManager(mgr); err != nil {

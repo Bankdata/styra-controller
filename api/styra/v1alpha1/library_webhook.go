@@ -44,6 +44,10 @@ var _ webhook.Defaulter = &Library{}
 func (r *Library) Default() {
 	librarylog.Info("default", "name", r.Name)
 
+	if r.Spec.SourceControl == nil || r.Spec.SourceControl.LibraryOrigin == nil {
+		return
+	}
+
 	if r.Spec.SourceControl.LibraryOrigin.Commit != "" && r.Spec.SourceControl.LibraryOrigin.Reference != "" {
 		r.Spec.SourceControl.LibraryOrigin.Reference = ""
 	}
