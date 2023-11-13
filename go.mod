@@ -2,7 +2,6 @@ module github.com/bankdata/styra-controller
 
 go 1.21.3
 
-
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
 	github.com/getsentry/sentry-go v0.25.0
@@ -11,7 +10,7 @@ require (
 	github.com/google/uuid v1.4.0
 	github.com/goreleaser/goreleaser v1.21.2
 	github.com/onsi/ginkgo/v2 v2.13.0
-	github.com/onsi/gomega v1.29.0
+	github.com/onsi/gomega v1.30.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.17.0
 	github.com/stretchr/testify v1.8.4
