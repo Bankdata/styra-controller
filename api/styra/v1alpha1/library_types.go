@@ -33,7 +33,7 @@ type LibrarySpec struct {
 	Subjects []LibrarySubject `json:"subjects,omitempty"`
 
 	// SourceControl is the sourcecontrol configuration for the Library
-	SourceControl *SourceControl `json:"sourceControl"`
+	SourceControl *SourceControl `json:"sourceControl,omitempty"`
 
 	// Datasources is the list of datasources in the Library
 	Datasources []LibraryDatasource `json:"datasources,omitempty"`

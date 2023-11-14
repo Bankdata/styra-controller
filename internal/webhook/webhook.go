@@ -32,24 +32,75 @@ import (
 
 // Client defines the interface for the notification webhook client.
 type Client interface {
-	DatasourceChanged(context.Context, logr.Logger, string, string) error
+	SystemDatasourceChanged(context.Context, logr.Logger, string, string) error
+	LibraryDatasourceChanged(context.Context, logr.Logger, string) error
 }
 
 type client struct {
-	hc  http.Client
-	url string
+	hc                       http.Client
+	libraryDatasourceChanged string
+	systemDatasourceChanged  string
 }
 
 // New creates a new webhook notification Client.
-func New(url string) Client {
+func New(systemDatasourceChanged string, libraryDatasourceChanged string) Client {
 	return &client{
-		hc:  http.Client{},
-		url: url,
+		hc:                       http.Client{},
+		systemDatasourceChanged:  systemDatasourceChanged,
+		libraryDatasourceChanged: libraryDatasourceChanged,
 	}
 }
 
+func (client *client) LibraryDatasourceChanged(ctx context.Context, log logr.Logger, datasourceID string) error {
+	if client.libraryDatasourceChanged == "" {
+		return errors.New("libraryDatasourceChanged webhook not configured")
+	}
+
+	body := map[string]string{"datasourceID": datasourceID}
+	jsonData, err := json.Marshal(body)
+
+	if err != nil {
+		log.Error(err, "Failed to marshal request body")
+		return errors.Wrap(err, "Failed to marshal request body")
+	}
+
+	r, err := http.NewRequestWithContext(ctx, http.MethodPost, client.libraryDatasourceChanged, bytes.NewBuffer(jsonData))
+	if err != nil {
+		log.Error(err, "Failed to create request to webhook")
+		return errors.Wrap(err, "Failed to create request to webhook")
+	}
+	r.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.hc.Do(r)
+	if err != nil {
+		log.Error(err, "Failed in call to webhook")
+		return errors.Wrap(err, "Failed in call to webhook")
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		log.Info("Response status code is not 2XX")
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Error(err, "Could not read response body")
+			return errors.Errorf("Could not read response body")
+		}
+		bodyString := string(bodyBytes)
+		return errors.Errorf("response status code is %d, response body is %s", resp.StatusCode, bodyString)
+	}
+
+	log.Info("Called library webhook successfully")
+	return nil
+}
+
 // DatasourceChanged notifies the webhook that a datasource has changed.
-func (client *client) DatasourceChanged(ctx context.Context, log logr.Logger, systemID string, dsID string) error {
+func (client *client) SystemDatasourceChanged(
+	ctx context.Context,
+	log logr.Logger,
+	systemID string,
+	dsID string) error {
+	if client.systemDatasourceChanged == "" {
+		return errors.New("systemDatasourceChanged webhook not configured")
+	}
 
 	body := map[string]string{"systemId": systemID, "datasourceId": dsID}
 	jsonData, err := json.Marshal(body)
@@ -59,7 +110,7 @@ func (client *client) DatasourceChanged(ctx context.Context, log logr.Logger, sy
 		return errors.Wrap(err, "Failed to marshal request body")
 	}
 
-	r, err := http.NewRequestWithContext(ctx, http.MethodPost, client.url, bytes.NewBuffer(jsonData))
+	r, err := http.NewRequestWithContext(ctx, http.MethodPost, client.systemDatasourceChanged, bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Error(err, "Failed to create request to webhook")
 		return errors.Wrap(err, "Failed to create request to webhook")
@@ -82,9 +133,9 @@ func (client *client) DatasourceChanged(ctx context.Context, log logr.Logger, sy
 			return errors.Errorf("Could not read response body")
 		}
 		bodyString := string(bodyBytes)
-		return errors.Errorf("response status code is %d, request body is %s", resp.StatusCode, bodyString)
+		return errors.Errorf("response status code is %d, response body is %s", resp.StatusCode, bodyString)
 	}
 
-	log.Info("Called webhook successfully")
+	log.Info("Called system webhook successfully")
 	return nil
 }

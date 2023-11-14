@@ -10,7 +10,9 @@ leaderElection:
   leaseDuration: "60s"
   renewDeadline: "30s"
   retryPeriod: "5s"
-#notificationWebhook:
+notificationWebhooks:
+  systemDatasourceChanged: google.com
+  libraryDatasourceChanged: test.dk
 #sentry:
 #sso:
 styra:
