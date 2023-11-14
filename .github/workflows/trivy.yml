@@ -51,12 +51,10 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM,LOW'          
           exit-code: '1'
-          format: 'table'
-          #format: 'sarif'
-          #output: 'trivy-results-image.sarif'
-      
-#      Enable upload when repo is public
-#      - name: Upload Trivy scan image results to GitHub Security tab
-#        uses: github/codeql-action/upload-sarif@v2
-#        with:
-#          sarif_file: 'trivy-results-image.sarif'
+          # format: 'table'
+          format: 'sarif'
+          output: 'trivy-results-image.sarif'
+      - name: Upload Trivy scan image results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results-image.sarif'
