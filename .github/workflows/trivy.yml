@@ -26,8 +26,8 @@ jobs:
     name: Trivy scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/cache@v3
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cache/go-build
@@ -39,9 +39,9 @@ jobs:
         with:
           path: ./bin/
           key: ${{ runner.os }}-binaries-${{ hashFiles('**/go.sum') }}
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
-          go-version: '>=1.19.0'
+          go-version: '>=1.21.3'
       - name: build
         run: make docker-build
       - uses: aquasecurity/trivy-action@master
@@ -51,12 +51,10 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM,LOW'          
           exit-code: '1'
-          format: 'table'
-          #format: 'sarif'
-          #output: 'trivy-results-image.sarif'
-      
-#      Enable upload when repo is public
-#      - name: Upload Trivy scan image results to GitHub Security tab
-#        uses: github/codeql-action/upload-sarif@v2
-#        with:
-#          sarif_file: 'trivy-results-image.sarif'
+          # format: 'table'
+          format: 'sarif'
+          output: 'trivy-results-image.sarif'
+      - name: Upload Trivy scan image results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results-image.sarif'
