@@ -741,7 +741,7 @@ func (r *SystemReconciler) reconcileDatasources(
 
 			if r.WebhookClient != nil {
 				log.Info("Calling datasource changed webhook")
-				if err := r.WebhookClient.DatasourceChanged(ctx, log, system.Status.ID, id); err != nil {
+				if err := r.WebhookClient.SystemDatasourceChanged(ctx, log, system.Status.ID, id); err != nil {
 					err = ctrlerr.Wrap(err, "Could not call datasource changed webhook").
 						WithEvent("ErrorCallWebhook").
 						WithSystemCondition(v1beta1.ConditionTypeDatasourcesUpdated)

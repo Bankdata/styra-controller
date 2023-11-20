@@ -33,7 +33,7 @@ import (
 
 var _ = ginkgo.Describe("LibraryReconciler.Reconcile", ginkgo.Label("integration"), func() {
 	ginkgo.It("reconciles Library", func() {
-		key := types.NamespacedName{Name: "uuidewtring", Namespace: "default"}
+		key := types.NamespacedName{Name: "uniquename", Namespace: "default"}
 		toCreate := &styrav1alpha1.Library{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      key.Name,
@@ -142,11 +142,10 @@ var _ = ginkgo.Describe("LibraryReconciler.Reconcile", ginkgo.Label("integration
 		}, nil).Once()
 
 		webhookMock.On(
-			"DatasourceChanged",
+			"LibraryDatasourceChanged",
 			mock.Anything,
 			mock.Anything,
-			"jwt-library",
-			"",
+			path.Join("libraries", key.Name, "oidc/sandbox"),
 		).Return(nil).Once()
 
 		styraClientMock.On("UpsertDatasource", mock.Anything, path.Join("libraries", key.Name, "oidc/sandbox/2"),
@@ -158,11 +157,10 @@ var _ = ginkgo.Describe("LibraryReconciler.Reconcile", ginkgo.Label("integration
 		}, nil).Once()
 
 		webhookMock.On(
-			"DatasourceChanged",
+			"LibraryDatasourceChanged",
 			mock.Anything,
 			mock.Anything,
-			"jwt-library",
-			"",
+			path.Join("libraries", key.Name, "oidc/sandbox/2"),
 		).Return(nil).Once()
 
 		// createUsersIfMissing:
@@ -294,7 +292,7 @@ var _ = ginkgo.Describe("LibraryReconciler.Reconcile", ginkgo.Label("integration
 
 			for _, call := range webhookMock.Calls {
 				switch call.Method {
-				case "DatasourceChanged":
+				case "LibraryDatasourceChanged":
 					datasourceChanged++
 				}
 			}

@@ -76,20 +76,22 @@ func (r *LibraryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	log.Info("Reconciling git credentials from default credentials")
-	gitCredential := r.Config.GetGitCredentialForRepo(k8sLib.Spec.SourceControl.LibraryOrigin.URL)
-	if gitCredential == nil {
-		log.Info("Could not find matching credentials", "url", k8sLib.Spec.SourceControl.LibraryOrigin.URL)
-	} else {
-		_, err := r.Styra.CreateUpdateSecret(
-			ctx,
-			path.Join("libraries", k8sLib.Spec.Name, "git"),
-			&styra.CreateUpdateSecretsRequest{
-				Name:   gitCredential.User,
-				Secret: gitCredential.Password,
-			},
-		)
-		if err != nil {
-			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not update Styra secret")
+	if k8sLib.Spec.SourceControl != nil {
+		gitCredential := r.Config.GetGitCredentialForRepo(k8sLib.Spec.SourceControl.LibraryOrigin.URL)
+		if gitCredential == nil {
+			log.Info("Could not find matching credentials", "url", k8sLib.Spec.SourceControl.LibraryOrigin.URL)
+		} else {
+			_, err := r.Styra.CreateUpdateSecret(
+				ctx,
+				path.Join("libraries", k8sLib.Spec.Name, "git"),
+				&styra.CreateUpdateSecretsRequest{
+					Name:   gitCredential.User,
+					Secret: gitCredential.Password,
+				},
+			)
+			if err != nil {
+				return ctrl.Result{}, ctrlerr.Wrap(err, "Could not update Styra secret")
+			}
 		}
 	}
 
@@ -138,20 +140,22 @@ func (r *LibraryReconciler) specToUpdate(k8sLib *styrav1alpha1.Library) *styra.U
 		return nil
 	}
 	specs := k8sLib.Spec
-	k8sSourceControl := specs.SourceControl.LibraryOrigin
-
-	sourceControl := styra.LibraryGitRepoConfig{
-		Commit:      k8sSourceControl.Commit,
-		Credentials: path.Join("libraries", specs.Name, "git"),
-		Path:        k8sSourceControl.Path,
-		Reference:   k8sSourceControl.Reference,
-		URL:         k8sSourceControl.URL,
+	req := styra.UpsertLibraryRequest{
+		Description: specs.Description,
+		ReadOnly:    true,
 	}
 
-	req := styra.UpsertLibraryRequest{
-		Description:   specs.Description,
-		ReadOnly:      true,
-		SourceControl: &styra.LibrarySourceControlConfig{LibraryOrigin: &sourceControl},
+	if specs.SourceControl != nil {
+		k8sSourceControl := specs.SourceControl.LibraryOrigin
+
+		sourceControl := styra.LibraryGitRepoConfig{
+			Commit:      k8sSourceControl.Commit,
+			Credentials: path.Join("libraries", specs.Name, "git"),
+			Path:        k8sSourceControl.Path,
+			Reference:   k8sSourceControl.Reference,
+			URL:         k8sSourceControl.URL,
+		}
+		req.SourceControl = &styra.LibrarySourceControlConfig{LibraryOrigin: &sourceControl}
 	}
 
 	return &req
@@ -171,8 +175,10 @@ func (r *LibraryReconciler) needsUpdate(k8sLib *styrav1alpha1.Library, styraLib 
 		return true
 	}
 
-	if styraLib.SourceControl.LibraryOrigin.Credentials != path.Join("libraries", k8sLib.Spec.Name, "git") {
-		if r.Config.GetGitCredentialForRepo(specs.SourceControl.LibraryOrigin.URL) != nil {
+	if styraLib.SourceControl != nil &&
+		styraLib.SourceControl.LibraryOrigin.Credentials != path.Join("libraries", k8sLib.Spec.Name, "git") {
+		if specs.SourceControl != nil &&
+			r.Config.GetGitCredentialForRepo(specs.SourceControl.LibraryOrigin.URL) != nil {
 			return true
 		}
 	}
@@ -181,6 +187,10 @@ func (r *LibraryReconciler) needsUpdate(k8sLib *styrav1alpha1.Library, styraLib 
 }
 
 func sameSourceControl(k8sLib *styrav1alpha1.SourceControl, styraLib *styra.LibrarySourceControlConfig) bool {
+	if k8sLib == nil || styraLib == nil {
+		return k8sLib == nil && styraLib == nil
+	}
+
 	return k8sLib.LibraryOrigin.Path == styraLib.LibraryOrigin.Path &&
 		k8sLib.LibraryOrigin.Reference == styraLib.LibraryOrigin.Reference &&
 		k8sLib.LibraryOrigin.Commit == styraLib.LibraryOrigin.Commit &&
@@ -225,7 +235,7 @@ func (r *LibraryReconciler) reconcileDatasources(ctx context.Context, log logr.L
 
 			if r.WebhookClient != nil {
 				log.Info("Calling library datasource changed webhook")
-				if err := r.WebhookClient.DatasourceChanged(ctx, log, "jwt-library", ""); err != nil {
+				if err := r.WebhookClient.LibraryDatasourceChanged(ctx, log, id); err != nil {
 					err = ctrlerr.Wrap(err, "could not call 'library datasource changed' webhook")
 					log.Error(err, err.Error())
 				}

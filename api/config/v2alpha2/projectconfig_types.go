@@ -60,7 +60,7 @@ type ProjectConfig struct {
 
 	LeaderElection *LeaderElectionConfig `json:"leaderElection"`
 
-	NotificationWebhook *NotificationWebhookConfig `json:"notificationWebhook"`
+	NotificationWebhooks *NotificationWebhooksConfig `json:"notificationWebhooks,omitempty"`
 
 	Sentry *SentryConfig `json:"sentry"`
 
@@ -116,13 +116,14 @@ type SentryConfig struct {
 	HTTPSProxy string `json:"httpsProxy"`
 }
 
-// NotificationWebhookConfig contains configuration for how to call the notification
+// NotificationWebhooksConfig contains configuration for how to call the notification
 // webhook.
-type NotificationWebhookConfig struct {
+type NotificationWebhooksConfig struct {
 	// Address is the URL to be called when the controller should do a webhook
 	// notification. Currently the only supported notification is that a
 	// datasource configuration has changed.
-	Address string `json:"address"`
+	SystemDatasourceChanged  string `json:"systemDatasourceChanged,omitempty"`
+	LibraryDatasourceChanged string `json:"libraryDatasourceChanged,omitempty"`
 }
 
 // SSOConfig contains configuration for how to use SSO tokens for determining
