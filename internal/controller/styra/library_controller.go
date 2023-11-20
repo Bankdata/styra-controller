@@ -272,7 +272,7 @@ func (r *LibraryReconciler) reconcileSubjects(
 	log logr.Logger,
 	k8sLib *styrav1alpha1.Library,
 ) (ctrl.Result, error) {
-	log.Info("Reconciling subjects for library")
+	log.Info("Reconciling subjects and rolebindings for library")
 
 	// Make sure all users already exist in Styra, otherwise create them
 	if err := r.createUsersIfMissing(ctx, log, k8sLib); err != nil {
@@ -326,7 +326,7 @@ func (r *LibraryReconciler) deleteIncorrectRoleBindings(
 	ctx context.Context,
 	log logr.Logger,
 	k8sLib *styrav1alpha1.Library) error {
-	log.Info("Deleting Rolebindings to roles that are not LibraryViewers")
+	log.Info("Checking for Rolebindings to roles that are not LibraryViewers")
 	res, err := r.Styra.ListRoleBindingsV2(ctx, &styra.ListRoleBindingsV2Params{
 		ResourceKind: styra.RoleBindingKindLibrary,
 		ResourceID:   k8sLib.Spec.Name,
@@ -337,6 +337,7 @@ func (r *LibraryReconciler) deleteIncorrectRoleBindings(
 
 	for _, styraRB := range res.Rolebindings {
 		if styraRB.RoleID != styra.Role("LibraryViewer") {
+			log.Info(fmt.Sprintf("Deleting Rolebinding to %s", styraRB.RoleID))
 			if _, err := r.Styra.DeleteRoleBindingV2(ctx, styraRB.ID); err != nil {
 				return err
 			}
