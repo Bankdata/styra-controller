@@ -18,7 +18,7 @@ require (
 	go.uber.org/zap v1.26.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.29.0-alpha.3
-	k8s.io/apimachinery v0.29.0-alpha.3
+	k8s.io/apimachinery v0.30.0-alpha.0
 	k8s.io/client-go v0.29.0-alpha.3
 	sigs.k8s.io/controller-runtime v0.16.2
 	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20230307042619-c304e7ec2ee7
