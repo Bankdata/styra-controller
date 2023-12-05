@@ -827,18 +827,6 @@ func (r *SystemReconciler) reconcileOPAToken(
 
 	update := false
 
-	// backwards compatibility: StyraSystem
-	if isControlledByStyraSystem(&s) {
-		log.Info("Secret owned by StyraSystem. Taking ownership.")
-		s.OwnerReferences = nil
-		if err := controllerutil.SetControllerReference(system, &s, r.Scheme); err != nil {
-			return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not set owner reference on Secret").
-				WithEvent("ErrorOwnerRefOPATokenSecret").
-				WithSystemCondition(v1beta1.ConditionTypeOPATokenUpdated)
-		}
-		update = true
-	}
-
 	if !metav1.IsControlledBy(&s, system) {
 		return ctrl.Result{}, false, ctrlerr.New("Existing secret is not owned by controller. Skipping update").
 			WithEvent("ErrorSecretNotOwnedByController").
@@ -863,16 +851,6 @@ func (r *SystemReconciler) reconcileOPAToken(
 
 	log.Info("Reconciled OPA token Secret")
 	return ctrl.Result{}, update, nil
-}
-
-// backwards compatibility: StyraSystem
-func isControlledByStyraSystem(o metav1.Object) bool {
-	for _, ref := range o.GetOwnerReferences() {
-		if ref.Kind == "StyraSystem" {
-			return true
-		}
-	}
-	return false
 }
 
 func (r *SystemReconciler) reconcileOPAConfigMap(
@@ -932,18 +910,6 @@ func (r *SystemReconciler) reconcileOPAConfigMap(
 	}
 
 	update := false
-
-	// backwards compatibility: StyraSystem
-	if isControlledByStyraSystem(&cm) {
-		log.Info("ConfigMap owned by StyraSystem. Taking ownership.")
-		cm.OwnerReferences = nil
-		if err := controllerutil.SetControllerReference(system, &cm, r.Scheme); err != nil {
-			return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not set owner reference on Secret").
-				WithEvent("ErrorOwnerRefOPATokenSecret").
-				WithSystemCondition(v1beta1.ConditionTypeOPATokenUpdated)
-		}
-		update = true
-	}
 
 	if !metav1.IsControlledBy(&cm, system) {
 		return ctrl.Result{}, false, ctrlerr.New("ConfigMap already exists and is not owned by controller").
@@ -1024,18 +990,6 @@ func (r *SystemReconciler) reconcileSLPConfigMap(
 	}
 
 	update := false
-
-	// backwards compatibility: StyraSystem
-	if isControlledByStyraSystem(&cm) {
-		log.Info("ConfigMap owned by StyraSystem. Taking ownership.")
-		cm.OwnerReferences = nil
-		if err := controllerutil.SetControllerReference(system, &cm, r.Scheme); err != nil {
-			return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not set owner reference on Secret").
-				WithEvent("ErrorOwnerRefOPATokenSecret").
-				WithSystemCondition(v1beta1.ConditionTypeOPATokenUpdated)
-		}
-		update = true
-	}
 
 	if !metav1.IsControlledBy(&cm, system) {
 		return ctrl.Result{}, false, ctrlerr.New("ConfigMap already exists and is not owned by controller").
@@ -1294,17 +1248,8 @@ func (r *SystemReconciler) findSecretOwners(ctx context.Context, secret client.O
 }
 
 func ownerIsSystem(owner metav1.OwnerReference) bool {
-	if owner.APIVersion != v1beta1.GroupVersion.String() &&
-		// backwards compatibility: StyraSystem
-		owner.APIVersion != "styra.bankdata.dk/v1alpha1" {
-		return false
-	}
-	if owner.Kind != "System" &&
-		// backwards compatibility: StyraSystem
-		owner.Kind != "StyraSystem" {
-		return false
-	}
-	return true
+	return owner.APIVersion == v1beta1.GroupVersion.String() &&
+		owner.Kind == "System"
 }
 
 // findSystemsForConfigMap detects if modified configmap is the configmap containing opa/slp config.

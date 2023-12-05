@@ -18,6 +18,10 @@ type Client struct {
 func (_m *Client) LibraryDatasourceChanged(_a0 context.Context, _a1 logr.Logger, _a2 string) error {
 	ret := _m.Called(_a0, _a1, _a2)
 
+	if len(ret) == 0 {
+		panic("no return value specified for LibraryDatasourceChanged")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, logr.Logger, string) error); ok {
 		r0 = rf(_a0, _a1, _a2)
@@ -31,6 +35,10 @@ func (_m *Client) LibraryDatasourceChanged(_a0 context.Context, _a1 logr.Logger,
 // SystemDatasourceChanged provides a mock function with given fields: _a0, _a1, _a2, _a3
 func (_m *Client) SystemDatasourceChanged(_a0 context.Context, _a1 logr.Logger, _a2 string, _a3 string) error {
 	ret := _m.Called(_a0, _a1, _a2, _a3)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SystemDatasourceChanged")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, logr.Logger, string, string) error); ok {
