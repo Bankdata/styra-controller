@@ -20,8 +20,6 @@ package config
 import (
 	"os"
 
-	v1 "github.com/bankdata/styra-controller/api/config/v1"
-	"github.com/bankdata/styra-controller/api/config/v2alpha1"
 	"github.com/bankdata/styra-controller/api/config/v2alpha2"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -92,18 +90,6 @@ func deserialize(data []byte, scheme *runtime.Scheme) (*v2alpha2.ProjectConfig, 
 		if _, _, err := decoder.Decode(data, nil, cfg); err != nil {
 			return nil, errors.Wrap(err, "could not decode into kind")
 		}
-	case v2alpha1.GroupVersion.Version:
-		var v2cfg v2alpha1.ProjectConfig
-		if _, _, err := decoder.Decode(data, nil, &v2cfg); err != nil {
-			return nil, errors.Wrap(err, "could not decode into kind")
-		}
-		cfg = v2cfg.ToV2Alpha2()
-	case v1.GroupVersion.Version:
-		var v1cfg v1.ProjectConfig
-		if _, _, err := decoder.Decode(data, nil, &v1cfg); err != nil {
-			return nil, errors.Wrap(err, "could not decode into kind")
-		}
-		cfg = v1cfg.ToV2Alpha1().ToV2Alpha2()
 	default:
 		return nil, errors.New("unsupported api version")
 	}
