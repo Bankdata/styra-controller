@@ -22,8 +22,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	v1 "github.com/bankdata/styra-controller/api/config/v1"
-	"github.com/bankdata/styra-controller/api/config/v2alpha1"
 	"github.com/bankdata/styra-controller/api/config/v2alpha2"
 )
 
@@ -31,10 +29,6 @@ var _ = ginkgo.DescribeTable("deserialize",
 	func(data []byte, expected *v2alpha2.ProjectConfig, shouldErr bool) {
 		scheme := runtime.NewScheme()
 		err := v2alpha2.AddToScheme(scheme)
-		gomega.Ω(err).ShouldNot(gomega.HaveOccurred())
-		err = v2alpha1.AddToScheme(scheme)
-		gomega.Ω(err).ShouldNot(gomega.HaveOccurred())
-		err = v1.AddToScheme(scheme)
 		gomega.Ω(err).ShouldNot(gomega.HaveOccurred())
 		actual, err := deserialize(data, scheme)
 		if shouldErr {
@@ -54,35 +48,6 @@ styra:
 `),
 		nil,
 		true,
-	),
-
-	ginkgo.Entry("can deserialize v1",
-		[]byte(`
-apiVersion: config.bankdata.dk/v1
-kind: ProjectConfig
-styraToken: my-token
-`),
-		&v2alpha2.ProjectConfig{
-			Styra: v2alpha2.StyraConfig{
-				Token: "my-token",
-			},
-		},
-		false,
-	),
-
-	ginkgo.Entry("can deserialize v2alpha1",
-		[]byte(`
-apiVersion: config.bankdata.dk/v2alpha1
-kind: ProjectConfig
-styra:
-  token: my-token
-`),
-		&v2alpha2.ProjectConfig{
-			Styra: v2alpha2.StyraConfig{
-				Token: "my-token",
-			},
-		},
-		false,
 	),
 
 	ginkgo.Entry("can deserialize v2alpha2",

@@ -40,8 +40,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 
-	configv1 "github.com/bankdata/styra-controller/api/config/v1"
-	configv2alpha1 "github.com/bankdata/styra-controller/api/config/v2alpha1"
 	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
 	styrav1alpha1 "github.com/bankdata/styra-controller/api/styra/v1alpha1"
 	styrav1beta1 "github.com/bankdata/styra-controller/api/styra/v1beta1"
@@ -68,9 +66,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(styrav1alpha1.AddToScheme(scheme))
-	utilruntime.Must(configv1.AddToScheme(scheme))
 	utilruntime.Must(styrav1beta1.AddToScheme(scheme))
-	utilruntime.Must(configv2alpha1.AddToScheme(scheme))
 	utilruntime.Must(configv2alpha2.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }

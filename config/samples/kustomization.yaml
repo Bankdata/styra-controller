@@ -1,10 +1,8 @@
 ## Append samples of your project ##
 resources:
-- config_v1_projectconfig.yaml
 - styra_v1beta1_system.yaml
 - styra_v1alpha1_globaldatasource.yaml
 - test_v1_object.yaml
-- config_v2alpha1_projectconfig.yaml
 - config_v2alpha2_projectconfig.yaml
 - styra_v1alpha1_library.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples
