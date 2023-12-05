@@ -18,6 +18,10 @@ type ClientInterface struct {
 func (_m *ClientInterface) CreateInvitation(ctx context.Context, email bool, name string) (*styra.CreateInvitationResponse, error) {
 	ret := _m.Called(ctx, email, name)
 
+	if len(ret) == 0 {
+		panic("no return value specified for CreateInvitation")
+	}
+
 	var r0 *styra.CreateInvitationResponse
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, bool, string) (*styra.CreateInvitationResponse, error)); ok {
@@ -43,6 +47,10 @@ func (_m *ClientInterface) CreateInvitation(ctx context.Context, email bool, nam
 // CreateRoleBinding provides a mock function with given fields: ctx, request
 func (_m *ClientInterface) CreateRoleBinding(ctx context.Context, request *styra.CreateRoleBindingRequest) (*styra.CreateRoleBindingResponse, error) {
 	ret := _m.Called(ctx, request)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateRoleBinding")
+	}
 
 	var r0 *styra.CreateRoleBindingResponse
 	var r1 error
@@ -70,6 +78,10 @@ func (_m *ClientInterface) CreateRoleBinding(ctx context.Context, request *styra
 func (_m *ClientInterface) CreateSystem(ctx context.Context, request *styra.CreateSystemRequest) (*styra.CreateSystemResponse, error) {
 	ret := _m.Called(ctx, request)
 
+	if len(ret) == 0 {
+		panic("no return value specified for CreateSystem")
+	}
+
 	var r0 *styra.CreateSystemResponse
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, *styra.CreateSystemRequest) (*styra.CreateSystemResponse, error)); ok {
@@ -95,6 +107,10 @@ func (_m *ClientInterface) CreateSystem(ctx context.Context, request *styra.Crea
 // CreateUpdateSecret provides a mock function with given fields: ctx, secretID, request
 func (_m *ClientInterface) CreateUpdateSecret(ctx context.Context, secretID string, request *styra.CreateUpdateSecretsRequest) (*styra.CreateUpdateSecretResponse, error) {
 	ret := _m.Called(ctx, secretID, request)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateUpdateSecret")
+	}
 
 	var r0 *styra.CreateUpdateSecretResponse
 	var r1 error
@@ -122,6 +138,10 @@ func (_m *ClientInterface) CreateUpdateSecret(ctx context.Context, secretID stri
 func (_m *ClientInterface) DeleteDatasource(ctx context.Context, id string) (*styra.DeleteDatasourceResponse, error) {
 	ret := _m.Called(ctx, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteDatasource")
+	}
+
 	var r0 *styra.DeleteDatasourceResponse
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*styra.DeleteDatasourceResponse, error)); ok {
@@ -147,6 +167,10 @@ func (_m *ClientInterface) DeleteDatasource(ctx context.Context, id string) (*st
 // DeletePolicy provides a mock function with given fields: ctx, policyName
 func (_m *ClientInterface) DeletePolicy(ctx context.Context, policyName string) (*styra.DeletePolicyResponse, error) {
 	ret := _m.Called(ctx, policyName)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeletePolicy")
+	}
 
 	var r0 *styra.DeletePolicyResponse
 	var r1 error
@@ -174,6 +198,10 @@ func (_m *ClientInterface) DeletePolicy(ctx context.Context, policyName string) 
 func (_m *ClientInterface) DeleteRoleBindingV2(ctx context.Context, id string) (*styra.DeleteRoleBindingV2Response, error) {
 	ret := _m.Called(ctx, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteRoleBindingV2")
+	}
+
 	var r0 *styra.DeleteRoleBindingV2Response
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*styra.DeleteRoleBindingV2Response, error)); ok {
@@ -199,6 +227,10 @@ func (_m *ClientInterface) DeleteRoleBindingV2(ctx context.Context, id string) (
 // DeleteSystem provides a mock function with given fields: ctx, id
 func (_m *ClientInterface) DeleteSystem(ctx context.Context, id string) (*styra.DeleteSystemResponse, error) {
 	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteSystem")
+	}
 
 	var r0 *styra.DeleteSystemResponse
 	var r1 error
@@ -226,6 +258,10 @@ func (_m *ClientInterface) DeleteSystem(ctx context.Context, id string) (*styra.
 func (_m *ClientInterface) GetDatasource(ctx context.Context, id string) (*styra.GetDatasourceResponse, error) {
 	ret := _m.Called(ctx, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetDatasource")
+	}
+
 	var r0 *styra.GetDatasourceResponse
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*styra.GetDatasourceResponse, error)); ok {
@@ -251,6 +287,10 @@ func (_m *ClientInterface) GetDatasource(ctx context.Context, id string) (*styra
 // GetLibrary provides a mock function with given fields: ctx, id
 func (_m *ClientInterface) GetLibrary(ctx context.Context, id string) (*styra.GetLibraryResponse, error) {
 	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLibrary")
+	}
 
 	var r0 *styra.GetLibraryResponse
 	var r1 error
@@ -278,6 +318,10 @@ func (_m *ClientInterface) GetLibrary(ctx context.Context, id string) (*styra.Ge
 func (_m *ClientInterface) GetOPAConfig(ctx context.Context, systemID string) (styra.OPAConfig, error) {
 	ret := _m.Called(ctx, systemID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetOPAConfig")
+	}
+
 	var r0 styra.OPAConfig
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (styra.OPAConfig, error)); ok {
@@ -301,6 +345,10 @@ func (_m *ClientInterface) GetOPAConfig(ctx context.Context, systemID string) (s
 // GetSystem provides a mock function with given fields: ctx, id
 func (_m *ClientInterface) GetSystem(ctx context.Context, id string) (*styra.GetSystemResponse, error) {
 	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetSystem")
+	}
 
 	var r0 *styra.GetSystemResponse
 	var r1 error
@@ -328,6 +376,10 @@ func (_m *ClientInterface) GetSystem(ctx context.Context, id string) (*styra.Get
 func (_m *ClientInterface) GetUser(ctx context.Context, name string) (*styra.GetUserResponse, error) {
 	ret := _m.Called(ctx, name)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetUser")
+	}
+
 	var r0 *styra.GetUserResponse
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*styra.GetUserResponse, error)); ok {
@@ -353,6 +405,10 @@ func (_m *ClientInterface) GetUser(ctx context.Context, name string) (*styra.Get
 // ListRoleBindingsV2 provides a mock function with given fields: ctx, params
 func (_m *ClientInterface) ListRoleBindingsV2(ctx context.Context, params *styra.ListRoleBindingsV2Params) (*styra.ListRoleBindingsV2Response, error) {
 	ret := _m.Called(ctx, params)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListRoleBindingsV2")
+	}
 
 	var r0 *styra.ListRoleBindingsV2Response
 	var r1 error
@@ -380,6 +436,10 @@ func (_m *ClientInterface) ListRoleBindingsV2(ctx context.Context, params *styra
 func (_m *ClientInterface) UpdateRoleBindingSubjects(ctx context.Context, id string, request *styra.UpdateRoleBindingSubjectsRequest) (*styra.UpdateRoleBindingSubjectsResponse, error) {
 	ret := _m.Called(ctx, id, request)
 
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateRoleBindingSubjects")
+	}
+
 	var r0 *styra.UpdateRoleBindingSubjectsResponse
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *styra.UpdateRoleBindingSubjectsRequest) (*styra.UpdateRoleBindingSubjectsResponse, error)); ok {
@@ -405,6 +465,10 @@ func (_m *ClientInterface) UpdateRoleBindingSubjects(ctx context.Context, id str
 // UpdateSystem provides a mock function with given fields: ctx, id, request
 func (_m *ClientInterface) UpdateSystem(ctx context.Context, id string, request *styra.UpdateSystemRequest) (*styra.UpdateSystemResponse, error) {
 	ret := _m.Called(ctx, id, request)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateSystem")
+	}
 
 	var r0 *styra.UpdateSystemResponse
 	var r1 error
@@ -432,6 +496,10 @@ func (_m *ClientInterface) UpdateSystem(ctx context.Context, id string, request 
 func (_m *ClientInterface) UpsertDatasource(ctx context.Context, id string, request *styra.UpsertDatasourceRequest) (*styra.UpsertDatasourceResponse, error) {
 	ret := _m.Called(ctx, id, request)
 
+	if len(ret) == 0 {
+		panic("no return value specified for UpsertDatasource")
+	}
+
 	var r0 *styra.UpsertDatasourceResponse
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *styra.UpsertDatasourceRequest) (*styra.UpsertDatasourceResponse, error)); ok {
@@ -458,6 +526,10 @@ func (_m *ClientInterface) UpsertDatasource(ctx context.Context, id string, requ
 func (_m *ClientInterface) UpsertLibrary(ctx context.Context, id string, request *styra.UpsertLibraryRequest) (*styra.UpsertLibraryResponse, error) {
 	ret := _m.Called(ctx, id, request)
 
+	if len(ret) == 0 {
+		panic("no return value specified for UpsertLibrary")
+	}
+
 	var r0 *styra.UpsertLibraryResponse
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *styra.UpsertLibraryRequest) (*styra.UpsertLibraryResponse, error)); ok {
@@ -483,6 +555,10 @@ func (_m *ClientInterface) UpsertLibrary(ctx context.Context, id string, request
 // VerifyGitConfiguration provides a mock function with given fields: ctx, request
 func (_m *ClientInterface) VerifyGitConfiguration(ctx context.Context, request *styra.VerfiyGitConfigRequest) (*styra.VerfiyGitConfigResponse, error) {
 	ret := _m.Called(ctx, request)
+
+	if len(ret) == 0 {
+		panic("no return value specified for VerifyGitConfiguration")
+	}
 
 	var r0 *styra.VerfiyGitConfigResponse
 	var r1 error
