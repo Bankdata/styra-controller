@@ -14,7 +14,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.18.0
 	github.com/stretchr/testify v1.8.4
-	github.com/vektra/mockery/v2 v2.38.0
+	github.com/vektra/mockery/v2 v2.39.1
 	go.uber.org/zap v1.26.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.30.0-alpha.0
@@ -132,7 +132,7 @@ require (
 	github.com/charmbracelet/lipgloss v0.9.1 // indirect
 	github.com/charmbracelet/x/exp/ordered v0.0.0-20231010190216-1cb11efc897d // indirect
 	github.com/chavacava/garif v0.1.0 // indirect
-	github.com/chigopher/pathlib v1.0.0 // indirect
+	github.com/chigopher/pathlib v0.19.1 // indirect
 	github.com/chrismellard/docker-credential-acr-env v0.0.0-20230304212654-82a0ddb27589 // indirect
 	github.com/cloudflare/circl v1.3.5 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
