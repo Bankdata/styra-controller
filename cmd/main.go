@@ -92,6 +92,14 @@ func main() {
 
 	log := ctrl.Log.WithName("setup")
 	logDebug := log.V(logLevelDebug)
+	restCfg := ctrl.GetConfigOrDie()
+
+	logDebug.Info(
+		"rest config details",
+		"timeout", restCfg.Timeout,
+		"host", restCfg.Host,
+		"apiPath", restCfg.APIPath,
+	)
 
 	ctrlConfig, err := config.Load(configFile, scheme)
 	if err != nil {
@@ -99,16 +107,18 @@ func main() {
 		exit(err)
 	}
 
-	options := config.OptionsFromConfig(ctrlConfig, scheme)
-	if err != nil {
-		log.Error(err, "could not load options from config")
-		exit(err)
-	}
-
 	ctrl.SetLogger(zap.New(
 		zap.UseDevMode(ctrlConfig.LogLevel >= logLevelDebug),
 		zap.Level(zapcore.Level(-ctrlConfig.LogLevel)),
 	))
+
+	styraToken, err1 := config.TokenFromConfig(ctrlConfig)
+	if err1 != nil {
+		log.Error(err1, "Unable to load styra token")
+		exit(err1)
+	}
+
+	options := config.OptionsFromConfig(ctrlConfig, scheme)
 
 	if ctrlConfig.Sentry != nil {
 		err := sentry.Init(sentry.ClientOptions{
@@ -125,15 +135,6 @@ func main() {
 		defer sentry.Flush(2 * time.Second)
 	}
 
-	restCfg := ctrl.GetConfigOrDie()
-
-	logDebug.Info(
-		"rest config details",
-		"timeout", restCfg.Timeout,
-		"host", restCfg.Host,
-		"apiPath", restCfg.APIPath,
-	)
-
 	mgr, err := ctrl.NewManager(restCfg, options)
 	if err != nil {
 		log.Error(err, "unable to start manager")
@@ -145,7 +146,7 @@ func main() {
 		roles[i] = styra.Role(role)
 	}
 
-	styraClient := styra.New(ctrlConfig.Styra.Address, ctrlConfig.Styra.Token)
+	styraClient := styra.New(ctrlConfig.Styra.Address, styraToken)
 
 	// System Controller
 	metric := prometheus.NewGaugeVec(
@@ -165,7 +166,7 @@ func main() {
 	r1 := &controllers.SystemReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
-		Styra:    styra.New(ctrlConfig.Styra.Address, ctrlConfig.Styra.Token),
+		Styra:    styra.New(ctrlConfig.Styra.Address, styraToken),
 		Recorder: mgr.GetEventRecorderFor("system-controller"),
 		Metric:   metric,
 		Config:   ctrlConfig,

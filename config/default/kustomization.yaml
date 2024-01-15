@@ -147,3 +147,6 @@ secretGenerator:
 - name: config
   files:
   - config.yaml
+- name: token
+  literals:
+  - styra_token=token

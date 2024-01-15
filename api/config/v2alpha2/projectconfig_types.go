@@ -98,6 +98,10 @@ type StyraConfig struct {
 	// Token is a Styra DAS API token. These can be created in the Styra DAS GUI
 	// or through the API. The token should have the `WorkspaceAdministrator` role.
 	Token string `json:"token"`
+
+	// Alternative to the "token" whice define the Styra DAS API token directly in the config file,
+	// this "tokenSecretPath" will use a token from a secret (only if "token" is not set)
+	TokenSecretPath string `json:"tokenSecretPath"`
 }
 
 // SentryConfig contains configuration for how errors should be reported to

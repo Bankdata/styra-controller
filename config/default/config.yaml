@@ -18,6 +18,7 @@ notificationWebhooks:
 styra:
   address: http://127.0.0.1:8080
   token: token
+#  tokenSecretPath: /etc/styra-controller-token/styra_token
 #systemPrefix:
 #systemSuffix:
 systemUserRoles:
