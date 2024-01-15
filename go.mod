@@ -22,7 +22,7 @@ require (
 	k8s.io/client-go v0.30.0-alpha.0
 	sigs.k8s.io/controller-runtime v0.16.2
 	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20230307042619-c304e7ec2ee7
-	sigs.k8s.io/controller-tools v0.13.0
+	sigs.k8s.io/controller-tools v0.14.0
 	sigs.k8s.io/kind v0.20.0
 	sigs.k8s.io/kustomize/kustomize/v5 v5.3.0
 )
@@ -162,7 +162,7 @@ require (
 	github.com/esimonov/ifshort v1.0.4 // indirect
 	github.com/ettle/strcase v0.1.1 // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
-	github.com/fatih/color v1.15.0 // indirect
+	github.com/fatih/color v1.16.0 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/firefart/nonamedreturns v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
@@ -280,7 +280,7 @@ require (
 	github.com/maratori/testpackage v1.1.1 // indirect
 	github.com/matoous/godox v0.0.0-20230222163458-006bad1f9d26 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.18 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-mastodon v0.0.6 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
@@ -424,8 +424,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.1.0 // indirect
 	honnef.co/go/tools v0.4.6 // indirect
-	k8s.io/apiextensions-apiserver v0.28.0 // indirect
-	k8s.io/component-base v0.28.1 // indirect
+	k8s.io/apiextensions-apiserver v0.29.0 // indirect
+	k8s.io/component-base v0.29.0 // indirect
 	k8s.io/gengo v0.0.0-20230829151522-9cce18d56c01 // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/klog/v2 v2.110.1 // indirect
