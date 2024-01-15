@@ -68,6 +68,8 @@ func OptionsFromConfig(cfg *v2alpha2.ProjectConfig, scheme *runtime.Scheme) mana
 	return o
 }
 
+// TokenFromConfig returns the Styra DAS api token directly from "styra.token"
+// in the config or using the "styra.tokenSecretPath" to retrieve it fra a secret
 func TokenFromConfig(cfg *v2alpha2.ProjectConfig) (string, error) {
 	if cfg.Styra.Token != "" {
 		return cfg.Styra.Token, nil
