@@ -13,7 +13,12 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /etc/styra-controller
+        - name: token
+          mountPath: /etc/styra-controller-token
       volumes:
       - name: config
         secret:
           secretName: config
+      - name: token
+        secret:
+          secretName: token

@@ -68,6 +68,24 @@ func OptionsFromConfig(cfg *v2alpha2.ProjectConfig, scheme *runtime.Scheme) mana
 	return o
 }
 
+// TokenFromConfig returns the Styra DAS api token directly from "styra.token"
+// in the config or using the "styra.tokenSecretPath" to retrieve it fra a secret
+func TokenFromConfig(cfg *v2alpha2.ProjectConfig) (string, error) {
+	if cfg.Styra.Token != "" {
+		return cfg.Styra.Token, nil
+	}
+
+	if cfg.Styra.TokenSecretPath != "" {
+		styraURLBytes, err := os.ReadFile(cfg.Styra.TokenSecretPath)
+		if err != nil {
+			return "", errors.Wrapf(err, "Could not ready Styra token from TokenSecretPath: %s", cfg.Styra.TokenSecretPath)
+		}
+		return string(styraURLBytes), nil
+	}
+
+	return "", errors.New("No token or tokenSecretPath defined in the config")
+}
+
 func deserialize(data []byte, scheme *runtime.Scheme) (*v2alpha2.ProjectConfig, error) {
 	decoder := serializer.NewCodecFactory(scheme).UniversalDeserializer()
 	_, gvk, err := decoder.Decode(data, nil, nil)

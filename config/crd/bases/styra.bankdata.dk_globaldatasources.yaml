@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.13.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: globaldatasources.styra.bankdata.dk
 spec:
   group: styra.bankdata.dk
@@ -17,20 +17,26 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: GlobalDatasource is a resource used for creating global datasources
-          in Styra. These datasources are available across systems and can be used
-          for shared data. GlobalDatasource can also be used to create libraries by
-          using the GlobalDatasourceCategoryGitRego category.
+        description: |-
+          GlobalDatasource is a resource used for creating global datasources in
+          Styra. These datasources are available across systems and can be used for
+          shared data. GlobalDatasource can also be used to create libraries by using
+          the GlobalDatasourceCategoryGitRego category.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -38,19 +44,22 @@ spec:
             description: GlobalDatasourceSpec is the specification of the GlobalDatasource.
             properties:
               category:
-                description: Category is the datasource category. For more information
-                  about supported categories see the available GlobalDatasourceCategory
+                description: |-
+                  Category is the datasource category. For more information about
+                  supported categories see the available GlobalDatasourceCategory
                   constants in the package.
                 enum:
                 - git/rego
                 type: string
               commit:
-                description: Commit is a commit SHA for the git/xx datasources. If
-                  `Reference` and this is set, this takes precedence.
+                description: |-
+                  Commit is a commit SHA for the git/xx datasources. If `Reference` and this
+                  is set, this takes precedence.
                 type: string
               credentialsSecretRef:
-                description: CredentialsSecretRef references a secret with keys `name`
-                  and `secret` which will be used for authentication.
+                description: |-
+                  CredentialsSecretRef references a secret with keys `name` and `secret`
+                  which will be used for authentication.
                 properties:
                   name:
                     description: Name is the name of the secret.
@@ -63,8 +72,9 @@ spec:
                 - namespace
                 type: object
               deletionProtection:
-                description: DeletionProtection skips deleting the datasource in Styra
-                  when the `GlobalDatasource` resource is deleted.
+                description: |-
+                  DeletionProtection skips deleting the datasource in Styra when the
+                  `GlobalDatasource` resource is deleted.
                 type: boolean
               description:
                 description: Description describes the datasource.
