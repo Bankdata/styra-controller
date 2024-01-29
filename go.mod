@@ -7,7 +7,7 @@ require (
 	github.com/getsentry/sentry-go v0.26.0
 	github.com/go-logr/logr v1.4.1
 	github.com/golangci/golangci-lint v1.55.2
-	github.com/google/uuid v1.5.0
+	github.com/google/uuid v1.6.0
 	github.com/goreleaser/goreleaser v1.23.0
 	github.com/onsi/ginkgo/v2 v2.15.0
 	github.com/onsi/gomega v1.31.1
