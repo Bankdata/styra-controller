@@ -1673,8 +1673,8 @@ k8s.io/apiextensions-apiserver v0.29.0 h1:0VuspFG7Hj+SxyF/Z/2T0uFbI5gb5LRgEyUVE3
 k8s.io/apiextensions-apiserver v0.29.0/go.mod h1:TKmpy3bTS0mr9pylH0nOt/QzQRrW7/h7yLdRForMZwc=
 k8s.io/apimachinery v0.30.0-alpha.1 h1:AAQ3jCL1jnVGUNCr0osDLaO62fJACPiR3vXyozvWKMY=
 k8s.io/apimachinery v0.30.0-alpha.1/go.mod h1:Oh3ZrffM1/I8O/43oAA+aoOYgSregIXHxcWJB9ZRfQ8=
-k8s.io/client-go v0.30.0-alpha.0 h1:TkmG2tycNX0/4xdxeJ9V8vGzwMwvyWEKTGwmYLTSkjs=
-k8s.io/client-go v0.30.0-alpha.0/go.mod h1:x33Sn0LXBXKBwltalZb7j9KCwv5DW17V8FjZwVu/0Fo=
+k8s.io/client-go v0.30.0-alpha.1 h1:vfj5uf6550wLMd0vasPs9u+FN9x0IajX77g2v8j/GYM=
+k8s.io/client-go v0.30.0-alpha.1/go.mod h1:CNAs/ypuyd2pvbIvz2YvcaTpTK0nM2JTclLVjjKb7Tw=
 k8s.io/component-base v0.29.0 h1:T7rjd5wvLnPBV1vC4zWd/iWRbV8Mdxs+nGaoaFzGw3s=
 k8s.io/component-base v0.29.0/go.mod h1:sADonFTQ9Zc9yFLghpDpmNXEdHyQmFIGbiuZbqAXQ1M=
 k8s.io/gengo v0.0.0-20201203183100-97869a43a9d9/go.mod h1:FiNAH4ZV3gBg2Kwh89tzAEV2be7d5xI0vBa/VySYy3E=
