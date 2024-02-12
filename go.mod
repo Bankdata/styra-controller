@@ -17,8 +17,8 @@ require (
 	github.com/vektra/mockery/v2 v2.40.1
 	go.uber.org/zap v1.26.0
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.30.0-alpha.0
-	k8s.io/apimachinery v0.30.0-alpha.0
+	k8s.io/api v0.30.0-alpha.1
+	k8s.io/apimachinery v0.30.0-alpha.1
 	k8s.io/client-go v0.30.0-alpha.0
 	sigs.k8s.io/controller-runtime v0.17.0
 	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20230307042619-c304e7ec2ee7
@@ -424,8 +424,8 @@ require (
 	k8s.io/component-base v0.29.0 // indirect
 	k8s.io/gengo v0.0.0-20230829151522-9cce18d56c01 // indirect
 	k8s.io/klog v1.0.0 // indirect
-	k8s.io/klog/v2 v2.110.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect
+	k8s.io/klog/v2 v2.120.1 // indirect
+	k8s.io/kube-openapi v0.0.0-20231113174909-778a5567bc1e // indirect
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b // indirect
 	mvdan.cc/gofumpt v0.5.0 // indirect
 	mvdan.cc/interfacer v0.0.0-20180901003855-c20040233aed // indirect
