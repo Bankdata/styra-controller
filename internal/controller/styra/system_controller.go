@@ -264,15 +264,25 @@ func (r *SystemReconciler) reconcile(
 			}
 		}
 	} else {
-		res, err := r.createSystem(ctx, log, system)
+		cfg, err = r.getSystemByName(ctx, log, system.Name)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		if err := r.deleteDefaultPolicies(ctx, log, res.SystemConfig.ID); err != nil {
-			return ctrl.Result{}, err
-		}
-		if err := r.reconcileID(ctx, log, system, res.SystemConfig.ID); err != nil {
-			return ctrl.Result{}, err
+		if cfg != nil {
+			if err := r.reconcileID(ctx, log, system, cfg.ID); err != nil {
+				return ctrl.Result{}, err
+			}
+		} else {
+			res, err := r.createSystem(ctx, log, system)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			if err := r.deleteDefaultPolicies(ctx, log, res.SystemConfig.ID); err != nil {
+				return ctrl.Result{}, err
+			}
+			if err := r.reconcileID(ctx, log, system, res.SystemConfig.ID); err != nil {
+				return ctrl.Result{}, err
+			}
 		}
 	}
 
@@ -362,6 +372,24 @@ func (r *SystemReconciler) getSystem(
 	}
 
 	log.Info("Fetched system from Styra API")
+	return res.SystemConfig, nil
+}
+
+func (r *SystemReconciler) getSystemByName(
+	ctx context.Context,
+	log logr.Logger,
+	name string,
+) (*styra.SystemConfig, error) {
+	log.Info(fmt.Sprintf("Fetching system %v from Styra API if it exists", name))
+
+	res, err := r.Styra.GetSystemByName(ctx, name)
+	if err != nil {
+		return nil, ctrlerr.Wrap(err, "Could not fetch system from Styra API").
+			WithEvent("ErrorFetchSystemFromStyra")
+	}
+	if res.SystemConfig == nil {
+		log.Info(fmt.Sprintf("Fetched system %v from Styra API", name))
+	}
 	return res.SystemConfig, nil
 }
 
