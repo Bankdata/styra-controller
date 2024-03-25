@@ -193,6 +193,8 @@ func (c *Client) GetSystem(ctx context.Context, id string) (*GetSystemResponse, 
 	return &r, nil
 }
 
+// GetSystemByName calls the GET /v1/systems?name=<name> endpoint in the Styra API. If a system exists with this
+// name it will be returned in the response. Otherwise, r.SystemConfig will be nil.
 func (c *Client) GetSystemByName(ctx context.Context, name string) (*GetSystemResponse, error) {
 	res, err := c.request(ctx, http.MethodGet, fmt.Sprintf("%s?name=%s", endpointV1Systems, name), nil)
 	if err != nil {

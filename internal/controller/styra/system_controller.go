@@ -264,7 +264,9 @@ func (r *SystemReconciler) reconcile(
 			}
 		}
 	} else {
-		cfg, err = r.getSystemByName(ctx, log, system.Name)
+		displayName := system.DisplayName(r.Config.SystemPrefix, r.Config.SystemSuffix)
+
+		cfg, err = r.getSystemByName(ctx, log, displayName)
 		if err != nil {
 			return ctrl.Result{}, err
 		}

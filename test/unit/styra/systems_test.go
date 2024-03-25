@@ -31,7 +31,10 @@ func TestGetSystemByName(t *testing.T) {
 		// Test request parameters
 		assert.Equal(t, req.URL.String(), "/v1/systems?name=test")
 		// Send response to be tested
-		rw.Write([]byte(`{"result": []}`))
+		_, err := rw.Write([]byte(`{"result": []}`))
+		if err != nil {
+			t.Fatal(err)
+		}
 	}))
 	// Close the server when test finishes
 	defer server.Close()
@@ -57,12 +60,15 @@ func TestGetSystemByNameOneExists(t *testing.T) {
 		// Test request parameters
 		assert.Equal(t, req.URL.String(), "/v1/systems?name=test")
 		// Send response to be tested
-		rw.Write([]byte(`{"result": [
+		_, err := rw.Write([]byte(`{"result": [
 			{
 				"name": "test", 
 				"id": "abc123"
 			}
 		]}`))
+		if err != nil {
+			t.Fatal(err)
+		}
 	}))
 	// Close the server when test finishes
 	defer server.Close()
@@ -89,7 +95,7 @@ func TestGetSystemByNameMoreExist(t *testing.T) {
 		// Test request parameters
 		assert.Equal(t, req.URL.String(), "/v1/systems?name=test")
 		// Send response to be tested
-		rw.Write([]byte(`{"result": [
+		_, err := rw.Write([]byte(`{"result": [
 			{
 				"name": "test", 
 				"id": "abc123"
@@ -100,6 +106,9 @@ func TestGetSystemByNameMoreExist(t *testing.T) {
 				"id": "def456"
 			}
 		]}`))
+		if err != nil {
+			t.Fatal(err)
+		}
 	}))
 	// Close the server when test finishes
 	defer server.Close()
@@ -120,4 +129,3 @@ func TestGetSystemByNameMoreExist(t *testing.T) {
 	assert.Equal(t, "test", resp.SystemConfig.Name)
 	assert.Equal(t, "abc123", resp.SystemConfig.ID)
 }
-
