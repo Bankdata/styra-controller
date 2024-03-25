@@ -45,7 +45,7 @@ func NewHTTPError(statuscode int, body string) error {
 	}
 
 	if err := yaml.Unmarshal([]byte(body), &err); err != nil {
-		return errors.Wrap(err, "could not unmarshal error body")
+		return errors.Wrap(err, "could not unmarshal error body: "+body)
 	}
 
 	return errors.WithStack(err)

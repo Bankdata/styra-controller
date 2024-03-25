@@ -193,6 +193,43 @@ func (c *Client) GetSystem(ctx context.Context, id string) (*GetSystemResponse, 
 	return &r, nil
 }
 
+// GetSystemByName calls the GET /v1/systems?name=<name> endpoint in the Styra API. If a system exists with this
+// name it will be returned in the response. Otherwise, r.SystemConfig will be nil.
+func (c *Client) GetSystemByName(ctx context.Context, name string) (*GetSystemResponse, error) {
+	res, err := c.request(ctx, http.MethodGet, fmt.Sprintf("%s?name=%s", endpointV1Systems, name), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not read body")
+	}
+
+	if res.StatusCode != http.StatusOK {
+		err := NewHTTPError(res.StatusCode, string(body))
+		return nil, err
+	}
+
+	r := GetSystemResponse{
+		StatusCode: res.StatusCode,
+		Body:       body,
+	}
+
+	var js struct {
+		Result []SystemConfig
+	}
+	if err := json.Unmarshal(r.Body, &js); err != nil {
+		return nil, errors.Wrap(err, "could not unmarshal body")
+	}
+
+	if len(js.Result) > 0 {
+		r.SystemConfig = &js.Result[0]
+	}
+
+	return &r, nil
+}
+
 // CreateSystem calls the POST /v1/systems endpoint in the Styra API.
 func (c *Client) CreateSystem(ctx context.Context, request *CreateSystemRequest) (*CreateSystemResponse, error) {
 	res, err := c.request(ctx, http.MethodPost, endpointV1Systems, request)
@@ -218,7 +255,7 @@ func (c *Client) CreateSystem(ctx context.Context, request *CreateSystemRequest)
 	if r.StatusCode == http.StatusOK {
 		var js getSystemJSONResponse
 		if err := json.Unmarshal(r.Body, &js); err != nil {
-			return nil, errors.Wrap(err, "could not unmarshal body")
+			return nil, errors.Wrap(err, fmt.Sprintf("could not unmarshal body, %v", string(r.Body)))
 		}
 		r.SystemConfig = js.Result
 	}
