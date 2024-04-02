@@ -7,6 +7,7 @@ The custom resources managed by the styra-controller are:
 
 * `System`
 * `GlobalDatasource`
+* `Library`
 
 ## System  
 
@@ -104,3 +105,40 @@ controller also supports default credentials which will be used if the
 `credentialsSecretName` field is left empty. Read more about this in the
 [controller configuration
 documentation](configuration.md#default-git-credentials).
+
+## Library
+
+The `Library` custom resource definition (CRD) declaratively defines a desired library 
+in Styra DAS. It provides options for configuring the name of the library, a 
+description of it, permissions, git settings, and datasources.
+
+```yaml
+apiVersion: styra.bankdata.dk/v1alpha1
+kind: Library
+metadata:
+  name: my-library
+spec:
+  name: mylibrary
+  description: my library
+  sourceControl:
+    libraryOrigin:
+      url: https://github.com/Bankdata/styra-controller.git
+      reference: refs/heads/master
+      commit: f37cc9d87251921cbe49349235d9b5305c833769
+      path: rego/path
+  datasources:
+    - path: seconds/datasource
+      description: this is the second datasource 
+  subjects:
+    - kind: user
+      name: user1@mail.dk
+    - kind: group
+      name: mygroup
+```
+
+The content of the library is what is found in the folder `<path>/libraries/<library-name>`. 
+There is therefore a high coupling between the library name and the path to the library in 
+the git repository. The library name is also used as the name of the library in Styra DAS.
+With the above example, the content of the library would be the files found at 
+`https://github.com/Bankdata/styra-controller/tree/master/rego/path/libraries/mylibrary` 
+together with the datasource.

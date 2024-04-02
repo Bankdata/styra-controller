@@ -39,6 +39,7 @@ resource definitions (CRDs).
 - `System`, which defines a Styra DAS system configuration, its datasources and
   users with access.
 - `GlobalDatasource`, which defines a global datasource resource in Styra DAS.
+- `Library`, which defines a Library resource in Styra DAS.
 
 For more information about these resources see the 
 [design document](docs/design.md) 
@@ -56,8 +57,7 @@ The styra-controller is a rather new project made to accomodate the needs we
 have in Bankdata. This means that the feature set currently has some
 limitations. The following is a few of the most important ones.
 
-- Only supported datasource category for `GlobalDatasource` is `git/rego`
-- Only supported datasource category for datasources added to systems is `rest`
+- Only supported datasource category for datasources added to systems is `JSON`
 - Git ssh auth is not supported
 - Only supported system type is `custom`
 - Stacks are currently unsupported

@@ -76,10 +76,12 @@ lint: golangci-lint ## Run linters
 
 .PHONY: test
 test: ginkgo manifests generate lint envtest generate-mocks ## Run all tests.
+	go test ./pkg/...
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r --output-interceptor-mode=none
 
 .PHONY: test-unit
 test-unit: ginkgo manifests generate lint generate-mocks ## Run unit tests.
+	go test ./pkg/...
 	$(GINKGO) -r --label-filter "!integration" --output-interceptor-mode=none
 
 .PHONY: test-integration ## Run integration tests.
