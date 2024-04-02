@@ -58,6 +58,11 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"
 
 		ginkgo.By("Creating the system")
 
+		styraClientMock.On("GetSystemByName", mock.Anything, key.String()).Return(&styra.GetSystemResponse{
+			StatusCode:   http.StatusOK,
+			SystemConfig: nil,
+		}, nil).Once()
+
 		styraClientMock.On("CreateSystem", mock.Anything, mock.Anything).Return(&styra.CreateSystemResponse{
 			StatusCode: http.StatusOK,
 			SystemConfig: &styra.SystemConfig{
@@ -210,6 +215,7 @@ discovery:
 		gomega.Eventually(func() bool {
 			var (
 				getSystem          int
+				getSystemByName    int
 				createSystem       int
 				deletePolicy       int
 				rolebindingsListed int
@@ -222,6 +228,8 @@ discovery:
 					getSystem++
 				case "CreateSystem":
 					createSystem++
+				case "GetSystemByName":
+					getSystemByName++
 				case "DeletePolicy":
 					deletePolicy++
 				case "ListRoleBindingsV2":
@@ -233,6 +241,7 @@ discovery:
 				}
 			}
 			return getSystem == 2 &&
+				getSystemByName == 1 &&
 				createSystem == 1 &&
 				deletePolicy == 2 &&
 				rolebindingsListed == 3 &&
@@ -1207,6 +1216,115 @@ discovery:
 			fetched := &styrav1beta1.System{}
 			err := k8sClient.Get(ctx, key, fetched)
 			return k8serrors.IsNotFound(err)
+		}, timeout, interval).Should(gomega.BeTrue())
+
+		resetMock(&styraClientMock.Mock)
+
+		key2 := types.NamespacedName{
+			Name:      "test2",
+			Namespace: "default",
+		}
+
+		toCreate2 := &styrav1beta1.System{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      key2.Name,
+				Namespace: key2.Namespace,
+			},
+			Spec: spec,
+		}
+
+		ginkgo.By("Connecting to an existing Styra System")
+
+		cfg := &styra.SystemConfig{
+			ID:   "system_id",
+			Name: key2.String(),
+		}
+
+		styraClientMock.On("GetSystemByName", mock.Anything, key2.String()).Return(&styra.GetSystemResponse{
+			StatusCode:   http.StatusOK,
+			SystemConfig: cfg,
+		}, nil).Once()
+
+		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
+			ResourceKind: styra.RoleBindingKindSystem,
+			ResourceID:   "system_id",
+		}).Return(&styra.ListRoleBindingsV2Response{
+			StatusCode:   http.StatusOK,
+			Rolebindings: []*styra.RoleBindingConfig{{ID: "1", RoleID: styra.RoleSystemViewer}},
+		}, nil).Once()
+
+		styraClientMock.On("GetOPAConfig", mock.Anything, "system_id").Return(styra.OPAConfig{
+			HostURL:    "styra-url-123",
+			SystemID:   "system_id",
+			Token:      "opa-token-123",
+			SystemType: "custom",
+		}, nil)
+
+		styraClientMock.On("GetSystem", mock.Anything, "system_id").Return(
+			&styra.GetSystemResponse{
+				StatusCode: http.StatusOK,
+				SystemConfig: &styra.SystemConfig{
+					ID:   "system_id",
+					Name: key2.String(),
+				},
+			}, nil)
+
+		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
+			ResourceKind: styra.RoleBindingKindSystem,
+			ResourceID:   "system_id",
+		}).Return(&styra.ListRoleBindingsV2Response{
+			StatusCode:   http.StatusOK,
+			Rolebindings: []*styra.RoleBindingConfig{{ID: "1", RoleID: styra.RoleSystemViewer}},
+		}, nil)
+
+		gomega.Expect(k8sClient.Create(ctx, toCreate2)).To(gomega.Succeed())
+
+		gomega.Eventually(func() bool {
+			var (
+				getSystem          int
+				getSystemByName    int
+				createSystem       int
+				deletePolicy       int
+				listRolebindingsV2 int
+				createRoleBinding  int
+				getOPAConfig       int
+			)
+			for _, call := range styraClientMock.Calls {
+				switch call.Method {
+				case "GetSystem":
+					getSystem++
+				case "CreateSystem":
+					createSystem++
+				case "GetSystemByName":
+					getSystemByName++
+				case "DeletePolicy":
+					deletePolicy++
+				case "ListRoleBindingsV2":
+					listRolebindingsV2++
+				case "CreateRoleBinding":
+					createRoleBinding++
+				case "GetOPAConfig":
+					getOPAConfig++
+				}
+			}
+			return getSystem == 2 &&
+				getSystemByName == 1 &&
+				createSystem == 0 &&
+				deletePolicy == 0 &&
+				listRolebindingsV2 == 3 &&
+				createRoleBinding == 0 &&
+				getOPAConfig == 3
+		}, timeout, interval).Should(gomega.BeTrue())
+
+		gomega.Eventually(func() bool {
+			fetched := &styrav1beta1.System{}
+			if err := k8sClient.Get(ctx, key2, fetched); err != nil {
+				return false
+			}
+			return finalizer.IsSet(fetched) &&
+				fetched.Status.ID == "system_id" &&
+				fetched.Status.Phase == styrav1beta1.SystemPhaseCreated &&
+				fetched.Status.Ready
 		}, timeout, interval).Should(gomega.BeTrue())
 
 		resetMock(&styraClientMock.Mock)

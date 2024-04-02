@@ -29,6 +29,7 @@ import (
 // ClientInterface defines the interface for the Styra client.
 type ClientInterface interface {
 	GetSystem(ctx context.Context, id string) (*GetSystemResponse, error)
+	GetSystemByName(ctx context.Context, name string) (*GetSystemResponse, error)
 
 	CreateUpdateSecret(
 		ctx context.Context,
