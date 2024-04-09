@@ -1,6 +1,8 @@
 module github.com/bankdata/styra-controller
 
-go 1.21.3
+go 1.22.0
+
+toolchain go1.22.1
 
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
@@ -14,11 +16,11 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.19.0
 	github.com/stretchr/testify v1.9.0
-	github.com/vektra/mockery/v2 v2.40.3
+	github.com/vektra/mockery/v2 v2.42.2
 	go.uber.org/zap v1.27.0
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.30.0-alpha.3
-	k8s.io/apimachinery v0.30.0-alpha.3
+	k8s.io/api v0.31.0-alpha.0
+	k8s.io/apimachinery v0.31.0-alpha.0
 	k8s.io/client-go v0.30.0-alpha.0
 	sigs.k8s.io/controller-runtime v0.17.2
 	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20230307042619-c304e7ec2ee7
@@ -428,7 +430,7 @@ require (
 	k8s.io/gengo v0.0.0-20230829151522-9cce18d56c01 // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/klog/v2 v2.120.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20231113174909-778a5567bc1e // indirect
+	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b // indirect
 	mvdan.cc/gofumpt v0.6.0 // indirect
 	mvdan.cc/unparam v0.0.0-20240104100049-c549a3470d14 // indirect
