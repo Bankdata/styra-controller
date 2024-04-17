@@ -20,7 +20,7 @@ require (
 	go.uber.org/zap v1.27.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.29.3
-	k8s.io/apimachinery v0.29.3
+	k8s.io/apimachinery v0.29.4
 	k8s.io/client-go v0.29.3
 	sigs.k8s.io/controller-runtime v0.17.3
 	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20230307042619-c304e7ec2ee7
@@ -398,7 +398,7 @@ require (
 	golang.org/x/exp v0.0.0-20240103183307-be819d1f06fc // indirect
 	golang.org/x/exp/typeparams v0.0.0-20240314144324-c7f7c6466f7f // indirect
 	golang.org/x/mod v0.16.0 // indirect
-	golang.org/x/net v0.22.0 // indirect
+	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/oauth2 v0.18.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
