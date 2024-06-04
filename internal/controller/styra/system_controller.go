@@ -92,6 +92,8 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, errors.Wrap(err, "unable to fetch System")
 	}
 
+	log = log.WithValues("systemID", system.Status.ID)
+
 	if !labels.ControllerClassMatches(&system, r.Config.ControllerClass) {
 		log.Info("This is not a System we are managing. Skipping reconciliation.")
 		r.deleteMetric(req)
