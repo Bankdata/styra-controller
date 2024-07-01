@@ -1087,7 +1087,7 @@ func (r *SystemReconciler) specToSystemConfig(system *v1beta1.System) *styra.Sys
 	cfg := &styra.SystemConfig{
 		Name:     system.DisplayName(r.Config.SystemPrefix, r.Config.SystemSuffix),
 		Type:     "custom",
-		ReadOnly: true,
+		ReadOnly: r.Config.ReadOnly,
 	}
 
 	if len(system.Spec.DecisionMappings) > 0 {
@@ -1153,6 +1153,11 @@ func (r *SystemReconciler) specToSystemConfig(system *v1beta1.System) *styra.Sys
 func (r *SystemReconciler) systemNeedsUpdate(log logr.Logger, system *v1beta1.System, cfg *styra.SystemConfig) bool {
 	if cfg == nil {
 		log.Info("System needs update: cfg is nil")
+		return true
+	}
+
+	if cfg.ReadOnly != r.Config.ReadOnly {
+		log.Info("System needs update: read only is not equal")
 		return true
 	}
 
