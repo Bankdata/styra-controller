@@ -3,6 +3,7 @@ kind: ProjectConfig
 #controllerClass:
 #deletionProtectionDefault:
 #disableCRDWebhooks:
+readOnly: true
 enableMigrations: false
 #gitCredentials:
 logLevel: 0

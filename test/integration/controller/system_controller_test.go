@@ -54,6 +54,12 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"
 			Spec: spec,
 		}
 
+		cfg := &styra.SystemConfig{
+			ID:       "system_id",
+			Name:     key.String(),
+			ReadOnly: true,
+		}
+
 		ctx := context.Background()
 
 		ginkgo.By("Creating the system")
@@ -64,21 +70,18 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"
 		}, nil).Once()
 
 		styraClientMock.On("CreateSystem", mock.Anything, mock.Anything).Return(&styra.CreateSystemResponse{
-			StatusCode: http.StatusOK,
-			SystemConfig: &styra.SystemConfig{
-				ID:   "default_test",
-				Name: key.String(),
-			},
+			StatusCode:   http.StatusOK,
+			SystemConfig: cfg,
 		}, nil).Once()
 
-		styraClientMock.On("DeletePolicy", mock.Anything, "systems/default_test/rules").Return(&styra.DeletePolicyResponse{
+		styraClientMock.On("DeletePolicy", mock.Anything, "systems/system_id/rules").Return(&styra.DeletePolicyResponse{
 			StatusCode: http.StatusOK,
 		}, nil).Once()
-		styraClientMock.On("DeletePolicy", mock.Anything, "systems/default_test/test").Return(&styra.DeletePolicyResponse{
+		styraClientMock.On("DeletePolicy", mock.Anything, "systems/system_id/test").Return(&styra.DeletePolicyResponse{
 			StatusCode: http.StatusOK,
 		}, nil).Once()
 
-		styraClientMock.On("UpdateSystem", mock.Anything, "default_test", &styra.UpdateSystemRequest{
+		styraClientMock.On("UpdateSystem", mock.Anything, "system_id", &styra.UpdateSystemRequest{
 			SystemConfig: &styra.SystemConfig{
 				Name:     key.String(),
 				Type:     "custom",
@@ -90,20 +93,20 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"
 				Name:     key.String(),
 				Type:     "custom",
 				ReadOnly: true,
-				ID:       "default_test",
+				ID:       "system_id",
 			},
 		}, nil).Once()
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
-			ResourceID:   "default_test",
+			ResourceID:   "system_id",
 		}).Return(&styra.ListRoleBindingsV2Response{
 			StatusCode: http.StatusOK,
 		}, nil).Once()
 
 		styraClientMock.On("CreateRoleBinding", mock.Anything, &styra.CreateRoleBindingRequest{
 			ResourceFilter: &styra.ResourceFilter{
-				ID:   "default_test",
+				ID:   "system_id",
 				Kind: styra.RoleBindingKindSystem,
 			},
 			RoleID:   styra.RoleSystemViewer,
@@ -112,59 +115,60 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"
 			StatusCode: http.StatusOK,
 		}, nil).Once()
 
-		styraClientMock.On("GetOPAConfig", mock.Anything, "default_test").Return(styra.OPAConfig{
+		styraClientMock.On("GetOPAConfig", mock.Anything, "system_id").Return(styra.OPAConfig{
 			HostURL:    "styra-url-123",
-			SystemID:   "default_test",
+			SystemID:   "system_id",
 			Token:      "opa-token-123",
 			SystemType: "custom",
 		}, nil).Once()
 
 		// new reconcile as we create opatoken secret that we are watching
-		styraClientMock.On("GetSystem", mock.Anything, "default_test").Return(
+		styraClientMock.On("GetSystem", mock.Anything, "system_id").Return(
 			&styra.GetSystemResponse{
 				StatusCode: http.StatusOK,
 				SystemConfig: &styra.SystemConfig{
-					ID:   "default_test",
-					Name: key.String(),
+					ID:       "system_id",
+					Name:     key.String(),
+					ReadOnly: true,
 				},
 			}, nil).Once()
-
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
-			ResourceID:   "default_test",
+			ResourceID:   "system_id",
 		}).Return(&styra.ListRoleBindingsV2Response{
 			StatusCode:   http.StatusOK,
 			Rolebindings: []*styra.RoleBindingConfig{{ID: "1", RoleID: styra.RoleSystemViewer}},
 		}, nil).Once()
 
-		styraClientMock.On("GetOPAConfig", mock.Anything, "default_test").Return(styra.OPAConfig{
+		styraClientMock.On("GetOPAConfig", mock.Anything, "system_id").Return(styra.OPAConfig{
 			HostURL:    "styra-url-123",
-			SystemID:   "default_test",
+			SystemID:   "system_id",
 			Token:      "opa-token-123",
 			SystemType: "custom",
 		}, nil).Once()
 
 		// new reconcile as we create opa configmap that we are watching
-		styraClientMock.On("GetSystem", mock.Anything, "default_test").Return(
+		styraClientMock.On("GetSystem", mock.Anything, "system_id").Return(
 			&styra.GetSystemResponse{
 				StatusCode: http.StatusOK,
 				SystemConfig: &styra.SystemConfig{
-					ID:   "default_test",
-					Name: key.String(),
+					ID:       "system_id",
+					Name:     key.String(),
+					ReadOnly: true,
 				},
 			}, nil).Once()
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
-			ResourceID:   "default_test",
+			ResourceID:   "system_id",
 		}).Return(&styra.ListRoleBindingsV2Response{
 			StatusCode:   http.StatusOK,
 			Rolebindings: []*styra.RoleBindingConfig{{ID: "1", RoleID: styra.RoleSystemViewer}},
 		}, nil).Once()
 
-		styraClientMock.On("GetOPAConfig", mock.Anything, "default_test").Return(styra.OPAConfig{
+		styraClientMock.On("GetOPAConfig", mock.Anything, "system_id").Return(styra.OPAConfig{
 			HostURL:    "styra-url-123",
-			SystemID:   "default_test",
+			SystemID:   "system_id",
 			Token:      "opa-token-123",
 			SystemType: "custom",
 		}, nil).Once()
@@ -203,11 +207,11 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"
     bearer:
       token_path: /etc/opa/auth/token
 labels:
-  system-id: default_test
+  system-id: system_id
   system-type: custom
 discovery:
   name: discovery
-  prefix: /systems/default_test
+  prefix: /systems/system_id
   service: styra
 `
 		}, timeout, interval).Should(gomega.BeTrue())
@@ -260,7 +264,7 @@ discovery:
 			Name: "default_local_plane",
 		}
 
-		styraClientMock.On("GetSystem", mock.Anything, "default_test").Return(
+		styraClientMock.On("GetSystem", mock.Anything, "system_id").Return(
 			&styra.GetSystemResponse{
 				StatusCode: http.StatusOK,
 				SystemConfig: &styra.SystemConfig{
@@ -272,22 +276,22 @@ discovery:
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
-			ResourceID:   "default_test",
+			ResourceID:   "system_id",
 		}).Return(&styra.ListRoleBindingsV2Response{
 			StatusCode:   http.StatusOK,
 			Rolebindings: []*styra.RoleBindingConfig{{ID: "1", RoleID: styra.RoleSystemViewer}},
 		}, nil).Once()
 
-		styraClientMock.On("GetOPAConfig", mock.Anything, "default_test").Return(styra.OPAConfig{
+		styraClientMock.On("GetOPAConfig", mock.Anything, "system_id").Return(styra.OPAConfig{
 			HostURL:    "styra-url-123",
-			SystemID:   "default_test",
+			SystemID:   "system_id",
 			Token:      "opa-token-123",
 			SystemType: "custom",
 		}, nil).Once()
 
 		// new reconcile as we create opa configmap that we watch
 
-		styraClientMock.On("GetSystem", mock.Anything, "default_test").Return(
+		styraClientMock.On("GetSystem", mock.Anything, "system_id").Return(
 			&styra.GetSystemResponse{
 				StatusCode: http.StatusOK,
 				SystemConfig: &styra.SystemConfig{
@@ -299,22 +303,22 @@ discovery:
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
-			ResourceID:   "default_test",
+			ResourceID:   "system_id",
 		}).Return(&styra.ListRoleBindingsV2Response{
 			StatusCode:   http.StatusOK,
 			Rolebindings: []*styra.RoleBindingConfig{{ID: "1", RoleID: styra.RoleSystemViewer}},
 		}, nil).Once()
 
-		styraClientMock.On("GetOPAConfig", mock.Anything, "default_test").Return(styra.OPAConfig{
+		styraClientMock.On("GetOPAConfig", mock.Anything, "system_id").Return(styra.OPAConfig{
 			HostURL:    "styra-url-123",
-			SystemID:   "default_test",
+			SystemID:   "system_id",
 			Token:      "opa-token-123",
 			SystemType: "custom",
 		}, nil).Once()
 
 		// new reconcile as we create slp configmap that we watch
 
-		styraClientMock.On("GetSystem", mock.Anything, "default_test").Return(
+		styraClientMock.On("GetSystem", mock.Anything, "system_id").Return(
 			&styra.GetSystemResponse{
 				StatusCode: http.StatusOK,
 				SystemConfig: &styra.SystemConfig{
@@ -326,15 +330,15 @@ discovery:
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
-			ResourceID:   "default_test",
+			ResourceID:   "system_id",
 		}).Return(&styra.ListRoleBindingsV2Response{
 			StatusCode:   http.StatusOK,
 			Rolebindings: []*styra.RoleBindingConfig{{ID: "1", RoleID: styra.RoleSystemViewer}},
 		}, nil).Once()
 
-		styraClientMock.On("GetOPAConfig", mock.Anything, "default_test").Return(styra.OPAConfig{
+		styraClientMock.On("GetOPAConfig", mock.Anything, "system_id").Return(styra.OPAConfig{
 			HostURL:    "styra-url-123",
-			SystemID:   "default_test",
+			SystemID:   "system_id",
 			Token:      "opa-token-123",
 			SystemType: "custom",
 		}, nil).Once()
@@ -350,7 +354,7 @@ discovery:
 - name: styra
   url: http://default_local_plane/v1
 labels:
-  system-id: default_test
+  system-id: system_id
   system-type: custom
 discovery:
   name: discovery
@@ -371,11 +375,11 @@ discovery:
     bearer:
       token_path: /etc/slp/auth/token
 labels:
-  system-id: default_test
+  system-id: system_id
   system-type: custom
 discovery:
   name: discovery
-  resource: /systems/default_test/discovery
+  resource: /systems/system_id/discovery
   service: styra
 `
 			return fetchSuceeded && fetched.Data["slp.yaml"] == expectedConfigMapContent
@@ -430,7 +434,7 @@ discovery:
 			},
 		}
 
-		styraClientMock.On("GetSystem", mock.Anything, "default_test").Return(
+		styraClientMock.On("GetSystem", mock.Anything, "system_id").Return(
 			&styra.GetSystemResponse{
 				StatusCode: http.StatusOK,
 				SystemConfig: &styra.SystemConfig{
@@ -440,7 +444,7 @@ discovery:
 				},
 			}, nil).Once()
 
-		styraClientMock.On("UpdateSystem", mock.Anything, "default_test", &styra.UpdateSystemRequest{
+		styraClientMock.On("UpdateSystem", mock.Anything, "system_id", &styra.UpdateSystemRequest{
 			SystemConfig: &styra.SystemConfig{
 				Name:     key.String(),
 				Type:     "custom",
@@ -464,7 +468,7 @@ discovery:
 		}).Return(&styra.UpdateSystemResponse{
 			StatusCode: http.StatusOK,
 			SystemConfig: &styra.SystemConfig{
-				ID:   "default_test",
+				ID:   "system_id",
 				Name: key.String(),
 				DecisionMappings: map[string]styra.DecisionMapping{
 					"": {},
@@ -486,15 +490,15 @@ discovery:
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
-			ResourceID:   "default_test",
+			ResourceID:   "system_id",
 		}).Return(&styra.ListRoleBindingsV2Response{
 			StatusCode:   http.StatusOK,
 			Rolebindings: []*styra.RoleBindingConfig{{ID: "1", RoleID: styra.RoleSystemViewer}},
 		}, nil).Once()
 
-		styraClientMock.On("GetOPAConfig", mock.Anything, "default_test").Return(styra.OPAConfig{
+		styraClientMock.On("GetOPAConfig", mock.Anything, "system_id").Return(styra.OPAConfig{
 			HostURL:    "styra-url-123",
-			SystemID:   "default_test",
+			SystemID:   "system_id",
 			Token:      "opa-token-123",
 			SystemType: "custom",
 		}, nil).Once()
@@ -538,11 +542,12 @@ discovery:
 			{Kind: styrav1beta1.SubjectKindUser, Name: "test2@test.com"},
 		}
 
-		styraClientMock.On("GetSystem", mock.Anything, "default_test").Return(&styra.GetSystemResponse{
+		styraClientMock.On("GetSystem", mock.Anything, "system_id").Return(&styra.GetSystemResponse{
 			StatusCode: http.StatusOK,
 			SystemConfig: &styra.SystemConfig{
-				ID:   "default_test",
-				Name: key.String(),
+				ID:       "system_id",
+				Name:     key.String(),
+				ReadOnly: true,
 				DecisionMappings: map[string]styra.DecisionMapping{
 					"": {},
 					"test": {
@@ -579,7 +584,7 @@ discovery:
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
-			ResourceID:   "default_test",
+			ResourceID:   "system_id",
 		}).Return(&styra.ListRoleBindingsV2Response{
 			StatusCode:   http.StatusOK,
 			Rolebindings: []*styra.RoleBindingConfig{{ID: "1", RoleID: styra.RoleSystemViewer}},
@@ -594,9 +599,9 @@ discovery:
 			StatusCode: http.StatusOK,
 		}, nil).Once()
 
-		styraClientMock.On("GetOPAConfig", mock.Anything, "default_test").Return(styra.OPAConfig{
+		styraClientMock.On("GetOPAConfig", mock.Anything, "system_id").Return(styra.OPAConfig{
 			HostURL:    "styra-url-123",
-			SystemID:   "default_test",
+			SystemID:   "system_id",
 			Token:      "opa-token-123",
 			SystemType: "custom",
 		}, nil).Once()
@@ -648,11 +653,12 @@ discovery:
 			{Kind: styrav1beta1.SubjectKindGroup, Name: "Group2"},
 		}
 
-		styraClientMock.On("GetSystem", mock.Anything, "default_test").Return(&styra.GetSystemResponse{
+		styraClientMock.On("GetSystem", mock.Anything, "system_id").Return(&styra.GetSystemResponse{
 			StatusCode: http.StatusOK,
 			SystemConfig: &styra.SystemConfig{
-				ID:   "default_test",
-				Name: key.String(),
+				ID:       "system_id",
+				Name:     key.String(),
+				ReadOnly: true,
 				DecisionMappings: map[string]styra.DecisionMapping{
 					"": {},
 					"test": {
@@ -681,7 +687,7 @@ discovery:
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
-			ResourceID:   "default_test",
+			ResourceID:   "system_id",
 		}).Return(&styra.ListRoleBindingsV2Response{
 			StatusCode: http.StatusOK,
 			Rolebindings: []*styra.RoleBindingConfig{{ID: "1", RoleID: styra.RoleSystemViewer,
@@ -708,9 +714,9 @@ discovery:
 			StatusCode: http.StatusOK,
 		}, nil).Once()
 
-		styraClientMock.On("GetOPAConfig", mock.Anything, "default_test").Return(styra.OPAConfig{
+		styraClientMock.On("GetOPAConfig", mock.Anything, "system_id").Return(styra.OPAConfig{
 			HostURL:    "styra-url-123",
-			SystemID:   "default_test",
+			SystemID:   "system_id",
 			Token:      "opa-token-123",
 			SystemType: "custom",
 		}, nil).Once()
@@ -754,11 +760,12 @@ discovery:
 
 		toUpdate.Spec.Subjects = []styrav1beta1.Subject{}
 
-		styraClientMock.On("GetSystem", mock.Anything, "default_test").Return(&styra.GetSystemResponse{
+		styraClientMock.On("GetSystem", mock.Anything, "system_id").Return(&styra.GetSystemResponse{
 			StatusCode: http.StatusOK,
 			SystemConfig: &styra.SystemConfig{
-				ID:   "default_test",
-				Name: key.String(),
+				ID:       "system_id",
+				Name:     key.String(),
+				ReadOnly: true,
 				DecisionMappings: map[string]styra.DecisionMapping{
 					"": {},
 					"test": {
@@ -779,7 +786,7 @@ discovery:
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
-			ResourceID:   "default_test",
+			ResourceID:   "system_id",
 		}).Return(&styra.ListRoleBindingsV2Response{
 			Rolebindings: []*styra.RoleBindingConfig{
 				{
@@ -827,9 +834,9 @@ discovery:
 			StatusCode: http.StatusOK,
 		}, nil).Once()
 
-		styraClientMock.On("GetOPAConfig", mock.Anything, "default_test").Return(styra.OPAConfig{
+		styraClientMock.On("GetOPAConfig", mock.Anything, "system_id").Return(styra.OPAConfig{
 			HostURL:    "styra-url-123",
-			SystemID:   "default_test",
+			SystemID:   "system_id",
 			Token:      "opa-token-123",
 			SystemType: "custom",
 		}, nil).Once()
@@ -870,12 +877,13 @@ discovery:
 
 		toUpdate.Spec.Datasources = []styrav1beta1.Datasource{{Path: "test"}}
 
-		styraClientMock.On("GetSystem", mock.Anything, "default_test").Return(
+		styraClientMock.On("GetSystem", mock.Anything, "system_id").Return(
 			&styra.GetSystemResponse{
 				StatusCode: http.StatusOK,
 				SystemConfig: &styra.SystemConfig{
-					ID:   "default_test",
-					Name: key.String(),
+					ID:       "system_id",
+					Name:     key.String(),
+					ReadOnly: true,
 					DecisionMappings: map[string]styra.DecisionMapping{
 						"": {},
 						"test": {
@@ -896,15 +904,15 @@ discovery:
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
-			ResourceID:   "default_test",
+			ResourceID:   "system_id",
 		}).Return(&styra.ListRoleBindingsV2Response{
 			StatusCode:   http.StatusOK,
 			Rolebindings: []*styra.RoleBindingConfig{{ID: "1", RoleID: styra.RoleSystemViewer}},
 		}, nil).Once()
 
-		styraClientMock.On("GetOPAConfig", mock.Anything, "default_test").Return(styra.OPAConfig{
+		styraClientMock.On("GetOPAConfig", mock.Anything, "system_id").Return(styra.OPAConfig{
 			HostURL:    "styra-url-123",
-			SystemID:   "default_test",
+			SystemID:   "system_id",
 			Token:      "opa-token-123",
 			SystemType: "custom",
 		}, nil).Once()
@@ -912,7 +920,7 @@ discovery:
 		styraClientMock.On(
 			"UpsertDatasource",
 			mock.Anything,
-			fmt.Sprintf("systems/%s/%s", "default_test", "test"),
+			fmt.Sprintf("systems/%s/%s", "system_id", "test"),
 			&styra.UpsertDatasourceRequest{Category: "rest"},
 		).Return(&styra.UpsertDatasourceResponse{
 			StatusCode: http.StatusOK,
@@ -922,8 +930,8 @@ discovery:
 			"SystemDatasourceChanged",
 			mock.Anything,
 			mock.Anything,
-			"default_test",
-			"systems/default_test/test",
+			"system_id",
+			"systems/system_id/test",
 		).Return(nil).Once()
 
 		gomega.Expect(k8sClient.Update(ctx, toUpdate)).To(gomega.Succeed())
@@ -987,11 +995,12 @@ discovery:
 			},
 		}
 
-		styraClientMock.On("GetSystem", mock.Anything, "default_test").Return(&styra.GetSystemResponse{
+		styraClientMock.On("GetSystem", mock.Anything, "system_id").Return(&styra.GetSystemResponse{
 			StatusCode: http.StatusOK,
 			SystemConfig: &styra.SystemConfig{
-				ID:   "default_test",
-				Name: key.String(),
+				ID:       "system_id",
+				Name:     key.String(),
+				ReadOnly: true,
 				DecisionMappings: map[string]styra.DecisionMapping{
 					"": {},
 					"test": {
@@ -1012,21 +1021,21 @@ discovery:
 				},
 				Datasources: []*styra.DatasourceConfig{
 					{
-						ID:       "systems/default_test/test",
+						ID:       "systems/system_id/test",
 						Category: "rest",
 					},
 				},
 			},
 		}, nil).Once()
 
-		styraClientMock.On("CreateUpdateSecret", mock.Anything, "systems/default_test/git", &styra.CreateUpdateSecretsRequest{
+		styraClientMock.On("CreateUpdateSecret", mock.Anything, "systems/system_id/git", &styra.CreateUpdateSecretsRequest{
 			Name:   "git-user",
 			Secret: "git-password",
 		}).Return(&styra.CreateUpdateSecretResponse{
 			StatusCode: http.StatusOK,
 		}, nil).Once()
 
-		styraClientMock.On("UpdateSystem", mock.Anything, "default_test", &styra.UpdateSystemRequest{
+		styraClientMock.On("UpdateSystem", mock.Anything, "system_id", &styra.UpdateSystemRequest{
 			SystemConfig: &styra.SystemConfig{
 				Name:     key.String(),
 				ReadOnly: true,
@@ -1051,14 +1060,14 @@ discovery:
 				},
 				SourceControl: &styra.SourceControlConfig{
 					Origin: styra.GitRepoConfig{
-						Credentials: "systems/default_test/git",
+						Credentials: "systems/system_id/git",
 					},
 				},
 			},
 		}).Return(&styra.UpdateSystemResponse{
 			StatusCode: http.StatusOK,
 			SystemConfig: &styra.SystemConfig{
-				ID:       "default_test",
+				ID:       "system_id",
 				Name:     key.String(),
 				ReadOnly: true,
 				Type:     "custom",
@@ -1082,12 +1091,12 @@ discovery:
 				},
 				SourceControl: &styra.SourceControlConfig{
 					Origin: styra.GitRepoConfig{
-						Credentials: "systems/default_test/git",
+						Credentials: "systems/system_id/git",
 					},
 				},
 				Datasources: []*styra.DatasourceConfig{
 					{
-						ID:       "systems/default_test/test",
+						ID:       "systems/system_id/test",
 						Category: "rest",
 					},
 				},
@@ -1096,15 +1105,15 @@ discovery:
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
-			ResourceID:   "default_test",
+			ResourceID:   "system_id",
 		}).Return(&styra.ListRoleBindingsV2Response{
 			StatusCode:   http.StatusOK,
 			Rolebindings: []*styra.RoleBindingConfig{{ID: "1", RoleID: styra.RoleSystemViewer}},
 		}, nil).Once()
 
-		styraClientMock.On("GetOPAConfig", mock.Anything, "default_test").Return(styra.OPAConfig{
+		styraClientMock.On("GetOPAConfig", mock.Anything, "system_id").Return(styra.OPAConfig{
 			HostURL:    "styra-url-123",
-			SystemID:   "default_test",
+			SystemID:   "system_id",
 			Token:      "opa-token-123",
 			SystemType: "custom",
 		}, nil).Once()
@@ -1206,7 +1215,7 @@ discovery:
 
 		ginkgo.By("Deleting the system")
 
-		styraClientMock.On("DeleteSystem", mock.Anything, "default_test").Return(&styra.DeleteSystemResponse{
+		styraClientMock.On("DeleteSystem", mock.Anything, "system_id").Return(&styra.DeleteSystemResponse{
 			StatusCode: http.StatusOK,
 		}, nil)
 
@@ -1219,6 +1228,8 @@ discovery:
 		}, timeout, interval).Should(gomega.BeTrue())
 
 		resetMock(&styraClientMock.Mock)
+
+		ginkgo.By("Connecting to an existing Styra System by name")
 
 		key2 := types.NamespacedName{
 			Name:      "test2",
@@ -1233,45 +1244,45 @@ discovery:
 			Spec: spec,
 		}
 
-		ginkgo.By("Connecting to an existing Styra System")
-
-		cfg := &styra.SystemConfig{
-			ID:   "system_id",
-			Name: key2.String(),
+		cfg2 := &styra.SystemConfig{
+			ID:       "system_id2",
+			Name:     key2.String(),
+			ReadOnly: true,
 		}
 
 		styraClientMock.On("GetSystemByName", mock.Anything, key2.String()).Return(&styra.GetSystemResponse{
 			StatusCode:   http.StatusOK,
-			SystemConfig: cfg,
+			SystemConfig: cfg2,
 		}, nil).Once()
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
-			ResourceID:   "system_id",
+			ResourceID:   "system_id2",
 		}).Return(&styra.ListRoleBindingsV2Response{
 			StatusCode:   http.StatusOK,
 			Rolebindings: []*styra.RoleBindingConfig{{ID: "1", RoleID: styra.RoleSystemViewer}},
 		}, nil).Once()
 
-		styraClientMock.On("GetOPAConfig", mock.Anything, "system_id").Return(styra.OPAConfig{
+		styraClientMock.On("GetOPAConfig", mock.Anything, "system_id2").Return(styra.OPAConfig{
 			HostURL:    "styra-url-123",
-			SystemID:   "system_id",
+			SystemID:   "system_id2",
 			Token:      "opa-token-123",
 			SystemType: "custom",
 		}, nil)
 
-		styraClientMock.On("GetSystem", mock.Anything, "system_id").Return(
+		styraClientMock.On("GetSystem", mock.Anything, "system_id2").Return(
 			&styra.GetSystemResponse{
 				StatusCode: http.StatusOK,
 				SystemConfig: &styra.SystemConfig{
-					ID:   "system_id",
-					Name: key2.String(),
+					ID:       "system_id2",
+					Name:     key2.String(),
+					ReadOnly: true,
 				},
 			}, nil)
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
-			ResourceID:   "system_id",
+			ResourceID:   "system_id2",
 		}).Return(&styra.ListRoleBindingsV2Response{
 			StatusCode:   http.StatusOK,
 			Rolebindings: []*styra.RoleBindingConfig{{ID: "1", RoleID: styra.RoleSystemViewer}},
@@ -1322,7 +1333,136 @@ discovery:
 				return false
 			}
 			return finalizer.IsSet(fetched) &&
-				fetched.Status.ID == "system_id" &&
+				fetched.Status.ID == "system_id2" &&
+				fetched.Status.Phase == styrav1beta1.SystemPhaseCreated &&
+				fetched.Status.Ready
+		}, timeout, interval).Should(gomega.BeTrue())
+
+		resetMock(&styraClientMock.Mock)
+
+		// Create new system, which was not ReadOnly, so it gets updated
+
+		ginkgo.By("Changing ReadOnly flag in system")
+
+		key3 := types.NamespacedName{
+			Name:      "test3",
+			Namespace: "default",
+		}
+
+		// system v1beta1
+		toCreate3 := &styrav1beta1.System{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      key3.Name,
+				Namespace: key3.Namespace,
+			},
+			Spec: spec,
+		}
+
+		cfg3 := &styra.SystemConfig{
+			ID:       "system_id3",
+			Name:     key3.String(),
+			ReadOnly: false,
+		}
+
+		styraClientMock.On("GetSystemByName", mock.Anything, key3.String()).Return(&styra.GetSystemResponse{
+			StatusCode:   http.StatusOK,
+			SystemConfig: cfg3,
+		}, nil).Once()
+
+		styraClientMock.On("UpdateSystem", mock.Anything, "system_id3", &styra.UpdateSystemRequest{
+			SystemConfig: &styra.SystemConfig{
+				Name:     key3.String(),
+				ReadOnly: true,
+				Type:     "custom",
+			},
+		}).Return(&styra.UpdateSystemResponse{
+			StatusCode: http.StatusOK,
+			SystemConfig: &styra.SystemConfig{
+				ID:       cfg3.ID,
+				Name:     key3.String(),
+				ReadOnly: true,
+			},
+		}, nil).Once()
+
+		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
+			ResourceKind: styra.RoleBindingKindSystem,
+			ResourceID:   "system_id3",
+		}).Return(&styra.ListRoleBindingsV2Response{
+			StatusCode:   http.StatusOK,
+			Rolebindings: []*styra.RoleBindingConfig{{ID: "1", RoleID: styra.RoleSystemViewer}},
+		}, nil).Once()
+
+		styraClientMock.On("GetOPAConfig", mock.Anything, "system_id3").Return(styra.OPAConfig{
+			HostURL:    "styra-url-123",
+			SystemID:   "system_id3",
+			Token:      "opa-token-123",
+			SystemType: "custom",
+		}, nil)
+
+		styraClientMock.On("GetSystem", mock.Anything, "system_id3").Return(
+			&styra.GetSystemResponse{
+				StatusCode: http.StatusOK,
+				SystemConfig: &styra.SystemConfig{
+					ID:       "system_id3",
+					Name:     key3.String(),
+					ReadOnly: true,
+				},
+			}, nil)
+
+		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
+			ResourceKind: styra.RoleBindingKindSystem,
+			ResourceID:   "system_id3",
+		}).Return(&styra.ListRoleBindingsV2Response{
+			StatusCode:   http.StatusOK,
+			Rolebindings: []*styra.RoleBindingConfig{{ID: "1", RoleID: styra.RoleSystemViewer}},
+		}, nil)
+
+		gomega.Expect(k8sClient.Create(ctx, toCreate3)).To(gomega.Succeed())
+		gomega.Eventually(func() bool {
+			var (
+				getSystem          int
+				getSystemByName    int
+				createSystem       int
+				deletePolicy       int
+				listRolebindingsV2 int
+				createRoleBinding  int
+				getOPAConfig       int
+			)
+			for _, call := range styraClientMock.Calls {
+				switch call.Method {
+				case "GetSystem":
+					getSystem++
+				case "CreateSystem":
+					createSystem++
+				case "GetSystemByName":
+					getSystemByName++
+				case "DeletePolicy":
+					deletePolicy++
+				case "ListRoleBindingsV2":
+					listRolebindingsV2++
+				case "CreateRoleBinding":
+					createRoleBinding++
+				case "GetOPAConfig":
+					getOPAConfig++
+				}
+			}
+			return getSystem == 2 &&
+				getSystemByName == 1 &&
+				createSystem == 0 &&
+				deletePolicy == 0 &&
+				listRolebindingsV2 == 3 &&
+				createRoleBinding == 0 &&
+				getOPAConfig == 3
+		}, timeout, interval).Should(gomega.BeTrue())
+
+		gomega.Eventually(func() bool {
+			fetched := &styrav1beta1.System{}
+
+			if err := k8sClient.Get(ctx, key3, fetched); err != nil {
+				return false
+			}
+			return finalizer.IsSet(fetched) &&
+				fetched.Status.ID == "system_id3" &&
 				fetched.Status.Phase == styrav1beta1.SystemPhaseCreated &&
 				fetched.Status.Ready
 		}, timeout, interval).Should(gomega.BeTrue())

@@ -1,8 +1,6 @@
 module github.com/bankdata/styra-controller
 
-go 1.22.0
-
-toolchain go1.22.1
+go 1.22.5
 
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0

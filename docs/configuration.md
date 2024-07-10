@@ -3,6 +3,7 @@ This document describes the different configuration options for the Styra Contro
 
 * `controllerClass`         
 * `deletionProtectionDefault`
+* `readOnly`
 * `disableCRDWebhooks`
 * `enableMigrations`
 * `gitCredentials`
@@ -93,6 +94,9 @@ The controller can be configured to add a prefix and a suffix to the Systems nam
 
 ## Delete Protection
 Custom Resources can have delete protection, means that they will not be deleted by the controller in Styra. The default can be configured by setting `deletionProtectionDefault`.
+
+## Read Only
+Styra Systems can be read-only, meaning they cannot be changed in the Styra GUI. This can be configured by setting `readOnly`.
 
 ## EnableMigrations
 An annotation that allows configuring Systems in Kubernetes to link to a specific system in Styra. The ID that the system in Kubernetes should link to is configured by setting `styra-contoller/migration-id: [styra system id]` annotation on Kubernetes system resource. Should only be set while migrating. 

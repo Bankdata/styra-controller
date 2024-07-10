@@ -96,8 +96,7 @@ available targets.
 The Makefile has targets for building and deploying the controller to a
 Kubernetes cluster.
 
-1. Set desired docker image name using the IMG environment variable: `export
-   IMG=docker-image-name`. This will be used across make targets that refer to
+1. Set desired docker image name using the IMG environment variable: `export IMG=docker-image-name`. This will be used across make targets that refer to
    image names.
 2. Build the controller docker image: `make docker-build`
 3. Push the controller docker image: `make docker-push`

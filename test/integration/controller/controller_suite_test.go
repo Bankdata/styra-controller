@@ -122,6 +122,7 @@ var _ = ginkgo.BeforeSuite(func() {
 				IdentityProvider: "AzureAD Bankdata",
 				JWTGroupsClaim:   "groups",
 			},
+			ReadOnly: true,
 		},
 	}
 
