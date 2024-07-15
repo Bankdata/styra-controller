@@ -198,6 +198,9 @@ spec:
                 required:
                 - status
                 type: object
+              enableDeltaBundles:
+                description: EnableDeltaBundles decides whether DeltaBundles are enabled
+                type: boolean
               localPlane:
                 description: |-
                   LocalPlane specifies how the Styra Local Plane should be configured. This is

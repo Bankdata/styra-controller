@@ -39,6 +39,7 @@ spec:
       reason:
         path: result.reasons
   deletionProtection: true
+  enableDeltaBundles: true
   localPlane:
     name: styra-local-plane-example
   sourceControl:

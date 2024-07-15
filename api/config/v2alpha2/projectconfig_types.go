@@ -38,8 +38,11 @@ type ProjectConfig struct {
 	// protection if it is not set on the resource.
 	DeletionProtectionDefault bool `json:"deletionProtectionDefault"`
 
-	// ReadOnly sets the default values of ReadOnly for systems
+	// ReadOnly sets the value of ReadOnly for systems
 	ReadOnly bool `json:"readOnly"`
+
+	// EnableDeltaBundlesDefault sets the default of whether systems have delta-bundles or not
+	EnableDeltaBundlesDefault *bool `json:"enableDeltaBundlesDefault,omitempty"`
 
 	// DisableCRDWebhooks disables the CRD webhooks on the controller. If running
 	// multiple controllers in the same cluster, only one will need to have it's
