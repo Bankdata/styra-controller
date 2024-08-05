@@ -3,6 +3,7 @@ This document describes the different configuration options for the Styra Contro
 
 * `controllerClass`         
 * `deletionProtectionDefault`
+* `enableDeltaBundlesDefault`
 * `readOnly`
 * `disableCRDWebhooks`
 * `enableMigrations`
@@ -93,7 +94,12 @@ Only one controller per cluster should have webhooks (default and validating) en
 The controller can be configured to add a prefix and a suffix to the Systems names when created in Styra. This is achieved by setting `systemPrefix` and `systemSuffix`. 
 
 ## Delete Protection
-Custom Resources can have delete protection, means that they will not be deleted by the controller in Styra. The default can be configured by setting `deletionProtectionDefault`.
+Custom Resources can have delete protection, which means that they will not be deleted by the controller in Styra. The default can be configured by setting `deletionProtectionDefault`.
+
+## Delta Bundles
+Styra Systems can have enable Delta Bundles, which means Styra will upload the change between two bundles to the SLP/OPA rather than uploading the entire bundle. 
+The default can be configured by setting `enableDeltaBundlesDefault`.
+This is recommended to be set to true if all opas are version 0.44.0 or higher.
 
 ## Read Only
 Styra Systems can be read-only, meaning they cannot be changed in the Styra GUI. This can be configured by setting `readOnly`.

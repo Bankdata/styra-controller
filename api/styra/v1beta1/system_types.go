@@ -29,6 +29,9 @@ type SystemSpec struct {
 	// System resource is deleted.
 	DeletionProtection *bool `json:"deletionProtection,omitempty"`
 
+	// EnableDeltaBundles decides whether DeltaBundles are enabled
+	EnableDeltaBundles *bool `json:"enableDeltaBundles,omitempty"`
+
 	// Subjects is the list of subjects which should have access to the system.
 	Subjects []Subject `json:"subjects,omitempty"`
 

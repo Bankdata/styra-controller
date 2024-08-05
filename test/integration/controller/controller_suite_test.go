@@ -39,6 +39,7 @@ import (
 	styrav1beta1 "github.com/bankdata/styra-controller/api/styra/v1beta1"
 	styractrls "github.com/bankdata/styra-controller/internal/controller/styra"
 	webhookmocks "github.com/bankdata/styra-controller/internal/webhook/mocks"
+	"github.com/bankdata/styra-controller/pkg/ptr"
 	"github.com/bankdata/styra-controller/pkg/styra"
 	styraclientmock "github.com/bankdata/styra-controller/pkg/styra/mocks"
 	//+kubebuilder:scaffold:imports
@@ -109,7 +110,6 @@ var _ = ginkgo.BeforeSuite(func() {
 
 	styraClientMock = &styraclientmock.ClientInterface{}
 	webhookMock = &webhookmocks.Client{}
-
 	systemReconciler := styractrls.SystemReconciler{
 		Client:        k8sClient,
 		Scheme:        k8sManager.GetScheme(),
@@ -122,7 +122,8 @@ var _ = ginkgo.BeforeSuite(func() {
 				IdentityProvider: "AzureAD Bankdata",
 				JWTGroupsClaim:   "groups",
 			},
-			ReadOnly: true,
+			ReadOnly:                  true,
+			EnableDeltaBundlesDefault: ptr.Bool(false),
 		},
 	}
 

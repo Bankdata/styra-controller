@@ -412,6 +412,9 @@ func (r *SystemReconciler) createSystem(
 	// created the git secret yet.
 	cfg.SourceControl = nil
 
+	// Styra does not seem to allow setting deltaBundles before the system is created
+	cfg.BundleDownload = nil
+
 	if log.V(1).Enabled() {
 		log := log.V(1)
 		bs, err := json.Marshal(cfg)
@@ -440,6 +443,7 @@ func (r *SystemReconciler) reconcileCredentials(
 	log.Info("Reconciling credentials")
 
 	if system.Spec.SourceControl == nil {
+		log.Info("No source control settings defined. Skipping credentials reconciliation")
 		return ctrl.Result{}, nil
 	}
 
@@ -453,6 +457,7 @@ func (r *SystemReconciler) reconcileCredentials(
 		}
 		username = gitCredential.User
 		password = gitCredential.Password
+
 	} else {
 		secretName := system.Spec.SourceControl.Origin.CredentialsSecretName
 		nsName := types.NamespacedName{
@@ -1055,7 +1060,6 @@ func (r *SystemReconciler) updateSystem(
 	system *v1beta1.System,
 ) (*styra.SystemConfig, error) {
 	log.Info("Updating system")
-
 	cfg := r.specToSystemConfig(system)
 
 	if log.V(1).Enabled() {
@@ -1088,6 +1092,18 @@ func (r *SystemReconciler) specToSystemConfig(system *v1beta1.System) *styra.Sys
 		Name:     system.DisplayName(r.Config.SystemPrefix, r.Config.SystemSuffix),
 		Type:     "custom",
 		ReadOnly: r.Config.ReadOnly,
+	}
+
+	enableDeltaBundles := true
+	if r.Config.EnableDeltaBundlesDefault != nil {
+		enableDeltaBundles = *r.Config.EnableDeltaBundlesDefault
+	}
+	if system.Spec.EnableDeltaBundles != nil {
+		enableDeltaBundles = *system.Spec.EnableDeltaBundles
+	}
+
+	cfg.BundleDownload = &styra.BundleDownloadConfig{
+		DeltaBundles: enableDeltaBundles,
 	}
 
 	if len(system.Spec.DecisionMappings) > 0 {
@@ -1162,6 +1178,12 @@ func (r *SystemReconciler) systemNeedsUpdate(log logr.Logger, system *v1beta1.Sy
 	}
 
 	expectedModel := r.specToSystemConfig(system)
+
+	if cfg.BundleDownload == nil || cfg.BundleDownload.DeltaBundles != expectedModel.BundleDownload.DeltaBundles {
+		log.Info("System needs update: Deltabundle setting not equal")
+		return true
+	}
+
 	if !reflect.DeepEqual(expectedModel.SourceControl, cfg.SourceControl) {
 		log.Info("System needs update: source control is not equal")
 		return true
@@ -1178,7 +1200,6 @@ func (r *SystemReconciler) systemNeedsUpdate(log logr.Logger, system *v1beta1.Sy
 		log.Info("System needs update: decision mappings are not equal")
 		return true
 	}
-
 	return false
 }
 

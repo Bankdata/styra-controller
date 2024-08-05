@@ -9,4 +9,13 @@ metadata:
     app.kubernetes.io/created-by: styra-controller
   name: system-sample
 spec:
+  decisionMappings:
+    - allowed:
+        expected:
+          boolean: true
+        path: result.allowed
+      name: api/authz/decision
+      reason:
+        path: result.reasons
+
   # TODO(user): Add fields here

@@ -1,24 +1,25 @@
 apiVersion: config.bankdata.dk/v2alpha2
 kind: ProjectConfig
 #controllerClass:
-#deletionProtectionDefault:
+deletionProtectionDefault: false
 #disableCRDWebhooks:
 readOnly: true
 enableMigrations: false
+enableDeltaBundlesDefault: false # This does affect the thingy
 #gitCredentials:
 logLevel: 0
-leaderElection:
-  leaseDuration: "60s"
-  renewDeadline: "30s"
-  retryPeriod: "5s"
-notificationWebhooks:
-  systemDatasourceChanged: google.com
-  libraryDatasourceChanged: test.dk
+# leaderElection:
+#   leaseDuration: "60s"
+#   renewDeadline: "30s"
+#   retryPeriod: "5s"
+notificationWebhooks: {}
+  # systemDatasourceChanged: google.com
+  # libraryDatasourceChanged: test.dk
 #sentry:
 #sso:
 styra:
-  address: http://127.0.0.1:8080
-  token: token
+  address: styra-url.example.com
+  token: styra-token
 #  tokenSecretPath: /etc/styra-controller-token/styra_token
 #systemPrefix:
 #systemSuffix:

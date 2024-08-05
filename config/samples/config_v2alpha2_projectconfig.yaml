@@ -19,6 +19,9 @@ disableCRDWebhooks: false
 # disabled unless migrations need to be done.
 enableMigrations: false
 
+# enableDeltaBundlesDefault sets the default to use with regards to delta
+enableDeltaBundlesDefault: false
+
 # gitCredentials holds a list of git credential configurations. The repoPrefix
 # of the git credential will be matched angainst repository URL in order to
 # determine which credential to use. The git credential with the longest
@@ -78,3 +81,5 @@ systemSuffix: ""
 systemUserRoles: []
 # - SystemViewer
 # - SystemInstall
+
+readOnly: true
