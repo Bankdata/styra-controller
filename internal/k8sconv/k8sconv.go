@@ -25,13 +25,18 @@ import (
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 
+	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
 // OpaConfToK8sOPAConfigMap creates a corev1.ConfigMap for the OPA based on the
 // configuration from Styra. The configmap configures the OPA to communicate to
 // an SLP.
-func OpaConfToK8sOPAConfigMap(opaconf styra.OPAConfig, slpURL string) (corev1.ConfigMap, error) {
+func OpaConfToK8sOPAConfigMap(
+	opaconf styra.OPAConfig,
+	slpURL string,
+	opaDefaultConfig configv2alpha2.OPAConfig,
+) (corev1.ConfigMap, error) {
 	type Service struct {
 		Name string `yaml:"name"`
 		URL  string `yaml:"url"`
@@ -47,10 +52,23 @@ func OpaConfToK8sOPAConfigMap(opaconf styra.OPAConfig, slpURL string) (corev1.Co
 		Service string `yaml:"service"`
 	}
 
+	type HTTP struct {
+		Headers []string `yaml:"headers"`
+	}
+
+	type RequestContext struct {
+		HTTP HTTP `yaml:"http"`
+	}
+
+	type DecisionLogs struct {
+		RequestContext RequestContext `yaml:"request_context"`
+	}
+
 	type OPAConfigMap struct {
-		Services  []Service `yaml:"services"`
-		Labels    Labels    `yaml:"labels"`
-		Discovery Discovery `yaml:"discovery"`
+		Services     []Service    `yaml:"services"`
+		Labels       Labels       `yaml:"labels"`
+		Discovery    Discovery    `yaml:"discovery"`
+		DecisionLogs DecisionLogs `yaml:"decision_logs,omitempty"`
 	}
 
 	opaConfigMap := OPAConfigMap{
@@ -66,6 +84,16 @@ func OpaConfToK8sOPAConfigMap(opaconf styra.OPAConfig, slpURL string) (corev1.Co
 			Name:    "discovery",
 			Service: "styra",
 		},
+	}
+
+	if opaDefaultConfig.DecisionLogs.RequestContextHTTPHeaders != nil {
+		opaConfigMap.DecisionLogs = DecisionLogs{
+			RequestContext: RequestContext{
+				HTTP: HTTP{
+					Headers: opaDefaultConfig.DecisionLogs.RequestContextHTTPHeaders,
+				},
+			},
+		}
 	}
 
 	res, err := yaml.Marshal(&opaConfigMap)
@@ -152,7 +180,10 @@ func OpaConfToK8sSLPConfigMap(opaconf styra.OPAConfig) (corev1.ConfigMap, error)
 // OpaConfToK8sOPAConfigMapNoSLP creates a ConfigMap for the OPA based on the
 // configuration from Styra. The ConfigMap configures the OPA to communicate
 // directly to Styra and not via an SLP.
-func OpaConfToK8sOPAConfigMapNoSLP(opaconf styra.OPAConfig) (corev1.ConfigMap, error) {
+func OpaConfToK8sOPAConfigMapNoSLP(
+	opaconf styra.OPAConfig,
+	opaDefaultConfig configv2alpha2.OPAConfig,
+) (corev1.ConfigMap, error) {
 	type Bearer struct {
 		TokenPath string `yaml:"token_path"`
 	}
@@ -178,10 +209,23 @@ func OpaConfToK8sOPAConfigMapNoSLP(opaconf styra.OPAConfig) (corev1.ConfigMap, e
 		Service string `yaml:"service"`
 	}
 
+	type HTTP struct {
+		Headers []string `yaml:"headers"`
+	}
+
+	type RequestContext struct {
+		HTTP HTTP `yaml:"http"`
+	}
+
+	type DecisionLogs struct {
+		RequestContext RequestContext `yaml:"request_context"`
+	}
+
 	type OPAConfigMap struct {
-		Services  []Service `yaml:"services"`
-		Labels    Labels    `yaml:"labels"`
-		Discovery Discovery `yaml:"discovery"`
+		Services     []Service    `yaml:"services"`
+		Labels       Labels       `yaml:"labels"`
+		Discovery    Discovery    `yaml:"discovery"`
+		DecisionLogs DecisionLogs `yaml:"decision_logs,omitempty"`
 	}
 
 	opaConfigMap := OPAConfigMap{
@@ -210,9 +254,19 @@ func OpaConfToK8sOPAConfigMapNoSLP(opaconf styra.OPAConfig) (corev1.ConfigMap, e
 		},
 		Discovery: Discovery{
 			Name:    "discovery",
-			Prefix:  fmt.Sprintf("/systems/" + opaconf.SystemID),
+			Prefix:  fmt.Sprintf("/systems/%s", opaconf.SystemID),
 			Service: "styra",
 		},
+	}
+
+	if opaDefaultConfig.DecisionLogs.RequestContextHTTPHeaders != nil {
+		opaConfigMap.DecisionLogs = DecisionLogs{
+			RequestContext: RequestContext{
+				HTTP: HTTP{
+					Headers: opaDefaultConfig.DecisionLogs.RequestContextHTTPHeaders,
+				},
+			},
+		}
 	}
 
 	res, err := yaml.Marshal(&opaConfigMap)
