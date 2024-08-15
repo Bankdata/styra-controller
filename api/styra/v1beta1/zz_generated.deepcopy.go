@@ -345,6 +345,11 @@ func (in *SystemSpec) DeepCopyInto(out *SystemSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.EnableDeltaBundles != nil {
+		in, out := &in.EnableDeltaBundles, &out.EnableDeltaBundles
+		*out = new(bool)
+		**out = **in
+	}
 	if in.Subjects != nil {
 		in, out := &in.Subjects, &out.Subjects
 		*out = make([]Subject, len(*in))

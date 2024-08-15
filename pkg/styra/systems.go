@@ -83,6 +83,7 @@ type SystemConfig struct {
 	Name                 string                     `json:"name"`
 	ReadOnly             bool                       `json:"read_only"`
 	SourceControl        *SourceControlConfig       `json:"source_control,omitempty"`
+	BundleDownload       *BundleDownloadConfig      `json:"bundle_download,omitempty"`
 	Type                 string                     `json:"type"`
 	ID                   string                     `json:"id"`
 	Datasources          []*DatasourceConfig        `json:"datasources,omitempty"`
@@ -98,6 +99,11 @@ type DeploymentParameters struct {
 // SourceControlConfig defines the structure of a source control configuration.
 type SourceControlConfig struct {
 	Origin GitRepoConfig `json:"origin"`
+}
+
+// BundleDownloadConfig defines the structure of a bundle deployment configuration.
+type BundleDownloadConfig struct {
+	DeltaBundles bool `json:"delta_bundles"`
 }
 
 // GitRepoConfig defines the structure of a git repo configuration.

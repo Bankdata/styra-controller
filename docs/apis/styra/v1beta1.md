@@ -858,6 +858,17 @@ System resource is deleted.</p>
 </tr>
 <tr>
 <td>
+<code>enableDeltaBundles</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>EnableDeltaBundles decides whether DeltaBundles are enabled</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>subjects</code><br/>
 <em>
 <a href="#styra.bankdata.dk/v1beta1.Subject">
@@ -1008,6 +1019,17 @@ bool
 <td>
 <p>DeletionProtection disables deletion of the system in Styra, when the
 System resource is deleted.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>enableDeltaBundles</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>EnableDeltaBundles decides whether DeltaBundles are enabled</p>
 </td>
 </tr>
 <tr>
@@ -1172,5 +1194,5 @@ System.</p>
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>481d857</code>.
+on git commit <code>0db4900</code>.
 </em></p>

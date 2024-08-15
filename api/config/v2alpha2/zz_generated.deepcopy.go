@@ -76,6 +76,11 @@ func (in *NotificationWebhooksConfig) DeepCopy() *NotificationWebhooksConfig {
 func (in *ProjectConfig) DeepCopyInto(out *ProjectConfig) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
+	if in.EnableDeltaBundlesDefault != nil {
+		in, out := &in.EnableDeltaBundlesDefault, &out.EnableDeltaBundlesDefault
+		*out = new(bool)
+		**out = **in
+	}
 	if in.GitCredentials != nil {
 		in, out := &in.GitCredentials, &out.GitCredentials
 		*out = make([]*GitCredential, len(*in))
