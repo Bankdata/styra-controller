@@ -907,10 +907,10 @@ func (r *SystemReconciler) reconcileOPAConfigMap(
 
 	if system.Spec.LocalPlane == nil {
 		log.Info("No styra local plane defined for System")
-		expectedOPAConfigMap, err = k8sconv.OpaConfToK8sOPAConfigMapNoSLP(opaconf)
+		expectedOPAConfigMap, err = k8sconv.OpaConfToK8sOPAConfigMapNoSLP(opaconf, r.Config.OPA)
 	} else {
 		slpURL := fmt.Sprintf("http://%s/v1", system.Spec.LocalPlane.Name)
-		expectedOPAConfigMap, err = k8sconv.OpaConfToK8sOPAConfigMap(opaconf, slpURL)
+		expectedOPAConfigMap, err = k8sconv.OpaConfToK8sOPAConfigMap(opaconf, slpURL, r.Config.OPA)
 	}
 	if err != nil {
 		return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not convert OPA conf to ConfigMap").

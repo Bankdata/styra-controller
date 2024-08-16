@@ -26,3 +26,8 @@ styra:
 systemUserRoles:
   - SystemOwner
   - SystemMetadataManager
+
+#opa:
+#  decision_logs:
+#    request_context.http.headers:
+#      - "Accept"
