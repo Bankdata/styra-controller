@@ -17,9 +17,12 @@ limitations under the License.
 package k8sconv_test
 
 import (
+	"strings"
+
 	ginkgo "github.com/onsi/ginkgo/v2"
 	gomega "github.com/onsi/gomega"
 
+	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
 	"github.com/bankdata/styra-controller/internal/k8sconv"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
@@ -27,13 +30,14 @@ import (
 var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMap", func() {
 
 	type test struct {
+		opaDefaultConfig  configv2alpha2.OPAConfig
 		opaconf           styra.OPAConfig
 		slpURL            string
 		expectedCMContent string
 	}
 
 	ginkgo.DescribeTable("OpaConfToK8sOPAConfigMap", func(test test) {
-		cm, err := k8sconv.OpaConfToK8sOPAConfigMap(test.opaconf, test.slpURL)
+		cm, err := k8sconv.OpaConfToK8sOPAConfigMap(test.opaconf, test.slpURL, test.opaDefaultConfig)
 
 		gomega.Expect(err).To(gomega.BeNil())
 
@@ -41,6 +45,11 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMap", func() {
 	},
 
 		ginkgo.Entry("success", test{
+			opaDefaultConfig: configv2alpha2.OPAConfig{
+				DecisionLogs: configv2alpha2.DecisionLog{
+					RequestContextHTTPHeaders: strings.Split("header1,header2", ","),
+				},
+			},
 			opaconf: styra.OPAConfig{
 				HostURL:    "styra-host-url-123",
 				Token:      "opa-token-123",
@@ -57,6 +66,12 @@ labels:
 discovery:
   name: discovery
   service: styra
+decision_logs:
+  request_context:
+    http:
+      headers:
+      - header1
+      - header2
 `,
 		}),
 	)
@@ -105,12 +120,13 @@ discovery:
 var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapNoSLP", func() {
 
 	type test struct {
+		opaDefaultConfig  configv2alpha2.OPAConfig
 		opaconf           styra.OPAConfig
 		expectedCMContent string
 	}
 
 	ginkgo.DescribeTable("OpaConfToK8sOPAConfigMapNoSLP", func(test test) {
-		cm, err := k8sconv.OpaConfToK8sOPAConfigMapNoSLP(test.opaconf)
+		cm, err := k8sconv.OpaConfToK8sOPAConfigMapNoSLP(test.opaconf, test.opaDefaultConfig)
 
 		gomega.Expect(err).To(gomega.BeNil())
 
@@ -118,6 +134,11 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapNoSLP", func() {
 	},
 
 		ginkgo.Entry("success", test{
+			opaDefaultConfig: configv2alpha2.OPAConfig{
+				DecisionLogs: configv2alpha2.DecisionLog{
+					RequestContextHTTPHeaders: strings.Split("header1,header2", ","),
+				},
+			},
 			opaconf: styra.OPAConfig{
 				HostURL:    "styra-host-url-123",
 				Token:      "opa-token-123",
@@ -142,6 +163,12 @@ discovery:
   name: discovery
   prefix: /systems/system-id-123
   service: styra
+decision_logs:
+  request_context:
+    http:
+      headers:
+      - header1
+      - header2
 `,
 		}),
 	)
