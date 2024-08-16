@@ -14,7 +14,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.19.1
 	github.com/stretchr/testify v1.9.0
-	github.com/vektra/mockery/v2 v2.43.2
+	github.com/vektra/mockery/v2 v2.44.1
 	go.uber.org/zap v1.27.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.31.0
