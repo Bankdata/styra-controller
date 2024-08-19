@@ -17,6 +17,7 @@ This document describes the different configuration options for the Styra Contro
 * `systemPrefix`
 * `systemSuffix`
 * `systemUserRoles`
+* `decisionsExporter`
 
 ## Observability
 
@@ -109,3 +110,32 @@ An annotation that allows configuring Systems in Kubernetes to link to a specifi
 
 ## Leader Election
 If multiple instances of the controller are running together, leader election can be configured by setting `leaderElection.leaseDuration`, `leaderElection.renewDeadline`, `leaderElection.retryPeriod`.
+
+## Decisions Exporter
+It is possible to configure all decisions to be exported to a Kafka cluster. This is achieved by setting the `decisionsExporter` in the controller configuration. For example, if `decisionsExporter` is set to this:
+
+```yaml
+decisionsExporter: 
+  interval: 30s
+  kafka:
+    brokers:
+    - broker1.com:1111
+    - broker2.com:2222
+    requiredAcks: WaitForAll
+    topic: bd-styra-opa-dev
+    tls:
+      clientCertificateName: kafka-client-cert
+      clientCertificate: |
+        -----BEGIN CERTIFICATE-----
+        Client Certificate
+        -----END CERTIFICATE-----
+      clientKey: |
+        -----BEGIN PRIVATE KEY-----
+        Client Key
+        -----END PRIVATE KEY-----
+      rootCA: |
+        -----BEGIN CERTIFICATE-----
+        Root Certificate
+        -----END CERTIFICATE-----
+```
+It will configure Styra to export all decisions to the brokers and connect via mTLS using the provided certs and key. The decision exporter configuration will be uploaded to Styra each time the controller boots.

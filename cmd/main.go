@@ -18,9 +18,11 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -148,6 +150,11 @@ func main() {
 
 	styraClient := styra.New(ctrlConfig.Styra.Address, styraToken)
 
+	if err := configureDecisionExporter(styraClient, ctrlConfig); err != nil {
+		log.Error(err, "unable to configure decision export")
+		exit(err)
+	}
+
 	// System Controller
 	metric := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -166,7 +173,7 @@ func main() {
 	r1 := &controllers.SystemReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
-		Styra:    styra.New(ctrlConfig.Styra.Address, styraToken),
+		Styra:    styraClient,
 		Recorder: mgr.GetEventRecorderFor("system-controller"),
 		Metric:   metric,
 		Config:   ctrlConfig,
@@ -248,4 +255,48 @@ func exit(err error) {
 	sentry.CaptureException(err)
 	sentry.Flush(2 * time.Second)
 	os.Exit(1)
+}
+
+// Issue: https://github.com/Bankdata/styra-controller/issues/353
+func configureDecisionExporter(styraClient styra.ClientInterface, ctrlConfig *configv2alpha2.ProjectConfig) error {
+	if ctrlConfig.DecisionsExporter == nil {
+		ctrl.Log.Info("no decisions exporter configuration found")
+		return nil
+	}
+	ctrl.Log.Info("configuring decisions exporter")
+
+	clientCertName := ctrlConfig.DecisionsExporter.Kafka.TLS.ClientCertificateName
+
+	_, err := styraClient.CreateUpdateSecret(context.Background(), clientCertName, &styra.CreateUpdateSecretsRequest{
+		Description: "Client certificate for Kafka",
+		// Secret name should be client cert and secret should be client key
+		Name:   strings.TrimSuffix(ctrlConfig.DecisionsExporter.Kafka.TLS.ClientCertificate, "\n"),
+		Secret: strings.TrimSuffix(ctrlConfig.DecisionsExporter.Kafka.TLS.ClientKey, "\n"),
+	},
+	)
+	if err != nil {
+		ctrl.Log.Error(err, "could not upload client certificate and key")
+		return err
+	}
+
+	_, err = styraClient.UpdateWorkspace(context.Background(), &styra.UpdateWorkspaceRequest{
+		DecisionsExporter: &styra.DecisionExportConfig{
+			Interval: ctrlConfig.DecisionsExporter.Interval,
+			Kafka: &styra.KafkaConfig{
+				Authentication: "TLS",
+				Brokers:        ctrlConfig.DecisionsExporter.Kafka.Brokers,
+				RequredAcks:    ctrlConfig.DecisionsExporter.Kafka.RequiredAcks,
+				Topic:          ctrlConfig.DecisionsExporter.Kafka.Topic,
+				TLS: &styra.KafkaTLS{
+					ClientCert: clientCertName,
+					RootCA:     strings.TrimSuffix(ctrlConfig.DecisionsExporter.Kafka.TLS.RootCA, "\n"),
+				}},
+		}})
+	if err != nil {
+		ctrl.Log.Error(err, "could not update workspace configuration")
+		return err
+	}
+
+	ctrl.Log.Info("successfully configured decisions exporter")
+	return nil
 }

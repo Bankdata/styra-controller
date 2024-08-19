@@ -522,6 +522,36 @@ func (_m *ClientInterface) UpdateSystem(ctx context.Context, id string, request 
 	return r0, r1
 }
 
+// UpdateWorkspace provides a mock function with given fields: ctx, request
+func (_m *ClientInterface) UpdateWorkspace(ctx context.Context, request *styra.UpdateWorkspaceRequest) (*styra.UpdateWorkspaceResponse, error) {
+	ret := _m.Called(ctx, request)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateWorkspace")
+	}
+
+	var r0 *styra.UpdateWorkspaceResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *styra.UpdateWorkspaceRequest) (*styra.UpdateWorkspaceResponse, error)); ok {
+		return rf(ctx, request)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *styra.UpdateWorkspaceRequest) *styra.UpdateWorkspaceResponse); ok {
+		r0 = rf(ctx, request)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*styra.UpdateWorkspaceResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *styra.UpdateWorkspaceRequest) error); ok {
+		r1 = rf(ctx, request)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // UpsertDatasource provides a mock function with given fields: ctx, id, request
 func (_m *ClientInterface) UpsertDatasource(ctx context.Context, id string, request *styra.UpsertDatasourceRequest) (*styra.UpsertDatasourceResponse, error) {
 	ret := _m.Called(ctx, id, request)

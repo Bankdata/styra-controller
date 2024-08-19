@@ -77,6 +77,8 @@ type ClientInterface interface {
 	VerifyGitConfiguration(ctx context.Context, request *VerfiyGitConfigRequest) (*VerfiyGitConfigResponse, error)
 
 	DeletePolicy(ctx context.Context, policyName string) (*DeletePolicyResponse, error)
+
+	UpdateWorkspace(ctx context.Context, request *UpdateWorkspaceRequest) (*UpdateWorkspaceResponse, error)
 }
 
 // Client is a client for the Styra APIs.
