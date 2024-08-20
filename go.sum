@@ -115,8 +115,8 @@ github.com/alecthomas/go-check-sumtype v0.1.4 h1:WCvlB3l5Vq5dZQTFmodqL2g68uHiSww
 github.com/alecthomas/go-check-sumtype v0.1.4/go.mod h1:WyYPfhfkdhyrdaligV6svFopZV8Lqdzn5pyVBaV6jhQ=
 github.com/alecthomas/repr v0.2.0 h1:HAzS41CIzNW5syS8Mf9UwXhNH1J9aix/BvDRf1Ml2Yk=
 github.com/alecthomas/repr v0.2.0/go.mod h1:Fr0507jx4eOXV7AlPV6AVZLYrLIuIeSOWtW57eE/O/4=
-github.com/alessio/shellescape v1.4.1 h1:V7yhSDDn8LP4lc4jS8pFkt0zCnzVJlG5JXy9BVKJUX0=
-github.com/alessio/shellescape v1.4.1/go.mod h1:PZAiSCk0LJaZkiCSkPv8qIobYglO3FPpyFjDCtHLS30=
+github.com/alessio/shellescape v1.4.2 h1:MHPfaU+ddJ0/bYWpgIeUnQUqKrlJ1S7BfEYPM4uEoM0=
+github.com/alessio/shellescape v1.4.2/go.mod h1:PZAiSCk0LJaZkiCSkPv8qIobYglO3FPpyFjDCtHLS30=
 github.com/alexkohler/nakedret/v2 v2.0.4 h1:yZuKmjqGi0pSmjGpOC016LtPJysIL0WEUiaXW5SUnNg=
 github.com/alexkohler/nakedret/v2 v2.0.4/go.mod h1:bF5i0zF2Wo2o4X4USt9ntUWve6JbFv02Ff4vlkmS/VU=
 github.com/alexkohler/prealloc v1.0.0 h1:Hbq0/3fJPQhNkN0dR95AVrr6R7tou91y0uHG5pOcUuw=
@@ -1447,8 +1447,8 @@ sigs.k8s.io/controller-tools v0.15.0 h1:4dxdABXGDhIa68Fiwaif0vcu32xfwmgQ+w8p+5Cx
 sigs.k8s.io/controller-tools v0.15.0/go.mod h1:8zUSS2T8Hx0APCNRhJWbS3CAQEbIxLa07khzh7pZmXM=
 sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd h1:EDPBXCAspyGV4jQlpZSudPeMmr1bNJefnuqLsRAsHZo=
 sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd/go.mod h1:B8JuhiUyNFVKdsE8h686QcCxMaH6HrOAZj4vswFpcB0=
-sigs.k8s.io/kind v0.23.0 h1:8fyDGWbWTeCcCTwA04v4Nfr45KKxbSPH1WO9K+jVrBg=
-sigs.k8s.io/kind v0.23.0/go.mod h1:ZQ1iZuJLh3T+O8fzhdi3VWcFTzsdXtNv2ppsHc8JQ7s=
+sigs.k8s.io/kind v0.24.0 h1:g4y4eu0qa+SCeKESLpESgMmVFBebL0BDa6f777OIWrg=
+sigs.k8s.io/kind v0.24.0/go.mod h1:t7ueEpzPYJvHA8aeLtI52rtFftNgUYUaCwvxjk7phfw=
 sigs.k8s.io/kustomize/api v0.17.3 h1:6GCuHSsxq7fN5yhF2XrC+AAr8gxQwhexgHflOAD/JJU=
 sigs.k8s.io/kustomize/api v0.17.3/go.mod h1:TuDH4mdx7jTfK61SQ/j1QZM/QWR+5rmEiNjvYlhzFhc=
 sigs.k8s.io/kustomize/cmd/config v0.14.2 h1:YOCu0BnVPm2Iq6PR4fJgO6+rivg5LbR3+o/4ZUeXAvM=

@@ -23,7 +23,7 @@ require (
 	sigs.k8s.io/controller-runtime v0.19.0
 	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20230307042619-c304e7ec2ee7
 	sigs.k8s.io/controller-tools v0.15.0
-	sigs.k8s.io/kind v0.23.0
+	sigs.k8s.io/kind v0.24.0
 	sigs.k8s.io/kustomize/kustomize/v5 v5.4.3
 )
 
@@ -71,7 +71,7 @@ require (
 	github.com/OpenPeeDeeP/depguard/v2 v2.2.0 // indirect
 	github.com/ProtonMail/go-crypto v1.0.0 // indirect
 	github.com/alecthomas/go-check-sumtype v0.1.4 // indirect
-	github.com/alessio/shellescape v1.4.1 // indirect
+	github.com/alessio/shellescape v1.4.2 // indirect
 	github.com/alexkohler/nakedret/v2 v2.0.4 // indirect
 	github.com/alexkohler/prealloc v1.0.0 // indirect
 	github.com/alingse/asasalint v0.0.11 // indirect
