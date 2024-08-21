@@ -86,11 +86,11 @@ func OpaConfToK8sOPAConfigMap(
 		},
 	}
 
-	if opaDefaultConfig.DecisionLogs.RequestContextHTTPHeaders != nil {
+	if opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers != nil {
 		opaConfigMap.DecisionLogs = DecisionLogs{
 			RequestContext: RequestContext{
 				HTTP: HTTP{
-					Headers: opaDefaultConfig.DecisionLogs.RequestContextHTTPHeaders,
+					Headers: opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers,
 				},
 			},
 		}
@@ -259,11 +259,11 @@ func OpaConfToK8sOPAConfigMapNoSLP(
 		},
 	}
 
-	if opaDefaultConfig.DecisionLogs.RequestContextHTTPHeaders != nil {
+	if opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers != nil {
 		opaConfigMap.DecisionLogs = DecisionLogs{
 			RequestContext: RequestContext{
 				HTTP: HTTP{
-					Headers: opaDefaultConfig.DecisionLogs.RequestContextHTTPHeaders,
+					Headers: opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers,
 				},
 			},
 		}

@@ -47,7 +47,11 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMap", func() {
 		ginkgo.Entry("success", test{
 			opaDefaultConfig: configv2alpha2.OPAConfig{
 				DecisionLogs: configv2alpha2.DecisionLog{
-					RequestContextHTTPHeaders: strings.Split("header1,header2", ","),
+					RequestContext: configv2alpha2.RequestContext{
+						HTTP: configv2alpha2.HTTP{
+							Headers: strings.Split("header1,header2", ","),
+						},
+					},
 				},
 			},
 			opaconf: styra.OPAConfig{
@@ -136,7 +140,11 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapNoSLP", func() {
 		ginkgo.Entry("success", test{
 			opaDefaultConfig: configv2alpha2.OPAConfig{
 				DecisionLogs: configv2alpha2.DecisionLog{
-					RequestContextHTTPHeaders: strings.Split("header1,header2", ","),
+					RequestContext: configv2alpha2.RequestContext{
+						HTTP: configv2alpha2.HTTP{
+							Headers: strings.Split("header1,header2", ","),
+						},
+					},
 				},
 			},
 			opaconf: styra.OPAConfig{

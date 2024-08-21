@@ -89,5 +89,7 @@ readOnly: true
 # request_context.http.headers: list of strings that will be added to the decision_logs
 #opa:
 #  decision_logs:
-#    request_context.http.headers:
-#      - "Accept"
+#    request_context:
+#      http:
+#       headers:
+#         - "Accept"

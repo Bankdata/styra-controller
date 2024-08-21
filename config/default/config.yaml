@@ -29,5 +29,7 @@ systemUserRoles:
 
 #opa:
 #  decision_logs:
-#    request_context.http.headers:
-#      - "Accept"
+#    request_context:
+#      http:
+#        headers:
+#          - "Accept"
