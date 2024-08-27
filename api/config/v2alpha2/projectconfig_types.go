@@ -89,6 +89,8 @@ type ProjectConfig struct {
 	// SystemUserRoles is a list of Styra DAS system level roles which the subjects of
 	// a system will be granted.
 	SystemUserRoles []string `json:"systemUserRoles"`
+
+	DecisionsExporter *DecisionsExporterConfig `json:"decisionsExporter,omitempty"`
 }
 
 // LeaderElectionConfig contains configuration for leader election
@@ -184,6 +186,28 @@ type GitCredential struct {
 	// `https://github.com/bankdata`, then this credentials would apply for any
 	// repository under the bankdata github org.
 	RepoPrefix string `json:"repoPrefix"`
+}
+
+// DecisionsExporterConfig contains configuration for decisions export
+type DecisionsExporterConfig struct {
+	Interval string       `json:"interval"`
+	Kafka    *KafkaConfig `json:"kafka,omitempty"`
+}
+
+// KafkaConfig contains configuration for exporting decisions to Kafka
+type KafkaConfig struct {
+	Brokers      []string   `json:"brokers"`
+	Topic        string     `json:"topic"`
+	RequiredAcks string     `json:"requiredAcks"`
+	TLS          *TLSConfig `json:"tls,omitempty"`
+}
+
+// TLSConfig contains TLS configuration for Kafka decisions export.
+type TLSConfig struct {
+	ClientCertificateName string `json:"clientCertificateName"`
+	ClientCertificate     string `json:"clientCertificate"`
+	ClientKey             string `json:"clientKey"`
+	RootCA                string `json:"rootCA"`
 }
 
 // GetGitCredentialForRepo determines which default GitCredential to use for checking out the

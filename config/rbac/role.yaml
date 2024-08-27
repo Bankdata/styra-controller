@@ -8,6 +8,7 @@ rules:
   - ""
   resources:
   - configmaps
+  - secrets
   verbs:
   - create
   - delete
@@ -24,72 +25,10 @@ rules:
   - create
   - patch
 - apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - styra.bankdata.dk
   resources:
   - globaldatasources
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - styra.bankdata.dk
-  resources:
-  - globaldatasources/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - styra.bankdata.dk
-  resources:
-  - globaldatasources/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - styra.bankdata.dk
-  resources:
   - libraries
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - styra.bankdata.dk
-  resources:
-  - libraries/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - styra.bankdata.dk
-  resources:
-  - libraries/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - styra.bankdata.dk
-  resources:
   - systems
   verbs:
   - create
@@ -102,12 +41,16 @@ rules:
 - apiGroups:
   - styra.bankdata.dk
   resources:
+  - globaldatasources/finalizers
+  - libraries/finalizers
   - systems/finalizers
   verbs:
   - update
 - apiGroups:
   - styra.bankdata.dk
   resources:
+  - globaldatasources/status
+  - libraries/status
   - systems/status
   verbs:
   - get

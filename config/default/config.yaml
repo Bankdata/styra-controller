@@ -27,6 +27,8 @@ systemUserRoles:
   - SystemOwner
   - SystemMetadataManager
 
+#decisionsExporter:
+
 #opa:
 #  decision_logs:
 #    request_context:
