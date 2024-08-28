@@ -150,9 +150,8 @@ func main() {
 
 	styraClient := styra.New(ctrlConfig.Styra.Address, styraToken)
 
-	if err := configureDecisionExporter(styraClient, ctrlConfig); err != nil {
-		log.Error(err, "unable to configure decision export")
-		exit(err)
+	if err := configureDecisionsExporter(styraClient, ctrlConfig); err != nil {
+		log.Error(err, "unable to configure decisions exporter")
 	}
 
 	// System Controller
@@ -258,7 +257,7 @@ func exit(err error) {
 }
 
 // Issue: https://github.com/Bankdata/styra-controller/issues/353
-func configureDecisionExporter(styraClient styra.ClientInterface, ctrlConfig *configv2alpha2.ProjectConfig) error {
+func configureDecisionsExporter(styraClient styra.ClientInterface, ctrlConfig *configv2alpha2.ProjectConfig) error {
 	if ctrlConfig.DecisionsExporter == nil {
 		ctrl.Log.Info("no decisions exporter configuration found")
 		return nil
