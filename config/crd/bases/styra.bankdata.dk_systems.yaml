@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.16.2
   name: systems.styra.bankdata.dk
 spec:
   group: styra.bankdata.dk
@@ -49,6 +49,12 @@ spec:
           spec:
             description: Spec is the specification of the System resource.
             properties:
+              customOPAConfig:
+                description: |-
+                  CustomOPAConfig allows the owner of a System resource to set custom features
+                  without having to extend the Controller
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
               datasources:
                 description: |-
                   Datasources represents a list of Styra datasources to be mounted in the

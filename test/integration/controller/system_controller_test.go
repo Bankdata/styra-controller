@@ -18,15 +18,19 @@ package styra
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 
 	ginkgo "github.com/onsi/ginkgo/v2"
 	gomega "github.com/onsi/gomega"
 	"github.com/stretchr/testify/mock"
+	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 
 	styrav1beta1 "github.com/bankdata/styra-controller/api/styra/v1beta1"
@@ -199,8 +203,15 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"
 
 		gomega.Eventually(func() bool {
 			fetched := &corev1.ConfigMap{}
+			var actualMap, expectedMap map[string]interface{}
+
 			key := types.NamespacedName{Name: fmt.Sprintf("%s-opa", key.Name), Namespace: key.Namespace}
-			return k8sClient.Get(ctx, key, fetched) == nil && string(fetched.Data["opa-conf.yaml"]) == `services:
+			if fetchSuceeded := k8sClient.Get(ctx, key, fetched) == nil; !fetchSuceeded {
+				return false
+			}
+
+			actualYAML := fetched.Data["opa-conf.yaml"]
+			expectedYAML := `services:
 - name: styra
   url: styra-url-123
   credentials:
@@ -219,6 +230,15 @@ discovery:
   prefix: /systems/system_id
   service: styra
 `
+
+			if err := yaml.Unmarshal([]byte(actualYAML), &actualMap); err != nil {
+				return false
+			}
+			if err := yaml.Unmarshal([]byte(expectedYAML), &expectedMap); err != nil {
+				return false
+			}
+
+			return reflect.DeepEqual(expectedMap, actualMap)
 		}, timeout, interval).Should(gomega.BeTrue())
 
 		gomega.Eventually(func() bool {
@@ -356,9 +376,15 @@ discovery:
 		gomega.Eventually(func() bool {
 			//opa configmap
 			fetched := &corev1.ConfigMap{}
+			var actualMap, expectedMap map[string]interface{}
+
 			key := types.NamespacedName{Name: fmt.Sprintf("%s-opa", key.Name), Namespace: key.Namespace}
-			fetchSuceeded := k8sClient.Get(ctx, key, fetched) == nil
-			expectedConfigMapContent := `services:
+			if fetchSuceeded := k8sClient.Get(ctx, key, fetched) == nil; !fetchSuceeded {
+				return false
+			}
+
+			actualYAML := fetched.Data["opa-conf.yaml"]
+			expectedYAML := `services:
 - name: styra
   url: http://default_local_plane/v1
 labels:
@@ -368,7 +394,15 @@ discovery:
   name: discovery
   service: styra
 `
-			return fetchSuceeded && fetched.Data["opa-conf.yaml"] == expectedConfigMapContent
+
+			if err := yaml.Unmarshal([]byte(actualYAML), &actualMap); err != nil {
+				return false
+			}
+			if err := yaml.Unmarshal([]byte(expectedYAML), &expectedMap); err != nil {
+				return false
+			}
+
+			return reflect.DeepEqual(expectedMap, actualMap)
 		}, timeout, interval).Should(gomega.BeTrue())
 
 		gomega.Eventually(func() bool {
@@ -1510,7 +1544,7 @@ discovery:
 
 		resetMock(&styraClientMock.Mock)
 
-		ginkgo.By("Creating a system with non-default delta bundle setting")
+		ginkgo.By("Creating a system with non-default delta bundle setting and custom settings")
 
 		key4 := types.NamespacedName{
 			Name:      "test4",
@@ -1523,6 +1557,19 @@ discovery:
 			ReadOnly: true,
 		}
 
+		customConfig := map[string]interface{}{
+			"distributed_tracing": map[string]interface{}{
+				"type":    "grpc",
+				"address": "localhost:1234",
+			},
+		}
+
+		customSettingsJSON, err := json.Marshal(customConfig)
+		if err != nil {
+			fmt.Printf("Failed to marshal custom settings to JSON: %v\n", err)
+			return
+		}
+
 		toCreate4 := &styrav1beta1.System{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      key4.Name,
@@ -1531,6 +1578,9 @@ discovery:
 			Spec: styrav1beta1.SystemSpec{
 				DeletionProtection: ptr.Bool(false),
 				EnableDeltaBundles: ptr.Bool(true),
+				CustomOPAConfig: &runtime.RawExtension{
+					Raw: customSettingsJSON,
+				},
 			},
 		}
 
@@ -1696,8 +1746,14 @@ discovery:
 
 		gomega.Eventually(func() bool {
 			fetched := &corev1.ConfigMap{}
+			var actualMap, expectedMap map[string]interface{}
+
 			key := types.NamespacedName{Name: fmt.Sprintf("%s-opa", key4.Name), Namespace: key4.Namespace}
-			return k8sClient.Get(ctx, key, fetched) == nil && string(fetched.Data["opa-conf.yaml"]) == `services:
+			if fetchSuceeded := k8sClient.Get(ctx, key, fetched) == nil; !fetchSuceeded {
+				return false
+			}
+			actualYAML := fetched.Data["opa-conf.yaml"]
+			expectedYAML := `services:
 - name: styra
   url: styra-url-123
   credentials:
@@ -1715,7 +1771,20 @@ discovery:
   name: discovery
   prefix: /systems/system4_id
   service: styra
+distributed_tracing:
+  type: grpc
+  address: localhost:1234
 `
+
+			if err := yaml.Unmarshal([]byte(actualYAML), &actualMap); err != nil {
+				return false
+			}
+			if err := yaml.Unmarshal([]byte(expectedYAML), &expectedMap); err != nil {
+				return false
+			}
+
+			return reflect.DeepEqual(expectedMap, actualMap)
+
 		}, timeout, interval).Should(gomega.BeTrue())
 
 		gomega.Eventually(func() bool {
