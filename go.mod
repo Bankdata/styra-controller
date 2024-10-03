@@ -1,6 +1,8 @@
 module github.com/bankdata/styra-controller
 
-go 1.22.5
+go 1.23
+
+toolchain go1.23.2
 
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
@@ -14,7 +16,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.20.2
 	github.com/stretchr/testify v1.9.0
-	github.com/vektra/mockery/v2 v2.45.0
+	github.com/vektra/mockery/v2 v2.46.2
 	go.uber.org/zap v1.27.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.31.0
