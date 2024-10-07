@@ -29,6 +29,50 @@ import (
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
+type bearer struct {
+	TokenPath string `yaml:"token_path"`
+}
+
+type credentials struct {
+	Bearer bearer `yaml:"bearer"`
+}
+
+type service struct {
+	Name        string      `yaml:"name"`
+	URL         string      `yaml:"url"`
+	Credentials credentials `yaml:"credentials,omitempty"`
+}
+
+type labels struct {
+	SystemID   string `yaml:"system-id"`
+	SystemType string `yaml:"system-type"`
+}
+
+type discovery struct {
+	Name    string `yaml:"name"`
+	Prefix  string `yaml:"prefix,omitempty"`
+	Service string `yaml:"service"`
+}
+
+type http struct {
+	Headers []string `yaml:"headers"`
+}
+
+type requestContext struct {
+	HTTP http `yaml:"http"`
+}
+
+type decisionLogs struct {
+	RequestContext requestContext `yaml:"request_context"`
+}
+
+type opaConfigMap struct {
+	Services     []service    `yaml:"services"`
+	Labels       labels       `yaml:"labels"`
+	Discovery    discovery    `yaml:"discovery"`
+	DecisionLogs decisionLogs `yaml:"decision_logs,omitempty"`
+}
+
 // OpaConfToK8sOPAConfigMap creates a corev1.ConfigMap for the OPA based on the
 // configuration from Styra. The configmap configures the OPA to communicate to
 // an SLP.
@@ -36,67 +80,43 @@ func OpaConfToK8sOPAConfigMap(
 	opaconf styra.OPAConfig,
 	slpURL string,
 	opaDefaultConfig configv2alpha2.OPAConfig,
+	customConfig map[string]interface{},
 ) (corev1.ConfigMap, error) {
-	type Service struct {
-		Name string `yaml:"name"`
-		URL  string `yaml:"url"`
-	}
 
-	type Labels struct {
-		SystemID   string `yaml:"system-id"`
-		SystemType string `yaml:"system-type"`
-	}
-
-	type Discovery struct {
-		Name    string `yaml:"name"`
-		Service string `yaml:"service"`
-	}
-
-	type HTTP struct {
-		Headers []string `yaml:"headers"`
-	}
-
-	type RequestContext struct {
-		HTTP HTTP `yaml:"http"`
-	}
-
-	type DecisionLogs struct {
-		RequestContext RequestContext `yaml:"request_context"`
-	}
-
-	type OPAConfigMap struct {
-		Services     []Service    `yaml:"services"`
-		Labels       Labels       `yaml:"labels"`
-		Discovery    Discovery    `yaml:"discovery"`
-		DecisionLogs DecisionLogs `yaml:"decision_logs,omitempty"`
-	}
-
-	opaConfigMap := OPAConfigMap{
-		Services: []Service{{
+	opaConfigMap := opaConfigMap{
+		Services: []service{{
 			Name: "styra",
 			URL:  slpURL,
 		}},
-		Labels: Labels{
+		Labels: labels{
 			SystemID:   opaconf.SystemID,
 			SystemType: opaconf.SystemType,
 		},
-		Discovery: Discovery{
+		Discovery: discovery{
 			Name:    "discovery",
 			Service: "styra",
 		},
 	}
 
 	if opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers != nil {
-		opaConfigMap.DecisionLogs = DecisionLogs{
-			RequestContext: RequestContext{
-				HTTP: HTTP{
+		opaConfigMap.DecisionLogs = decisionLogs{
+			RequestContext: requestContext{
+				HTTP: http{
 					Headers: opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers,
 				},
 			},
 		}
 	}
 
-	res, err := yaml.Marshal(&opaConfigMap)
+	opaConfigMapMapStringInterface, err := opaConfigMapToMap(opaConfigMap)
+
+	if err != nil {
+		return corev1.ConfigMap{}, err
+	}
+
+	merged := mergeMaps(opaConfigMapMapStringInterface, customConfig)
+
+	res, err := yaml.Marshal(&merged)
 	if err != nil {
 		return corev1.ConfigMap{}, errors.Wrap(err, "Could not marshal configmap data")
 	}
@@ -183,57 +203,15 @@ func OpaConfToK8sSLPConfigMap(opaconf styra.OPAConfig) (corev1.ConfigMap, error)
 func OpaConfToK8sOPAConfigMapNoSLP(
 	opaconf styra.OPAConfig,
 	opaDefaultConfig configv2alpha2.OPAConfig,
+	customConfig map[string]interface{},
 ) (corev1.ConfigMap, error) {
-	type Bearer struct {
-		TokenPath string `yaml:"token_path"`
-	}
 
-	type Credentials struct {
-		Bearer Bearer `yaml:"bearer"`
-	}
-
-	type Service struct {
-		Name        string      `yaml:"name"`
-		URL         string      `yaml:"url"`
-		Credentials Credentials `yaml:"credentials"`
-	}
-
-	type Labels struct {
-		SystemID   string `yaml:"system-id"`
-		SystemType string `yaml:"system-type"`
-	}
-
-	type Discovery struct {
-		Name    string `yaml:"name"`
-		Prefix  string `yaml:"prefix"`
-		Service string `yaml:"service"`
-	}
-
-	type HTTP struct {
-		Headers []string `yaml:"headers"`
-	}
-
-	type RequestContext struct {
-		HTTP HTTP `yaml:"http"`
-	}
-
-	type DecisionLogs struct {
-		RequestContext RequestContext `yaml:"request_context"`
-	}
-
-	type OPAConfigMap struct {
-		Services     []Service    `yaml:"services"`
-		Labels       Labels       `yaml:"labels"`
-		Discovery    Discovery    `yaml:"discovery"`
-		DecisionLogs DecisionLogs `yaml:"decision_logs,omitempty"`
-	}
-
-	opaConfigMap := OPAConfigMap{
-		Services: []Service{{
+	opaConfigMap := opaConfigMap{
+		Services: []service{{
 			Name: "styra",
 			URL:  opaconf.HostURL,
-			Credentials: Credentials{
-				Bearer: Bearer{
+			Credentials: credentials{
+				Bearer: bearer{
 					TokenPath: "/etc/opa/auth/token",
 				},
 			},
@@ -241,18 +219,18 @@ func OpaConfToK8sOPAConfigMapNoSLP(
 			{
 				Name: "styra-bundles",
 				URL:  fmt.Sprintf("%s/bundles", opaconf.HostURL),
-				Credentials: Credentials{
-					Bearer: Bearer{
+				Credentials: credentials{
+					Bearer: bearer{
 						TokenPath: "/etc/opa/auth/token",
 					},
 				},
 			},
 		},
-		Labels: Labels{
+		Labels: labels{
 			SystemID:   opaconf.SystemID,
 			SystemType: opaconf.SystemType,
 		},
-		Discovery: Discovery{
+		Discovery: discovery{
 			Name:    "discovery",
 			Prefix:  fmt.Sprintf("/systems/%s", opaconf.SystemID),
 			Service: "styra",
@@ -260,16 +238,24 @@ func OpaConfToK8sOPAConfigMapNoSLP(
 	}
 
 	if opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers != nil {
-		opaConfigMap.DecisionLogs = DecisionLogs{
-			RequestContext: RequestContext{
-				HTTP: HTTP{
+		opaConfigMap.DecisionLogs = decisionLogs{
+			RequestContext: requestContext{
+				HTTP: http{
 					Headers: opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers,
 				},
 			},
 		}
 	}
 
-	res, err := yaml.Marshal(&opaConfigMap)
+	opaConfigMapMapStringInterface, err := opaConfigMapToMap(opaConfigMap)
+
+	if err != nil {
+		return corev1.ConfigMap{}, err
+	}
+
+	merged := mergeMaps(opaConfigMapMapStringInterface, customConfig)
+
+	res, err := yaml.Marshal(&merged)
 	if err != nil {
 		return corev1.ConfigMap{}, errors.Wrap(err, "Could not marshal configmap data")
 	}
@@ -280,4 +266,47 @@ func OpaConfToK8sOPAConfigMapNoSLP(
 	}
 
 	return cm, nil
+}
+
+func opaConfigMapToMap(cm opaConfigMap) (map[string]interface{}, error) {
+	res, err := yaml.Marshal(&cm)
+	if err != nil {
+		return nil, errors.Wrap(err, "Could not marshal configmap data")
+	}
+
+	var opaConfigMapMapStringInterface map[string]interface{}
+
+	err = yaml.Unmarshal(res, &opaConfigMapMapStringInterface)
+	if err != nil {
+		return nil, errors.Wrap(err, "Could not unmarshal configmap data to map[string]interface{}")
+	}
+
+	return opaConfigMapMapStringInterface, nil
+}
+
+// mergeMaps recursively merges two map[string]interface{} variables
+func mergeMaps(map1, map2 map[string]interface{}) map[string]interface{} {
+	mergedMap := make(map[string]interface{})
+
+	// Copy all key-value pairs from map1 to mergedMap
+	for key, value := range map1 {
+		mergedMap[key] = value
+	}
+
+	// Copy all key-value pairs from map2 to mergedMap
+	for key, value := range map2 {
+		if existingValue, ok := mergedMap[key]; ok {
+			// If the key exists in both maps and both values are maps, merge them recursively
+			if existingMap, ok := existingValue.(map[string]interface{}); ok {
+				if valueMap, ok := value.(map[string]interface{}); ok {
+					mergedMap[key] = mergeMaps(existingMap, valueMap)
+					continue
+				}
+			}
+		}
+		// Otherwise, overwrite the value from map1 with the value from map2
+		mergedMap[key] = value
+	}
+
+	return mergedMap
 }

@@ -946,6 +946,18 @@ LocalPlane
 <td>
 </td>
 </tr>
+<tr>
+<td>
+<code>customOPAConfig</code><br/>
+<em>
+k8s.io/apimachinery/pkg/runtime.RawExtension
+</em>
+</td>
+<td>
+<p>CustomOPAConfig allows the owner of a System resource to set custom features
+without having to extend the Controller</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -1111,6 +1123,18 @@ LocalPlane
 <td>
 </td>
 </tr>
+<tr>
+<td>
+<code>customOPAConfig</code><br/>
+<em>
+k8s.io/apimachinery/pkg/runtime.RawExtension
+</em>
+</td>
+<td>
+<p>CustomOPAConfig allows the owner of a System resource to set custom features
+without having to extend the Controller</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="styra.bankdata.dk/v1beta1.SystemStatus">SystemStatus
@@ -1194,5 +1218,5 @@ System.</p>
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>0db4900</code>.
+on git commit <code>565a78b</code>.
 </em></p>
