@@ -27,6 +27,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -905,12 +906,20 @@ func (r *SystemReconciler) reconcileOPAConfigMap(
 	var expectedOPAConfigMap corev1.ConfigMap
 	var err error
 
+	var customConfig map[string]interface{}
+	if system.Spec.CustomOPAConfig != nil {
+		err := yaml.Unmarshal(system.Spec.CustomOPAConfig.Raw, &customConfig)
+		if err != nil {
+			return ctrl.Result{}, false, err
+		}
+	}
+
 	if system.Spec.LocalPlane == nil {
 		log.Info("No styra local plane defined for System")
-		expectedOPAConfigMap, err = k8sconv.OpaConfToK8sOPAConfigMapNoSLP(opaconf, r.Config.OPA)
+		expectedOPAConfigMap, err = k8sconv.OpaConfToK8sOPAConfigMapNoSLP(opaconf, r.Config.OPA, customConfig)
 	} else {
 		slpURL := fmt.Sprintf("http://%s/v1", system.Spec.LocalPlane.Name)
-		expectedOPAConfigMap, err = k8sconv.OpaConfToK8sOPAConfigMap(opaconf, slpURL, r.Config.OPA)
+		expectedOPAConfigMap, err = k8sconv.OpaConfToK8sOPAConfigMap(opaconf, slpURL, r.Config.OPA, customConfig)
 	}
 	if err != nil {
 		return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not convert OPA conf to ConfigMap").

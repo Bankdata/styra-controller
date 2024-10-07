@@ -18,7 +18,7 @@ notificationWebhooks: {}
 #sentry:
 #sso:
 styra:
-  address: styra-url.example.com
+  address: https://styra-url.example.com
   token: styra-token
 #  tokenSecretPath: /etc/styra-controller-token/styra_token
 #systemPrefix:

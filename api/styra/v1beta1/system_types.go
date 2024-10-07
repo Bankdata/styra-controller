@@ -21,6 +21,7 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // SystemSpec is the specification of the System resource.
@@ -49,6 +50,10 @@ type SystemSpec struct {
 
 	SourceControl *SourceControl `json:"sourceControl,omitempty"`
 	LocalPlane    *LocalPlane    `json:"localPlane,omitempty"`
+
+	// CustomOPAConfig allows the owner of a System resource to set custom features
+	// without having to extend the Controller
+	CustomOPAConfig *runtime.RawExtension `json:"customOPAConfig,omitempty"`
 }
 
 // DiscoveryOverrides specifies system specific overrides for the configuration
