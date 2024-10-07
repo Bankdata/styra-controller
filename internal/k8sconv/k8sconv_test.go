@@ -25,6 +25,7 @@ import (
 	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
 	"github.com/bankdata/styra-controller/internal/k8sconv"
 	"github.com/bankdata/styra-controller/pkg/styra"
+	"gopkg.in/yaml.v2"
 )
 
 var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMap", func() {
@@ -37,11 +38,21 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMap", func() {
 	}
 
 	ginkgo.DescribeTable("OpaConfToK8sOPAConfigMap", func(test test) {
-		cm, err := k8sconv.OpaConfToK8sOPAConfigMap(test.opaconf, test.slpURL, test.opaDefaultConfig)
+		cm, err := k8sconv.OpaConfToK8sOPAConfigMap(test.opaconf, test.slpURL, test.opaDefaultConfig, nil)
 
 		gomega.Expect(err).To(gomega.BeNil())
 
-		gomega.Expect(cm.Data["opa-conf.yaml"]).To(gomega.Equal(test.expectedCMContent))
+		var actualMap, expectedMap map[string]interface{}
+		actualYAML := cm.Data["opa-conf.yaml"]
+		expectedYAML := test.expectedCMContent
+
+		err = yaml.Unmarshal([]byte(actualYAML), &actualMap)
+		gomega.Expect(err).ToNot(gomega.HaveOccurred(), "Failed to unmarshal actual YAML")
+
+		err = yaml.Unmarshal([]byte(expectedYAML), &expectedMap)
+		gomega.Expect(err).ToNot(gomega.HaveOccurred(), "Failed to unmarshal expected YAML")
+
+		gomega.Expect(actualMap).To(gomega.Equal(expectedMap))
 	},
 
 		ginkgo.Entry("success", test{
@@ -93,7 +104,17 @@ var _ = ginkgo.Describe("OpaConfToK8sSLPConfigMap", func() {
 
 		gomega.Expect(err).To(gomega.BeNil())
 
-		gomega.Expect(cm.Data["slp.yaml"]).To(gomega.Equal(test.expectedCMContent))
+		var actualMap, expectedMap map[string]interface{}
+		actualYAML := cm.Data["slp.yaml"]
+		expectedYAML := test.expectedCMContent
+
+		err = yaml.Unmarshal([]byte(actualYAML), &actualMap)
+		gomega.Expect(err).ToNot(gomega.HaveOccurred(), "Failed to unmarshal actual YAML")
+
+		err = yaml.Unmarshal([]byte(expectedYAML), &expectedMap)
+		gomega.Expect(err).ToNot(gomega.HaveOccurred(), "Failed to unmarshal expected YAML")
+
+		gomega.Expect(actualMap).To(gomega.Equal(expectedMap))
 	},
 
 		ginkgo.Entry("success", test{
@@ -130,11 +151,22 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapNoSLP", func() {
 	}
 
 	ginkgo.DescribeTable("OpaConfToK8sOPAConfigMapNoSLP", func(test test) {
-		cm, err := k8sconv.OpaConfToK8sOPAConfigMapNoSLP(test.opaconf, test.opaDefaultConfig)
+		cm, err := k8sconv.OpaConfToK8sOPAConfigMapNoSLP(test.opaconf, test.opaDefaultConfig, nil)
 
 		gomega.Expect(err).To(gomega.BeNil())
 
-		gomega.Expect(cm.Data["opa-conf.yaml"]).To(gomega.Equal(test.expectedCMContent))
+		var actualMap, expectedMap map[string]interface{}
+		actualYAML := cm.Data["opa-conf.yaml"]
+		expectedYAML := test.expectedCMContent
+
+		err = yaml.Unmarshal([]byte(actualYAML), &actualMap)
+		gomega.Expect(err).ToNot(gomega.HaveOccurred(), "Failed to unmarshal actual YAML")
+
+		err = yaml.Unmarshal([]byte(expectedYAML), &expectedMap)
+		gomega.Expect(err).ToNot(gomega.HaveOccurred(), "Failed to unmarshal expected YAML")
+
+		gomega.Expect(actualMap).To(gomega.Equal(expectedMap))
+
 	},
 
 		ginkgo.Entry("success", test{
@@ -177,6 +209,161 @@ decision_logs:
       headers:
       - header1
       - header2
+`,
+		}),
+	)
+})
+
+var _ = ginkgo.Describe("OpaCustomConfToK8sWithSLP", func() {
+
+	type test struct {
+		opaDefaultConfig  configv2alpha2.OPAConfig
+		opaconf           styra.OPAConfig
+		customConfig      map[string]interface{}
+		slpURL            string
+		expectedCMContent string
+	}
+
+	ginkgo.DescribeTable("OpaCustomConfToK8sWithSLP", func(test test) {
+		cm, err := k8sconv.OpaConfToK8sOPAConfigMap(test.opaconf, test.slpURL, test.opaDefaultConfig, test.customConfig)
+
+		gomega.Expect(err).To(gomega.BeNil())
+
+		var actualMap, expectedMap map[string]interface{}
+		actualYAML := cm.Data["opa-conf.yaml"]
+		expectedYAML := test.expectedCMContent
+
+		err = yaml.Unmarshal([]byte(actualYAML), &actualMap)
+		gomega.Expect(err).ToNot(gomega.HaveOccurred(), "Failed to unmarshal actual YAML")
+
+		err = yaml.Unmarshal([]byte(expectedYAML), &expectedMap)
+		gomega.Expect(err).ToNot(gomega.HaveOccurred(), "Failed to unmarshal expected YAML")
+
+		gomega.Expect(actualMap).To(gomega.Equal(expectedMap))
+	},
+
+		ginkgo.Entry("success", test{
+			opaDefaultConfig: configv2alpha2.OPAConfig{
+				DecisionLogs: configv2alpha2.DecisionLog{
+					RequestContext: configv2alpha2.RequestContext{
+						HTTP: configv2alpha2.HTTP{
+							Headers: strings.Split("header1,header2", ","),
+						},
+					},
+				},
+			},
+			opaconf: styra.OPAConfig{
+				HostURL:    "styra-host-url-123",
+				Token:      "opa-token-123",
+				SystemID:   "system-id-123",
+				SystemType: "system-type-123",
+			},
+			customConfig: map[string]interface{}{
+				"distributed_tracing": map[string]interface{}{
+					"type":    "grpc",
+					"address": "localhost:1234",
+				},
+			},
+			slpURL: "slp-url-123",
+			expectedCMContent: `services:
+- name: styra
+  url: slp-url-123
+labels:
+  system-id: system-id-123
+  system-type: system-type-123
+discovery:
+  name: discovery
+  service: styra
+decision_logs:
+  request_context:
+    http:
+      headers:
+      - header1
+      - header2
+distributed_tracing:
+  type: grpc
+  address: localhost:1234
+`,
+		}),
+	)
+})
+
+var _ = ginkgo.Describe("OpaCustomConfToK8sNoSLP", func() {
+
+	type test struct {
+		opaDefaultConfig  configv2alpha2.OPAConfig
+		opaconf           styra.OPAConfig
+		customConfig      map[string]interface{}
+		expectedCMContent string
+	}
+
+	ginkgo.DescribeTable("OpaCustomConfToK8sNoSLP", func(test test) {
+		cm, err := k8sconv.OpaConfToK8sOPAConfigMapNoSLP(test.opaconf, test.opaDefaultConfig, test.customConfig)
+
+		gomega.Expect(err).To(gomega.BeNil())
+
+		var actualMap, expectedMap map[string]interface{}
+		actualYAML := cm.Data["opa-conf.yaml"]
+		expectedYAML := test.expectedCMContent
+
+		err = yaml.Unmarshal([]byte(actualYAML), &actualMap)
+		gomega.Expect(err).ToNot(gomega.HaveOccurred(), "Failed to unmarshal actual YAML")
+
+		err = yaml.Unmarshal([]byte(expectedYAML), &expectedMap)
+		gomega.Expect(err).ToNot(gomega.HaveOccurred(), "Failed to unmarshal expected YAML")
+
+		gomega.Expect(actualMap).To(gomega.Equal(expectedMap))
+	},
+
+		ginkgo.Entry("success", test{
+			opaDefaultConfig: configv2alpha2.OPAConfig{
+				DecisionLogs: configv2alpha2.DecisionLog{
+					RequestContext: configv2alpha2.RequestContext{
+						HTTP: configv2alpha2.HTTP{
+							Headers: strings.Split("header1,header2", ","),
+						},
+					},
+				},
+			},
+			opaconf: styra.OPAConfig{
+				HostURL:    "styra-host-url-123",
+				Token:      "opa-token-123",
+				SystemID:   "system-id-123",
+				SystemType: "system-type-123",
+			},
+			customConfig: map[string]interface{}{
+				"distributed_tracing": map[string]interface{}{
+					"type":    "grpc",
+					"address": "localhost:1234",
+				},
+			},
+			expectedCMContent: `services:
+- name: styra
+  url: styra-host-url-123
+  credentials:
+    bearer:
+      token_path: /etc/opa/auth/token
+- name: styra-bundles
+  url: styra-host-url-123/bundles
+  credentials:
+    bearer:
+      token_path: /etc/opa/auth/token
+labels:
+  system-id: system-id-123
+  system-type: system-type-123
+discovery:
+  name: discovery
+  prefix: /systems/system-id-123
+  service: styra
+decision_logs:
+  request_context:
+    http:
+      headers:
+      - header1
+      - header2
+distributed_tracing:
+  type: grpc
+  address: localhost:1234
 `,
 		}),
 	)
