@@ -194,23 +194,6 @@ func main() {
 		}
 	}
 
-	if err = (&controllers.GlobalDatasourceReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Config: ctrlConfig,
-		Styra:  styraClient,
-	}).SetupWithManager(mgr); err != nil {
-		log.Error(err, "unable to create controller", "controller", "GlobalDatasource")
-		os.Exit(1)
-	}
-
-	if !ctrlConfig.DisableCRDWebhooks {
-		if err = (&styrav1alpha1.GlobalDatasource{}).SetupWebhookWithManager(mgr); err != nil {
-			log.Error(err, "unable to create webhook", "webhook", "GlobalDatasource")
-			os.Exit(1)
-		}
-	}
-
 	libraryReconciler := &controllers.LibraryReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
