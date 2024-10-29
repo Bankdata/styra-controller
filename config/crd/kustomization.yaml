@@ -6,7 +6,6 @@ kind: Kustomization
 # It should be run by config/default
 resources:
 - bases/styra.bankdata.dk_systems.yaml
-- bases/styra.bankdata.dk_globaldatasources.yaml
 - bases/styra.bankdata.dk_libraries.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
@@ -14,14 +13,12 @@ patches:
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
 # patches here are for enabling the conversion webhook for each CRD
 - path: patches/webhook_in_styra_systems.yaml
-- path: patches/webhook_in_styra_globaldatasources.yaml
 - path: patches/webhook_in_styra_libraries.yaml
 #+kubebuilder:scaffold:crdkustomizewebhookpatch
 
 # [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
 # patches here are for enabling the CA injection for each CRD
 - path: patches/cainjection_in_styra_systems.yaml
-- path: patches/cainjection_in_styra_globaldatasources.yaml
 - path: patches/cainjection_in_styra_libraries.yaml
 #+kubebuilder:scaffold:crdkustomizecainjectionpatch
 
