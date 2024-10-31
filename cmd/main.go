@@ -270,8 +270,9 @@ func configureDecisionsExporter(styraClient styra.ClientInterface, ctrlConfig *c
 				RequredAcks:    ctrlConfig.DecisionsExporter.Kafka.RequiredAcks,
 				Topic:          ctrlConfig.DecisionsExporter.Kafka.Topic,
 				TLS: &styra.KafkaTLS{
-					ClientCert: clientCertName,
-					RootCA:     strings.TrimSuffix(ctrlConfig.DecisionsExporter.Kafka.TLS.RootCA, "\n"),
+					ClientCert:         clientCertName,
+					RootCA:             strings.TrimSuffix(ctrlConfig.DecisionsExporter.Kafka.TLS.RootCA, "\n"),
+					InsecureSkipVerify: ctrlConfig.DecisionsExporter.Kafka.TLS.InsecureSkipVerify,
 				}},
 		}})
 	if err != nil {
