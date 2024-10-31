@@ -208,6 +208,7 @@ type TLSConfig struct {
 	ClientCertificate     string `json:"clientCertificate"`
 	ClientKey             string `json:"clientKey"`
 	RootCA                string `json:"rootCA"`
+	InsecureSkipVerify    bool   `json:"insecureSkipVerify"`
 }
 
 // GetGitCredentialForRepo determines which default GitCredential to use for checking out the
