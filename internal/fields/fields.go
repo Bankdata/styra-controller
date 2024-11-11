@@ -21,24 +21,6 @@ package fields
 import "k8s.io/apimachinery/pkg/fields"
 
 const (
-	// GlobalDatasourceSecretRefName is the path to the credential secret
-	// reference name.
-	GlobalDatasourceSecretRefName = ".spec.credentialsSecretRef.name"
-	// GlobalDatasourceSecretRefNamespace is the path to the credential secret
-	// reference namespace.
-	GlobalDatasourceSecretRefNamespace = ".spec.credentialsSecretRef.namespace"
-)
-
-// GlobalDatasourceCredentialsSecretRefFieldSelector returns a field selector
-// for finding the GlobalDatasources referencing a secret.
-func GlobalDatasourceCredentialsSecretRefFieldSelector(namespace, name string) fields.Selector {
-	return fields.SelectorFromSet(fields.Set{
-		GlobalDatasourceSecretRefNamespace: namespace,
-		GlobalDatasourceSecretRefName:      name,
-	})
-}
-
-const (
 	// SystemCredentialsSecretName is the path to the credential secret name.
 	SystemCredentialsSecretName = ".spec.sourceControl.origin.credentialsSecretName"
 )

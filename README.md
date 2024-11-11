@@ -38,7 +38,6 @@ resource definitions (CRDs).
 
 - `System`, which defines a Styra DAS system configuration, its datasources and
   users with access.
-- `GlobalDatasource`, which defines a global datasource resource in Styra DAS.
 - `Library`, which defines a Library resource in Styra DAS.
 
 For more information about these resources see the 

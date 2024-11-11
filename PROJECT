@@ -24,18 +24,6 @@ resources:
     webhookVersion: v1
 - api:
     crdVersion: v1
-  controller: true
-  domain: bankdata.dk
-  group: styra
-  kind: GlobalDatasource
-  path: github.com/bankdata/styra-controller/api/styra/v1alpha1
-  version: v1alpha1
-  webhooks:
-    defaulting: true
-    validation: true
-    webhookVersion: v1
-- api:
-    crdVersion: v1
     namespaced: true
   domain: bankdata.dk
   group: test
