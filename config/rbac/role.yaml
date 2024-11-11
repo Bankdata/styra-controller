@@ -27,7 +27,6 @@ rules:
 - apiGroups:
   - styra.bankdata.dk
   resources:
-  - globaldatasources
   - libraries
   - systems
   verbs:
@@ -41,7 +40,6 @@ rules:
 - apiGroups:
   - styra.bankdata.dk
   resources:
-  - globaldatasources/finalizers
   - libraries/finalizers
   - systems/finalizers
   verbs:
@@ -49,7 +47,6 @@ rules:
 - apiGroups:
   - styra.bankdata.dk
   resources:
-  - globaldatasources/status
   - libraries/status
   - systems/status
   verbs:

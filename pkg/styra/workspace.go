@@ -58,8 +58,9 @@ type KafkaConfig struct {
 
 // KafkaTLS is the TLS configuration for the Kafka exporter in the Styra API.
 type KafkaTLS struct {
-	ClientCert string `json:"client_cert"`
-	RootCA     string `json:"rootca"`
+	ClientCert         string `json:"client_cert"`
+	RootCA             string `json:"rootca"`
+	InsecureSkipVerify bool   `json:"insecure_skip_verify"`
 }
 
 // UpdateWorkspace calls the PUT /v1/workspace endpoint in the Styra API.

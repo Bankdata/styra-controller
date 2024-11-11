@@ -130,19 +130,6 @@ var _ = ginkgo.BeforeSuite(func() {
 	err = systemReconciler.SetupWithManager(k8sManager)
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-	globalDatasourceReconciler := &styractrls.GlobalDatasourceReconciler{
-		Config: &configv2alpha2.ProjectConfig{
-			GitCredentials: []*configv2alpha2.GitCredential{
-				{User: "test-user", Password: "test-secret"},
-			},
-		},
-		Client: k8sClient,
-		Styra:  styraClientMock,
-	}
-
-	err = globalDatasourceReconciler.SetupWithManager(k8sManager)
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
 	libraryReconciler := &styractrls.LibraryReconciler{
 		Config: &configv2alpha2.ProjectConfig{
 			SSO: &configv2alpha2.SSOConfig{
