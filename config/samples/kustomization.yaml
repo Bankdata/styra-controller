@@ -1,7 +1,6 @@
 ## Append samples of your project ##
 resources:
 - styra_v1beta1_system.yaml
-- styra_v1alpha1_globaldatasource.yaml
 - test_v1_object.yaml
 - config_v2alpha2_projectconfig.yaml
 - styra_v1alpha1_library.yaml

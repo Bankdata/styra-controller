@@ -1085,7 +1085,7 @@ func (r *SystemReconciler) updateSystem(
 		errMsg := "Could not update System"
 		var styrahttperr *styra.HTTPError
 		if errors.As(err, &styrahttperr) {
-			errMsg = fmt.Sprintf("Could not update Styra system. Error %s", styrahttperr.Message)
+			errMsg = fmt.Sprintf("Could not update Styra system. Error %s", styrahttperr.Error())
 		}
 		return nil, ctrlerr.Wrap(err, errMsg).
 			WithEvent("ErrorUpdateSystem").

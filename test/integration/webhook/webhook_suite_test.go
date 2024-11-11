@@ -111,8 +111,6 @@ var _ = ginkgo.BeforeSuite(func() {
 
 	err = (&v1beta1.System{}).SetupWebhookWithManager(mgr)
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	err = (&v1alpha1.GlobalDatasource{}).SetupWebhookWithManager(mgr)
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	//+kubebuilder:scaffold:webhook
 
