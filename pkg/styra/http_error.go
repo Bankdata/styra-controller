@@ -17,10 +17,10 @@ limitations under the License.
 package styra
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
 )
 
 // HTTPError represents an error that occurred when interacting with the Styra
@@ -28,7 +28,6 @@ import (
 type HTTPError struct {
 	StatusCode int
 	Body       string
-	Message    string `yaml:"message,omitempty"`
 }
 
 // Error implements the error interface.
@@ -39,14 +38,20 @@ func (styraerror *HTTPError) Error() string {
 // NewHTTPError creates a new HTTPError based on the statuscode and body from a
 // failed call to the Styra API.
 func NewHTTPError(statuscode int, body string) error {
-	err := &HTTPError{
+	styraerror := &HTTPError{
 		StatusCode: statuscode,
-		Body:       body,
 	}
 
-	if err := yaml.Unmarshal([]byte(body), &err); err != nil {
-		return errors.Wrap(err, "could not unmarshal error body: "+body)
+	if isValidJSON(body) {
+		styraerror.Body = body
+	} else {
+		styraerror.Body = "invalid JSON response"
 	}
 
-	return errors.WithStack(err)
+	return errors.WithStack(styraerror)
+}
+
+func isValidJSON(data string) bool {
+	var out interface{}
+	return json.Unmarshal([]byte(data), &out) == nil
 }

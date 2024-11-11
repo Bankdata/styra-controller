@@ -10,26 +10,6 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-styra-bankdata-dk-v1alpha1-globaldatasource
-  failurePolicy: Fail
-  name: mglobaldatasource.kb.io
-  rules:
-  - apiGroups:
-    - styra.bankdata.dk
-    apiVersions:
-    - v1alpha1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - globaldatasources
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
       path: /mutate-styra-bankdata-dk-v1alpha1-library
   failurePolicy: Fail
   name: mlibrary.kb.io
@@ -70,26 +50,6 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: validating-webhook-configuration
 webhooks:
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
-      path: /validate-styra-bankdata-dk-v1alpha1-globaldatasource
-  failurePolicy: Fail
-  name: vglobaldatasource.kb.io
-  rules:
-  - apiGroups:
-    - styra.bankdata.dk
-    apiVersions:
-    - v1alpha1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - globaldatasources
-  sideEffects: None
 - admissionReviewVersions:
   - v1
   clientConfig:
