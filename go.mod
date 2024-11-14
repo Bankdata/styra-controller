@@ -11,7 +11,7 @@ require (
 	github.com/golangci/golangci-lint v1.62.0
 	github.com/google/uuid v1.6.0
 	github.com/goreleaser/goreleaser v1.26.2
-	github.com/onsi/ginkgo/v2 v2.20.2
+	github.com/onsi/ginkgo/v2 v2.21.0
 	github.com/onsi/gomega v1.34.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.20.5
@@ -238,7 +238,7 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/ko v0.15.4 // indirect
-	github.com/google/pprof v0.0.0-20240827171923-fa2c70bbbfe5 // indirect
+	github.com/google/pprof v0.0.0-20241029153458-d1b30febd7db // indirect
 	github.com/google/rpmpack v0.6.1-0.20240329070804-c2247cbb881a // indirect
 	github.com/google/s2a-go v0.1.8 // indirect
 	github.com/google/safetext v0.0.0-20220905092116-b49f7bc46da2 // indirect
