@@ -12,7 +12,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/goreleaser/goreleaser v1.26.2
 	github.com/onsi/ginkgo/v2 v2.21.0
-	github.com/onsi/gomega v1.34.2
+	github.com/onsi/gomega v1.35.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.20.5
 	github.com/stretchr/testify v1.9.0
@@ -468,7 +468,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20240827150818-7e3bb234dfed // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	google.golang.org/grpc v1.66.2 // indirect
-	google.golang.org/protobuf v1.34.2 // indirect
+	google.golang.org/protobuf v1.35.1 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
