@@ -68,6 +68,8 @@ type ProjectConfig struct {
 
 	NotificationWebhooks *NotificationWebhooksConfig `json:"notificationWebhooks,omitempty"`
 
+	MaxConcurrentReconciles *int `json:"maxConcurrentReconciles,omitempty"`
+
 	Sentry *SentryConfig `json:"sentry"`
 
 	SSO *SSOConfig `json:"sso"`
