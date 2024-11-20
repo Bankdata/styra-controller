@@ -22,9 +22,11 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"time"
 
 	ginkgo "github.com/onsi/ginkgo/v2"
 	gomega "github.com/onsi/gomega"
+	"github.com/patrickmn/go-cache"
 
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
@@ -74,6 +76,62 @@ var _ = ginkgo.Describe("GetUser", func() {
 					"id": "name"
 				}
 			}`,
+		}),
+
+		ginkgo.Entry("styra http error", test{
+			responseCode:   http.StatusInternalServerError,
+			expectStyraErr: true,
+		}),
+	)
+})
+
+var _ = ginkgo.Describe("GetUsers", func() {
+	type test struct {
+		responseCode   int
+		responseBody   string
+		expectStyraErr bool
+	}
+
+	ginkgo.DescribeTable("GetUsers",
+		func(test test) {
+			c := newTestClientWithCache(func(r *http.Request) *http.Response {
+				bs, err := io.ReadAll(r.Body)
+				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				gomega.Expect(bs).To(gomega.Equal([]byte("")))
+				gomega.Expect(r.Method).To(gomega.Equal(http.MethodGet))
+				gomega.Expect(r.URL.String()).To(gomega.Equal("http://test.com/v1/users"))
+
+				return &http.Response{
+					Header:     make(http.Header),
+					StatusCode: test.responseCode,
+					Body:       io.NopCloser(bytes.NewBufferString(test.responseBody)),
+				}
+			}, cache.New(1*time.Hour, 10*time.Minute))
+
+			// Call GetUsers
+			res, _, err := c.GetUsers(context.Background())
+			if test.expectStyraErr {
+				gomega.Expect(res).To(gomega.BeNil())
+				target := &styra.HTTPError{}
+				gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
+			} else {
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+				gomega.Expect(res.Users).ToNot(gomega.BeNil())
+				gomega.Expect(res.Users[0].ID).To(gomega.Equal("user1"))
+				gomega.Expect(res.Users[0].Enabled).To(gomega.BeTrue())
+				gomega.Expect(res.Users[1].ID).To(gomega.Equal("user2"))
+				gomega.Expect(res.Users[1].Enabled).To(gomega.BeFalse())
+			}
+		},
+
+		ginkgo.Entry("successful response", test{
+			responseCode: http.StatusOK,
+			responseBody: `{
+                "result": [
+                    {"enabled": true, "id": "user1"},
+                    {"enabled": false, "id": "user2"}
+                ]
+            }`,
 		}),
 
 		ginkgo.Entry("styra http error", test{

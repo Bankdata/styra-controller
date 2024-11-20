@@ -20,6 +20,7 @@ import (
 	"net/http"
 
 	"github.com/bankdata/styra-controller/pkg/styra"
+	"github.com/patrickmn/go-cache"
 )
 
 type roundTripFunc func(req *http.Request) *http.Response
@@ -34,5 +35,15 @@ func newTestClient(f roundTripFunc) styra.ClientInterface {
 		HTTPClient: http.Client{
 			Transport: roundTripFunc(f),
 		},
+	}
+}
+
+func newTestClientWithCache(f roundTripFunc, cache *cache.Cache) styra.ClientInterface {
+	return &styra.Client{
+		URL: "http://test.com",
+		HTTPClient: http.Client{
+			Transport: roundTripFunc(f),
+		},
+		Cache: cache,
 	}
 }
