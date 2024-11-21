@@ -22,7 +22,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 )
 
@@ -38,6 +40,8 @@ type ClientInterface interface {
 	) (*CreateUpdateSecretResponse, error)
 
 	GetUser(ctx context.Context, name string) (*GetUserResponse, error)
+	GetUsers(ctx context.Context) (*GetUsersResponse, bool, error)
+	InvalidateCache()
 
 	CreateInvitation(ctx context.Context, email bool, name string) (*CreateInvitationResponse, error)
 
@@ -86,15 +90,24 @@ type Client struct {
 	HTTPClient http.Client
 	URL        string
 	token      string
+	Cache      *cache.Cache
 }
 
 // New creates a new Styra ClientInterface.
 func New(url string, token string) ClientInterface {
+	c := cache.New(1*time.Hour, 10*time.Minute)
+
 	return &Client{
 		URL:        url,
 		HTTPClient: http.Client{},
 		token:      token,
+		Cache:      c,
 	}
+}
+
+// InvalidateCache invalidates the entire cache
+func (c *Client) InvalidateCache() {
+	c.Cache.Flush()
 }
 
 func (c *Client) newRequest(ctx context.Context, method, endpoint string, body interface{}) (*http.Request, error) {

@@ -553,18 +553,38 @@ func (r *SystemReconciler) reconcileSubjects(
 ) (ctrl.Result, error) {
 	log.Info("Reconciling subjects")
 
+	usersResponse, fromCache, err := r.Styra.GetUsers(ctx)
+	if fromCache {
+		log.Info("Users response from cache")
+	} else {
+		log.Info("Users response from Styra API - cache updated")
+	}
+
+	if err != nil {
+		return ctrl.Result{}, ctrlerr.Wrap(err, "Could not get users from Styra API").
+			WithEvent("ErrorGetUsersFromStyra").
+			WithSystemCondition(v1beta1.ConditionTypeSubjectsUpdated)
+	}
+
 	for _, subject := range system.Spec.Subjects {
 		if subject.IsUser() {
 			log := log.WithValues("user", subject.Name)
 			log.Info("Checking if user exists")
-			res, err := r.Styra.GetUser(ctx, subject.Name)
-			if err != nil {
-				return ctrl.Result{}, ctrlerr.Wrap(err, "Could not get user from Styra API").
-					WithEvent("ErrorGetUserFromStyra").
-					WithSystemCondition(v1beta1.ConditionTypeSubjectsUpdated)
+
+			found := false
+			for _, user := range usersResponse.Users {
+				if user.ID == subject.Name {
+					found = true
+					break
+				}
 			}
-			if res.StatusCode == http.StatusNotFound {
-				log.Info("User does not exist in styra. Creating...")
+
+			if !found {
+				log.Info("User does not exist in Styra. Creating user and invalidate user cache")
+
+				// Invalidate cache to ensure we get the new user in the next reconciliation
+				r.Styra.InvalidateCache()
+
 				_, err := r.Styra.CreateInvitation(ctx, false, subject.Name)
 				if err != nil {
 					return ctrl.Result{}, ctrlerr.Wrap(err, "Could not create user in Styra").
@@ -648,7 +668,7 @@ func (r *SystemReconciler) reconcileSubjects(
 		}
 	}
 
-	log.Info("Reconciled users")
+	log.Info("Reconciled subjects")
 	return ctrl.Result{}, nil
 }
 

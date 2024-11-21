@@ -432,6 +432,48 @@ func (_m *ClientInterface) GetUser(ctx context.Context, name string) (*styra.Get
 	return r0, r1
 }
 
+// GetUsers provides a mock function with given fields: ctx
+func (_m *ClientInterface) GetUsers(ctx context.Context) (*styra.GetUsersResponse, bool, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetUsers")
+	}
+
+	var r0 *styra.GetUsersResponse
+	var r1 bool
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context) (*styra.GetUsersResponse, bool, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) *styra.GetUsersResponse); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*styra.GetUsersResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) bool); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Get(1).(bool)
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context) error); ok {
+		r2 = rf(ctx)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// InvalidateCache provides a mock function with given fields:
+func (_m *ClientInterface) InvalidateCache() {
+	_m.Called()
+}
+
 // ListRoleBindingsV2 provides a mock function with given fields: ctx, params
 func (_m *ClientInterface) ListRoleBindingsV2(ctx context.Context, params *styra.ListRoleBindingsV2Params) (*styra.ListRoleBindingsV2Response, error) {
 	ret := _m.Called(ctx, params)

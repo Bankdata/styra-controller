@@ -103,6 +103,13 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"
 			},
 		}, nil).Once()
 
+		styraClientMock.On("GetUsers", mock.Anything).Return(&styra.GetUsersResponse{
+			Users: []styra.User{
+				{ID: "test1@test.com", Enabled: true},
+				{ID: "test2@test.com", Enabled: true},
+			},
+		}, false, nil).Once()
+
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
 			ResourceID:   "system_id",
@@ -140,6 +147,13 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"
 				},
 			}, nil).Once()
 
+		styraClientMock.On("GetUsers", mock.Anything).Return(&styra.GetUsersResponse{
+			Users: []styra.User{
+				{ID: "test1@test.com", Enabled: true},
+				{ID: "test2@test.com", Enabled: true},
+			},
+		}, false, nil).Once()
+
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
 			ResourceID:   "system_id",
@@ -166,6 +180,13 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"
 					BundleDownload: &styra.BundleDownloadConfig{DeltaBundles: false},
 				},
 			}, nil).Once()
+
+		styraClientMock.On("GetUsers", mock.Anything).Return(&styra.GetUsersResponse{
+			Users: []styra.User{
+				{ID: "test1@test.com", Enabled: true},
+				{ID: "test2@test.com", Enabled: true},
+			},
+		}, false, nil).Once()
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
@@ -247,6 +268,7 @@ discovery:
 				getSystemByName    int
 				createSystem       int
 				deletePolicy       int
+				getUsers           int
 				rolebindingsListed int
 				createRoleBinding  int
 				getOPAConfig       int
@@ -261,6 +283,8 @@ discovery:
 					getSystemByName++
 				case "DeletePolicy":
 					deletePolicy++
+				case "GetUsers":
+					getUsers++
 				case "ListRoleBindingsV2":
 					rolebindingsListed++
 				case "CreateRoleBinding":
@@ -273,6 +297,7 @@ discovery:
 				getSystemByName == 1 &&
 				createSystem == 1 &&
 				deletePolicy == 2 &&
+				getUsers == 3 &&
 				rolebindingsListed == 3 &&
 				createRoleBinding == 1 &&
 				getOPAConfig == 3
@@ -299,6 +324,13 @@ discovery:
 					BundleDownload: &styra.BundleDownloadConfig{DeltaBundles: false},
 				},
 			}, nil).Once()
+
+		styraClientMock.On("GetUsers", mock.Anything).Return(&styra.GetUsersResponse{
+			Users: []styra.User{
+				{ID: "test1@test.com", Enabled: true},
+				{ID: "test2@test.com", Enabled: true},
+			},
+		}, false, nil).Once()
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
@@ -328,6 +360,13 @@ discovery:
 				},
 			}, nil).Once()
 
+		styraClientMock.On("GetUsers", mock.Anything).Return(&styra.GetUsersResponse{
+			Users: []styra.User{
+				{ID: "test1@test.com", Enabled: true},
+				{ID: "test2@test.com", Enabled: true},
+			},
+		}, false, nil).Once()
+
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
 			ResourceID:   "system_id",
@@ -355,6 +394,13 @@ discovery:
 					BundleDownload: &styra.BundleDownloadConfig{DeltaBundles: false},
 				},
 			}, nil).Once()
+
+		styraClientMock.On("GetUsers", mock.Anything).Return(&styra.GetUsersResponse{
+			Users: []styra.User{
+				{ID: "test1@test.com", Enabled: true},
+				{ID: "test2@test.com", Enabled: true},
+			},
+		}, false, nil).Once()
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
@@ -430,6 +476,7 @@ discovery:
 		gomega.Eventually(func() bool {
 			var (
 				getSystem          int
+				getUsers           int
 				rolebindingsListed int
 				getOPAConfig       int
 			)
@@ -437,6 +484,8 @@ discovery:
 				switch call.Method {
 				case "GetSystem":
 					getSystem++
+				case "GetUsers":
+					getUsers++
 				case "ListRoleBindingsV2":
 					rolebindingsListed++
 				case "GetOPAConfig":
@@ -532,6 +581,13 @@ discovery:
 			},
 		}, nil).Once()
 
+		styraClientMock.On("GetUsers", mock.Anything).Return(&styra.GetUsersResponse{
+			Users: []styra.User{
+				{ID: "test1@test.com", Enabled: true},
+				{ID: "test2@test.com", Enabled: true},
+			},
+		}, false, nil).Once()
+
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
 			ResourceID:   "system_id",
@@ -553,6 +609,7 @@ discovery:
 			var (
 				getSystem          int
 				updateSystem       int
+				getUsers           int
 				listRolebindingsV2 int
 				getOPAConfig       int
 			)
@@ -562,6 +619,8 @@ discovery:
 					getSystem++
 				case "UpdateSystem":
 					updateSystem++
+				case "GetUsers":
+					getUsers++
 				case "ListRoleBindingsV2":
 					listRolebindingsV2++
 				case "GetOPAConfig":
@@ -571,6 +630,7 @@ discovery:
 
 			return getSystem == 1 &&
 				updateSystem == 1 &&
+				getUsers == 1 &&
 				listRolebindingsV2 == 1 &&
 				getOPAConfig == 1
 		}, timeout, interval).Should(gomega.BeTrue())
@@ -611,21 +671,22 @@ discovery:
 			},
 		}, nil).Once()
 
-		styraClientMock.On("GetUser", mock.Anything, "test1@test.com").Return(&styra.GetUserResponse{
-			StatusCode: http.StatusNotFound,
-		}, nil).Once()
+		styraClientMock.On("GetUsers", mock.Anything).Return(&styra.GetUsersResponse{
+			Users: []styra.User{
+				{ID: "test3@test.com", Enabled: true},
+				{ID: "test4@test.com", Enabled: true},
+			},
+		}, false, nil).Once()
 
 		styraClientMock.On("CreateInvitation", mock.Anything, false, "test1@test.com").Return(&styra.CreateInvitationResponse{
 			StatusCode: http.StatusOK,
 		}, nil).Once()
-
-		styraClientMock.On("GetUser", mock.Anything, "test2@test.com").Return(&styra.GetUserResponse{
-			StatusCode: http.StatusNotFound,
-		}, nil).Once()
+		styraClientMock.On("InvalidateCache", mock.Anything).Return(nil).Once()
 
 		styraClientMock.On("CreateInvitation", mock.Anything, false, "test2@test.com").Return(&styra.CreateInvitationResponse{
 			StatusCode: http.StatusOK,
 		}, nil).Once()
+		styraClientMock.On("InvalidateCache", mock.Anything).Return(nil).Once()
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
@@ -656,8 +717,9 @@ discovery:
 		gomega.Eventually(func() bool {
 			var (
 				getSystem                 int
-				getUser                   int
+				getUsers                  int
 				createInvitation          int
+				invalidateCache           int
 				listRolebindingsV2        int
 				updateRoleBindingSubjects int
 				getOPAConfig              int
@@ -666,10 +728,12 @@ discovery:
 				switch call.Method {
 				case "GetSystem":
 					getSystem++
-				case "GetUser":
-					getUser++
+				case "GetUsers":
+					getUsers++
 				case "CreateInvitation":
 					createInvitation++
+				case "InvalidateCache":
+					invalidateCache++
 				case "ListRoleBindingsV2":
 					listRolebindingsV2++
 				case "UpdateRoleBindingSubjects":
@@ -679,8 +743,9 @@ discovery:
 				}
 			}
 			return getSystem == 1 &&
-				getUser == 2 &&
+				getUsers == 1 &&
 				createInvitation == 2 &&
+				invalidateCache == 2 &&
 				listRolebindingsV2 == 1 &&
 				updateRoleBindingSubjects == 1 &&
 				getOPAConfig == 1
@@ -723,13 +788,12 @@ discovery:
 			},
 		}, nil).Once()
 
-		styraClientMock.On("GetUser", mock.Anything, "test1@test.com").Return(&styra.GetUserResponse{
-			StatusCode: http.StatusOK,
-		}, nil).Once()
-
-		styraClientMock.On("GetUser", mock.Anything, "test2@test.com").Return(&styra.GetUserResponse{
-			StatusCode: http.StatusOK,
-		}, nil).Once()
+		styraClientMock.On("GetUsers", mock.Anything).Return(&styra.GetUsersResponse{
+			Users: []styra.User{
+				{ID: "test1@test.com", Enabled: true},
+				{ID: "test2@test.com", Enabled: true},
+			},
+		}, false, nil).Once()
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
@@ -772,7 +836,7 @@ discovery:
 		gomega.Eventually(func() bool {
 			var (
 				getSystem                 int
-				getUser                   int
+				getUsers                  int
 				listRolebindingsV2        int
 				updateRoleBindingSubjects int
 				getOPAConfig              int
@@ -781,8 +845,8 @@ discovery:
 				switch call.Method {
 				case "GetSystem":
 					getSystem++
-				case "GetUser":
-					getUser++
+				case "GetUsers":
+					getUsers++
 				case "ListRoleBindingsV2":
 					listRolebindingsV2++
 				case "UpdateRoleBindingSubjects":
@@ -792,7 +856,7 @@ discovery:
 				}
 			}
 			return getSystem == 1 &&
-				getUser == 2 &&
+				getUsers == 1 &&
 				listRolebindingsV2 == 1 &&
 				updateRoleBindingSubjects == 1 &&
 				getOPAConfig == 1
@@ -830,6 +894,13 @@ discovery:
 				},
 			},
 		}, nil).Once()
+
+		styraClientMock.On("GetUsers", mock.Anything).Return(&styra.GetUsersResponse{
+			Users: []styra.User{
+				{ID: "test1@test.com", Enabled: true},
+				{ID: "test2@test.com", Enabled: true},
+			},
+		}, false, nil).Once()
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
@@ -893,6 +964,7 @@ discovery:
 		gomega.Eventually(func() bool {
 			var (
 				getSystem                 int
+				getUsers                  int
 				listRolebindingsV2        int
 				updateRoleBindingSubjects int
 				getOPAConfig              int
@@ -901,6 +973,8 @@ discovery:
 				switch call.Method {
 				case "GetSystem":
 					getSystem++
+				case "GetUsers":
+					getUsers++
 				case "ListRoleBindingsV2":
 					listRolebindingsV2++
 				case "UpdateRoleBindingSubjects":
@@ -910,6 +984,7 @@ discovery:
 				}
 			}
 			return getSystem == 1 &&
+				getUsers == 1 &&
 				listRolebindingsV2 == 1 &&
 				updateRoleBindingSubjects == 2 &&
 				getOPAConfig == 1
@@ -950,6 +1025,13 @@ discovery:
 				},
 			}, nil).Once()
 
+		styraClientMock.On("GetUsers", mock.Anything).Return(&styra.GetUsersResponse{
+			Users: []styra.User{
+				{ID: "test1@test.com", Enabled: true},
+				{ID: "test2@test.com", Enabled: true},
+			},
+		}, false, nil).Once()
+
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
 			ResourceID:   "system_id",
@@ -986,6 +1068,7 @@ discovery:
 		gomega.Eventually(func() bool {
 			var (
 				getSystem          int
+				getUsers           int
 				listRolebindingsV2 int
 				upsertDatasource   int
 				getOPAConfig       int
@@ -995,6 +1078,8 @@ discovery:
 				switch call.Method {
 				case "GetSystem":
 					getSystem++
+				case "GetUsers":
+					getUsers++
 				case "ListRoleBindingsV2":
 					listRolebindingsV2++
 				case "GetOPAConfig":
@@ -1012,6 +1097,7 @@ discovery:
 			}
 
 			return getSystem == 1 &&
+				getUsers == 1 &&
 				listRolebindingsV2 == 1 &&
 				upsertDatasource == 1 &&
 				getOPAConfig == 1 &&
@@ -1154,6 +1240,13 @@ discovery:
 			},
 		}, nil).Once()
 
+		styraClientMock.On("GetUsers", mock.Anything).Return(&styra.GetUsersResponse{
+			Users: []styra.User{
+				{ID: "test1@test.com", Enabled: true},
+				{ID: "test2@test.com", Enabled: true},
+			},
+		}, false, nil).Once()
+
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
 			ResourceID:   "system_id",
@@ -1236,6 +1329,7 @@ discovery:
 		gomega.Eventually(func() bool {
 			var (
 				getSystem          int
+				getUsers           int
 				createUpdateSecret int
 				updateSystem       int
 				listRolebindingsV2 int
@@ -1245,6 +1339,8 @@ discovery:
 				switch call.Method {
 				case "GetSystem":
 					getSystem++
+				case "GetUsers":
+					getUsers++
 				case "CreateUpdateSecret":
 					createUpdateSecret++
 				case "UpdateSystem":
@@ -1256,6 +1352,7 @@ discovery:
 				}
 			}
 			return getSystem == 1 &&
+				getUsers == 1 &&
 				createUpdateSecret == 1 &&
 				updateSystem == 1 &&
 				listRolebindingsV2 == 1 &&
@@ -1307,6 +1404,13 @@ discovery:
 			SystemConfig: cfg2,
 		}, nil).Once()
 
+		styraClientMock.On("GetUsers", mock.Anything).Return(&styra.GetUsersResponse{
+			Users: []styra.User{
+				{ID: "test1@test.com", Enabled: true},
+				{ID: "test2@test.com", Enabled: true},
+			},
+		}, false, nil).Once()
+
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
 			ResourceID:   cfg2.ID,
@@ -1340,6 +1444,13 @@ discovery:
 			},
 		}, nil).Once()
 
+		styraClientMock.On("GetUsers", mock.Anything).Return(&styra.GetUsersResponse{
+			Users: []styra.User{
+				{ID: "test1@test.com", Enabled: true},
+				{ID: "test2@test.com", Enabled: true},
+			},
+		}, false, nil).Once()
+
 		styraClientMock.On("GetSystem", mock.Anything, cfg2.ID).Return(
 			&styra.GetSystemResponse{
 				StatusCode: http.StatusOK,
@@ -1350,6 +1461,13 @@ discovery:
 					BundleDownload: &styra.BundleDownloadConfig{DeltaBundles: false},
 				},
 			}, nil)
+
+		styraClientMock.On("GetUsers", mock.Anything).Return(&styra.GetUsersResponse{
+			Users: []styra.User{
+				{ID: "test1@test.com", Enabled: true},
+				{ID: "test2@test.com", Enabled: true},
+			},
+		}, false, nil).Once()
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
@@ -1367,6 +1485,7 @@ discovery:
 				getSystemByName    int
 				createSystem       int
 				deletePolicy       int
+				getUsers           int
 				listRolebindingsV2 int
 				createRoleBinding  int
 				getOPAConfig       int
@@ -1381,6 +1500,8 @@ discovery:
 					getSystemByName++
 				case "DeletePolicy":
 					deletePolicy++
+				case "GetUsers":
+					getUsers++
 				case "ListRoleBindingsV2":
 					listRolebindingsV2++
 				case "CreateRoleBinding":
@@ -1393,6 +1514,7 @@ discovery:
 				getSystemByName == 1 &&
 				createSystem == 0 &&
 				deletePolicy == 0 &&
+				getUsers == 3 &&
 				listRolebindingsV2 == 3 &&
 				createRoleBinding == 0 &&
 				getOPAConfig == 3
@@ -1458,6 +1580,13 @@ discovery:
 			},
 		}, nil).Once()
 
+		styraClientMock.On("GetUsers", mock.Anything).Return(&styra.GetUsersResponse{
+			Users: []styra.User{
+				{ID: "test1@test.com", Enabled: true},
+				{ID: "test2@test.com", Enabled: true},
+			},
+		}, false, nil).Once()
+
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
 			ResourceID:   "system_id3",
@@ -1473,6 +1602,7 @@ discovery:
 			SystemType: "custom",
 		}, nil)
 
+		// new reconcile as we create opatoken secret that we are watching
 		styraClientMock.On("GetSystem", mock.Anything, "system_id3").Return(
 			&styra.GetSystemResponse{
 				StatusCode: http.StatusOK,
@@ -1484,6 +1614,13 @@ discovery:
 				},
 			}, nil)
 
+		styraClientMock.On("GetUsers", mock.Anything).Return(&styra.GetUsersResponse{
+			Users: []styra.User{
+				{ID: "test1@test.com", Enabled: true},
+				{ID: "test2@test.com", Enabled: true},
+			},
+		}, false, nil).Once()
+
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
 			ResourceID:   "system_id3",
@@ -1492,6 +1629,13 @@ discovery:
 			Rolebindings: []*styra.RoleBindingConfig{{ID: "1", RoleID: styra.RoleSystemViewer}},
 		}, nil)
 
+		styraClientMock.On("GetUsers", mock.Anything).Return(&styra.GetUsersResponse{
+			Users: []styra.User{
+				{ID: "test1@test.com", Enabled: true},
+				{ID: "test2@test.com", Enabled: true},
+			},
+		}, false, nil).Once()
+
 		gomega.Expect(k8sClient.Create(ctx, toCreate3)).To(gomega.Succeed())
 		gomega.Eventually(func() bool {
 			var (
@@ -1499,6 +1643,7 @@ discovery:
 				getSystemByName    int
 				createSystem       int
 				deletePolicy       int
+				getUsers           int
 				listRolebindingsV2 int
 				createRoleBinding  int
 				getOPAConfig       int
@@ -1513,6 +1658,8 @@ discovery:
 					getSystemByName++
 				case "DeletePolicy":
 					deletePolicy++
+				case "GetUsers":
+					getUsers++
 				case "ListRoleBindingsV2":
 					listRolebindingsV2++
 				case "CreateRoleBinding":
@@ -1525,6 +1672,7 @@ discovery:
 				getSystemByName == 1 &&
 				createSystem == 0 &&
 				deletePolicy == 0 &&
+				getUsers == 3 &&
 				listRolebindingsV2 == 3 &&
 				createRoleBinding == 0 &&
 				getOPAConfig == 3
@@ -1619,6 +1767,13 @@ discovery:
 			},
 		}, nil).Once()
 
+		styraClientMock.On("GetUsers", mock.Anything).Return(&styra.GetUsersResponse{
+			Users: []styra.User{
+				{ID: "test1@test.com", Enabled: true},
+				{ID: "test2@test.com", Enabled: true},
+			},
+		}, false, nil).Once()
+
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
 			ResourceID:   cfg4.ID,
@@ -1656,6 +1811,13 @@ discovery:
 				},
 			}, nil).Once()
 
+		styraClientMock.On("GetUsers", mock.Anything).Return(&styra.GetUsersResponse{
+			Users: []styra.User{
+				{ID: "test1@test.com", Enabled: true},
+				{ID: "test2@test.com", Enabled: true},
+			},
+		}, false, nil).Once()
+
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
 			ResourceID:   cfg4.ID,
@@ -1683,6 +1845,13 @@ discovery:
 				},
 			}, nil).Twice()
 
+		styraClientMock.On("GetUsers", mock.Anything).Return(&styra.GetUsersResponse{
+			Users: []styra.User{
+				{ID: "test1@test.com", Enabled: true},
+				{ID: "test2@test.com", Enabled: true},
+			},
+		}, false, nil).Once()
+
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
 			ResourceID:   "system_id",
@@ -1709,6 +1878,13 @@ discovery:
 					BundleDownload: &styra.BundleDownloadConfig{DeltaBundles: true},
 				},
 			}, nil).Once()
+
+		styraClientMock.On("GetUsers", mock.Anything).Return(&styra.GetUsersResponse{
+			Users: []styra.User{
+				{ID: "test1@test.com", Enabled: true},
+				{ID: "test2@test.com", Enabled: true},
+			},
+		}, false, nil).Once()
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
 			ResourceKind: styra.RoleBindingKindSystem,
@@ -1793,6 +1969,7 @@ distributed_tracing:
 				getSystemByName    int
 				createSystem       int
 				deletePolicy       int
+				getUsers           int
 				rolebindingsListed int
 				createRoleBinding  int
 				getOPAConfig       int
@@ -1807,6 +1984,8 @@ distributed_tracing:
 					getSystemByName++
 				case "DeletePolicy":
 					deletePolicy++
+				case "GetUsers":
+					getUsers++
 				case "ListRoleBindingsV2":
 					rolebindingsListed++
 				case "CreateRoleBinding":
@@ -1819,6 +1998,7 @@ distributed_tracing:
 				getSystemByName == 1 &&
 				createSystem == 1 &&
 				deletePolicy == 2 &&
+				getUsers == 3 &&
 				rolebindingsListed == 3 &&
 				createRoleBinding == 1 &&
 				getOPAConfig == 3

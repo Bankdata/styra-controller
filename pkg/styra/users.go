@@ -18,6 +18,7 @@ package styra
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -29,16 +30,67 @@ const (
 	endpointV1Users = "/v1/users"
 )
 
-// GetUserResponse is the response type for calls to the GET /v1/users endpoint
+// GetUserResponse is the response type for calls to the GET /v1/users/{userId} endpoint
 // in the Styra API.
 type GetUserResponse struct {
 	StatusCode int
 	Body       []byte
 }
 
+// GetUsersResponse is the response type for calls to the GET /v1/users endpoint
+// in the Styra API.
+type GetUsersResponse struct {
+	Users []User
+}
+
+// Struct to unmarshal the JSON response from the GET /v1/users endpoint
+type getUsersJSONResponse struct {
+	Result []User `json:"result"`
+}
+
+// User is the struct for a user in the Styra API.
+type User struct {
+	Enabled bool   `json:"enabled"`
+	ID      string `json:"id"`
+}
+
+// GetUsers calls the GET /v1/users endpoint in the Styra API.
+func (c *Client) GetUsers(ctx context.Context) (*GetUsersResponse, bool, error) {
+	const cacheKey = "allUsersResponse"
+
+	// Check if the response is in the cache
+	if cachedResponse, found := c.Cache.Get(cacheKey); found {
+		return cachedResponse.(*GetUsersResponse), true, nil
+	}
+
+	res, err := c.GetUserEndpoint(ctx, endpointV1Users)
+	if err != nil {
+		return nil, false, err
+	}
+
+	var js getUsersJSONResponse
+	if err := json.Unmarshal(res.Body, &js); err != nil {
+		return nil, false, errors.Wrap(err, "could not unmarshal body: ")
+	}
+
+	r := GetUsersResponse{
+		Users: js.Result,
+	}
+
+	// Cache the response
+	c.Cache.Set(cacheKey, &r, 0)
+
+	return &r, false, nil
+}
+
 // GetUser calls the GET /v1/users/{userId} endpoint in the Styra API.
 func (c *Client) GetUser(ctx context.Context, name string) (*GetUserResponse, error) {
-	res, err := c.request(ctx, http.MethodGet, fmt.Sprintf("%s/%s", endpointV1Users, name), nil)
+	return c.GetUserEndpoint(ctx, fmt.Sprintf("%s/%s", endpointV1Users, name))
+}
+
+// GetUserEndpoint is a helper function to call the Styra API.
+func (c *Client) GetUserEndpoint(ctx context.Context, endpoint string) (*GetUserResponse, error) {
+	res, err := c.request(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
