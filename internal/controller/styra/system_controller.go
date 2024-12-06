@@ -606,23 +606,24 @@ func (r *SystemReconciler) reconcileSubjects(
 			WithSystemCondition(v1beta1.ConditionTypeSubjectsUpdated)
 	}
 
-	roleBindingsByRole := map[styra.Role]*styra.RoleBindingConfig{}
+	styraRoleBindingsByRole := map[styra.Role]*styra.RoleBindingConfig{}
 	for _, rb := range res.Rolebindings {
-		roleBindingsByRole[rb.RoleID] = rb
+		styraRoleBindingsByRole[rb.RoleID] = rb
 	}
-	systemUserRoles := make([]styra.Role, len(r.Config.SystemUserRoles))
+	controllerSystemUserRoles := make([]styra.Role, len(r.Config.SystemUserRoles))
 	for i, role := range r.Config.SystemUserRoles {
-		systemUserRoles[i] = styra.Role(role)
+		controllerSystemUserRoles[i] = styra.Role(role)
 	}
-	rolebindingSubjects := createRolebindingSubjects(
+	systemRolebindingSubjects := createRolebindingSubjects(
 		system.Spec.Subjects,
 		r.Config.SSO,
 	)
-	for _, role := range systemUserRoles {
-		rb, ok := roleBindingsByRole[role]
+	for _, role := range controllerSystemUserRoles {
+		rb, ok := styraRoleBindingsByRole[role]
 
 		var subjects []*styra.Subject
 		if ok {
+			// We only want want the controller to manage user and claim subjects
 			for _, subject := range rb.Subjects {
 				if subject.Kind != styra.SubjectKindUser && subject.Kind != styra.SubjectKindClaim {
 					subjects = append(subjects, subject)
@@ -630,10 +631,10 @@ func (r *SystemReconciler) reconcileSubjects(
 			}
 		}
 
-		subjects = append(subjects, rolebindingSubjects...)
+		subjects = append(subjects, systemRolebindingSubjects...)
 
 		if !ok {
-			if err := r.createRoleBinding(ctx, log, system, role, rolebindingSubjects); err != nil {
+			if err := r.createRoleBinding(ctx, log, system, role, systemRolebindingSubjects); err != nil {
 				return ctrl.Result{}, err
 			}
 		} else if !styra.SubjectsAreEqual(rb.Subjects, subjects) {
@@ -645,7 +646,7 @@ func (r *SystemReconciler) reconcileSubjects(
 
 	// Remove users and groups from all other rolebindings
 	roles := map[styra.Role]struct{}{}
-	for _, role := range systemUserRoles {
+	for _, role := range controllerSystemUserRoles {
 		roles[role] = struct{}{}
 	}
 	for _, rb := range res.Rolebindings {
@@ -654,6 +655,8 @@ func (r *SystemReconciler) reconcileSubjects(
 		}
 
 		var subjects []*styra.Subject
+
+		// We only want want the controller to manage user and claim subjects
 		for _, subject := range rb.Subjects {
 			if subject.Kind == styra.SubjectKindUser || subject.Kind == styra.SubjectKindClaim {
 				continue
