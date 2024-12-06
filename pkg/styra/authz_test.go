@@ -345,6 +345,11 @@ var _ = ginkgo.DescribeTable("SubjectsAreEqual",
 		[]*styra.Subject{{ID: "test@test.dk", Kind: "user"}},
 		true),
 
+	ginkgo.Entry("returns true if subjects are equal only token",
+		[]*styra.Subject{{ID: "systems/e494612fbce54445a86057ad9b8bbab7/install", Kind: "token"}},
+		[]*styra.Subject{{ID: "systems/e494612fbce54445a86057ad9b8bbab7/install", Kind: "token"}},
+		true),
+
 	ginkgo.Entry("returns true if subjects are equal",
 		[]*styra.Subject{
 			{ID: "test@test.dk", Kind: "user"},
