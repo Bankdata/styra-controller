@@ -148,8 +148,8 @@ func main() {
 		roles[i] = styra.Role(role)
 	}
 
-	styraHostUrl := strings.TrimSuffix(ctrlConfig.Styra.Address, "/")
-	styraClient := styra.New(styraHostUrl, styraToken)
+	styraHostURL := strings.TrimSuffix(ctrlConfig.Styra.Address, "/")
+	styraClient := styra.New(styraHostURL, styraToken)
 
 	if err := configureDecisionsExporter(styraClient, ctrlConfig); err != nil {
 		log.Error(err, "unable to configure decisions exporter")
