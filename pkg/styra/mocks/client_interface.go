@@ -469,7 +469,7 @@ func (_m *ClientInterface) GetUsers(ctx context.Context) (*styra.GetUsersRespons
 	return r0, r1, r2
 }
 
-// InvalidateCache provides a mock function with given fields:
+// InvalidateCache provides a mock function with no fields
 func (_m *ClientInterface) InvalidateCache() {
 	_m.Called()
 }

@@ -64,6 +64,9 @@ const (
 	// SubjectKindUser is a SubjectKind used when the subject is a user.
 	SubjectKindUser SubjectKind = "user"
 
+	// SubjectKindToken is a SubjectKind used when the subject is a token.
+	SubjectKindToken SubjectKind = "token"
+
 	// SubjectKindClaim is a SubjectKind used when the subject is a claim.
 	SubjectKindClaim SubjectKind = "claim"
 )
@@ -302,7 +305,7 @@ func SubjectsAreEqual(as []*Subject, bs []*Subject) bool {
 					found = true
 				}
 			}
-			if a.Kind == SubjectKindUser {
+			if a.Kind == SubjectKindUser || a.Kind == SubjectKindToken {
 				if a.Kind == b.Kind && a.ID == b.ID {
 					found = true
 				}
