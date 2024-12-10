@@ -65,6 +65,10 @@ func OptionsFromConfig(cfg *v2alpha2.ProjectConfig, scheme *runtime.Scheme) mana
 		o.LeaderElectionID = leaderElectionID
 	}
 
+	if cfg.MaxConcurrentReconciles != nil {
+		o.Controller.MaxConcurrentReconciles = *cfg.MaxConcurrentReconciles
+	}
+
 	return o
 }
 
