@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"path"
 	"reflect"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -55,7 +56,10 @@ import (
 	"github.com/bankdata/styra-controller/internal/webhook"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
-
+type SystemReconcillerMetrics struct {
+	ControllerSystemStatusReady        *prometheus.GaugeVec
+	TotalReconcileTime                 *prometheus.HistogramVec
+}
 // SystemReconciler reconciles a System object
 type SystemReconciler struct {
 	client.Client
@@ -63,7 +67,7 @@ type SystemReconciler struct {
 	Styra         styra.ClientInterface
 	WebhookClient webhook.Client
 	Recorder      record.EventRecorder
-	Metric        *prometheus.GaugeVec
+	Metrics        *SystemReconcillerMetrics
 	Config        *configv2alpha2.ProjectConfig
 }
 
@@ -78,6 +82,7 @@ type SystemReconciler struct {
 // ensuring that the current state of the System resource renconciled
 // towards the desired state.
 func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	startTime := time.Now()
 	log := log.FromContext(ctx)
 	log.Info("Reconciliation begins")
 
@@ -108,11 +113,11 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	if system.ObjectMeta.DeletionTimestamp.IsZero() {
 		res, err = r.reconcile(ctx, log, &system)
-		r.updateMetric(req, system.Status.Ready)
+		r.updateMetric(req, system.Status.ID, system.Status.Ready)
 	} else {
 		res, err = r.reconcileDeletion(ctx, log, &system)
 		if err != nil {
-			r.updateMetric(req, system.Status.Ready)
+			r.updateMetric(req, system.Status.ID, system.Status.Ready)
 		} else {
 			r.deleteMetric(req)
 		}
@@ -126,6 +131,8 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return res, errors.Wrap(err, "could not set failure status on System")
 		}
 	}
+	endTime := time.Since(startTime)
+	r.Metrics.TotalReconcileTime.WithLabelValues(req.Name, req.Namespace, system.Status.ID).Observe(endTime.Seconds())
 	return res, err
 }
 
@@ -142,22 +149,23 @@ func (r *SystemReconciler) setSystemStatusError(System *v1beta1.System, err erro
 	}
 }
 
-func (r *SystemReconciler) updateMetric(req ctrl.Request, ready bool) {
-	if r.Metric == nil {
+func (r *SystemReconciler) updateMetric(req ctrl.Request, system_id string, ready bool) {
+	if (r.Metrics == nil || r.Metrics.ControllerSystemStatusReady == nil) {
 		return
 	}
+
 	var value float64
 	if ready {
 		value = 1
 	}
-	r.Metric.WithLabelValues(req.Name, req.Namespace).Set(value)
+	r.Metrics.ControllerSystemStatusReady.WithLabelValues(req.Name, req.Namespace, system_id).Set(value)
 }
 
 func (r *SystemReconciler) deleteMetric(req ctrl.Request) {
-	if r.Metric == nil {
+	if r.Metrics == nil || r.Metrics.ControllerSystemStatusReady == nil {
 		return
 	}
-	r.Metric.Delete(prometheus.Labels{"System": req.Name, "namespace": req.Namespace})
+	r.Metrics.ControllerSystemStatusReady.Delete(prometheus.Labels{"System": req.Name, "namespace": req.Namespace})
 }
 
 func (r *SystemReconciler) recordErrorEvent(system *v1beta1.System, err error) {
