@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"path"
 	"reflect"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -56,6 +57,13 @@ import (
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
+// SystemReconcilerMetrics holds the metrics for the SystemReconciller
+type SystemReconcilerMetrics struct {
+	ControllerSystemStatusReady *prometheus.GaugeVec
+	ReconcileSegmentTime        *prometheus.HistogramVec
+	ReconcileTime               *prometheus.HistogramVec
+}
+
 // SystemReconciler reconciles a System object
 type SystemReconciler struct {
 	client.Client
@@ -63,7 +71,7 @@ type SystemReconciler struct {
 	Styra         styra.ClientInterface
 	WebhookClient webhook.Client
 	Recorder      record.EventRecorder
-	Metric        *prometheus.GaugeVec
+	Metrics       *SystemReconcilerMetrics
 	Config        *configv2alpha2.ProjectConfig
 }
 
@@ -78,18 +86,20 @@ type SystemReconciler struct {
 // ensuring that the current state of the System resource renconciled
 // towards the desired state.
 func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	start := time.Now()
 	log := log.FromContext(ctx)
 	log.Info("Reconciliation begins")
 
 	log.Info("Fetching System")
 	var system v1beta1.System
 	if err := r.Get(ctx, req.NamespacedName, &system); err != nil {
+		r.Metrics.ReconcileTime.WithLabelValues("delete").Observe(time.Since(start).Seconds())
 		if k8serrors.IsNotFound(err) {
 			log.Info("Could not find System in kubernetes")
-			r.deleteMetric(req)
+			r.deleteMetrics(req)
 			return ctrl.Result{}, nil
 		}
-		r.deleteMetric(req)
+		r.deleteMetrics(req)
 		return ctrl.Result{}, errors.Wrap(err, "unable to fetch System")
 	}
 
@@ -97,7 +107,7 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	if !labels.ControllerClassMatches(&system, r.Config.ControllerClass) {
 		log.Info("This is not a System we are managing. Skipping reconciliation.")
-		r.deleteMetric(req)
+		r.deleteMetrics(req)
 		return ctrl.Result{}, nil
 	}
 
@@ -108,13 +118,15 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	if system.ObjectMeta.DeletionTimestamp.IsZero() {
 		res, err = r.reconcile(ctx, log, &system)
-		r.updateMetric(req, system.Status.Ready)
+		r.updateMetric(req, system.Status.ID, system.Status.Ready)
 	} else {
 		res, err = r.reconcileDeletion(ctx, log, &system)
 		if err != nil {
-			r.updateMetric(req, system.Status.Ready)
+			r.updateMetric(req, system.Status.ID, system.Status.Ready)
 		} else {
-			r.deleteMetric(req)
+			r.deleteMetrics(req)
+			r.Metrics.ReconcileTime.WithLabelValues("delete").Observe(time.Since(start).Seconds())
+			return res, err
 		}
 	}
 
@@ -122,9 +134,12 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		r.recordErrorEvent(&system, err)
 		r.setSystemStatusError(&system, err)
 
+		r.Metrics.ReconcileTime.WithLabelValues("error").Observe(time.Since(start).Seconds())
 		if err := r.Status().Update(ctx, &system); err != nil {
 			return res, errors.Wrap(err, "could not set failure status on System")
 		}
+	} else {
+		r.Metrics.ReconcileTime.WithLabelValues("ok").Observe(time.Since(start).Seconds())
 	}
 	return res, err
 }
@@ -142,22 +157,27 @@ func (r *SystemReconciler) setSystemStatusError(System *v1beta1.System, err erro
 	}
 }
 
-func (r *SystemReconciler) updateMetric(req ctrl.Request, ready bool) {
-	if r.Metric == nil {
+func (r *SystemReconciler) updateMetric(req ctrl.Request, systemID string, ready bool) {
+	if r.Metrics == nil || r.Metrics.ControllerSystemStatusReady == nil {
 		return
 	}
+
 	var value float64
 	if ready {
 		value = 1
 	}
-	r.Metric.WithLabelValues(req.Name, req.Namespace).Set(value)
+	r.Metrics.ControllerSystemStatusReady.WithLabelValues(req.Name, req.Namespace, systemID).Set(value)
 }
 
-func (r *SystemReconciler) deleteMetric(req ctrl.Request) {
-	if r.Metric == nil {
+func (r *SystemReconciler) deleteMetrics(req ctrl.Request) {
+	if r.Metrics == nil || r.Metrics.ControllerSystemStatusReady == nil {
 		return
 	}
-	r.Metric.Delete(prometheus.Labels{"System": req.Name, "namespace": req.Namespace})
+	if deleted := r.Metrics.ControllerSystemStatusReady.DeletePartialMatch(
+		prometheus.Labels{"System": req.Name, "namespace": req.Namespace},
+	); deleted != 1 {
+		log.Log.Error(errors.New("Failed to delete metric"), "Incorrect number of deleted metrics", "deleted", deleted)
+	}
 }
 
 func (r *SystemReconciler) recordErrorEvent(system *v1beta1.System, err error) {
@@ -239,8 +259,10 @@ func (r *SystemReconciler) reconcile(
 
 	if r.Config.EnableMigrations && systemID == "" && migrationID != "" {
 		log.Info(fmt.Sprintf("Use migrationId(%s) to fetch system from Styra DAS", migrationID))
-
+		getSystemStart := time.Now()
 		cfg, err = r.getSystem(ctx, log, migrationID)
+		r.Metrics.ReconcileSegmentTime.WithLabelValues("getSystem").Observe(time.Since(getSystemStart).Seconds())
+
 		if err != nil {
 			return ctrl.Result{}, err
 		}
@@ -248,18 +270,33 @@ func (r *SystemReconciler) reconcile(
 			return ctrl.Result{}, err
 		}
 	} else if systemID != "" {
+		getSystemStart := time.Now()
 		cfg, err = r.getSystem(ctx, log, systemID)
+		r.Metrics.ReconcileSegmentTime.WithLabelValues("getSystem").Observe(time.Since(getSystemStart).Seconds())
+
 		if err != nil {
 			var serr *styra.HTTPError
 			if errors.As(err, &serr) && serr.StatusCode == http.StatusNotFound {
+				createSystemStart := time.Now()
 				res, err := r.createSystem(ctx, log, system)
+				r.Metrics.ReconcileSegmentTime.WithLabelValues("createSystem").
+					Observe(time.Since(createSystemStart).Seconds())
+
 				if err != nil {
 					return ctrl.Result{}, err
 				}
-				if err := r.deleteDefaultPolicies(ctx, log, res.SystemConfig.ID); err != nil {
+				deleteDefaultPolicyStart := time.Now()
+				err = r.deleteDefaultPolicies(ctx, log, res.SystemConfig.ID)
+				r.Metrics.ReconcileSegmentTime.WithLabelValues("deleteDefaultPolicies").
+					Observe(time.Since(deleteDefaultPolicyStart).Seconds())
+				if err != nil {
 					return ctrl.Result{}, err
 				}
-				if err := r.reconcileID(ctx, log, system, res.SystemConfig.ID); err != nil {
+				reconcileIDStart := time.Now()
+				err = r.reconcileID(ctx, log, system, res.SystemConfig.ID)
+				r.Metrics.ReconcileSegmentTime.WithLabelValues("reconcileID").
+					Observe(time.Since(reconcileIDStart).Seconds())
+				if err != nil {
 					return ctrl.Result{}, err
 				}
 			} else {
@@ -269,23 +306,43 @@ func (r *SystemReconciler) reconcile(
 	} else {
 		displayName := system.DisplayName(r.Config.SystemPrefix, r.Config.SystemSuffix)
 
+		getSystemByNameStart := time.Now()
 		cfg, err = r.getSystemByName(ctx, log, displayName)
+		r.Metrics.ReconcileSegmentTime.WithLabelValues("getSystemByName").
+			Observe(time.Since(getSystemByNameStart).Seconds())
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 		if cfg != nil {
-			if err := r.reconcileID(ctx, log, system, cfg.ID); err != nil {
-				return ctrl.Result{}, err
-			}
-		} else {
-			res, err := r.createSystem(ctx, log, system)
+			reconcileIDStart := time.Now()
+			err = r.reconcileID(ctx, log, system, cfg.ID)
+			r.Metrics.ReconcileSegmentTime.WithLabelValues("reconcileID").
+				Observe(time.Since(reconcileIDStart).Seconds())
 			if err != nil {
 				return ctrl.Result{}, err
 			}
-			if err := r.deleteDefaultPolicies(ctx, log, res.SystemConfig.ID); err != nil {
+		} else {
+			createSystemStart := time.Now()
+			res, err := r.createSystem(ctx, log, system)
+			r.Metrics.ReconcileSegmentTime.WithLabelValues("createSystem").
+				Observe(time.Since(createSystemStart).Seconds())
+
+			if err != nil {
 				return ctrl.Result{}, err
 			}
-			if err := r.reconcileID(ctx, log, system, res.SystemConfig.ID); err != nil {
+			deleteDefaultPolicyStart := time.Now()
+			err = r.deleteDefaultPolicies(ctx, log, res.SystemConfig.ID)
+			r.Metrics.ReconcileSegmentTime.WithLabelValues("deleteDefaultPolicies").
+				Observe(time.Since(deleteDefaultPolicyStart).Seconds())
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			reconcileIDStart := time.Now()
+			err = r.reconcileID(ctx, log, system, res.SystemConfig.ID)
+			r.Metrics.ReconcileSegmentTime.WithLabelValues("reconcileID").
+				Observe(time.Since(reconcileIDStart).Seconds())
+
+			if err != nil {
 				return ctrl.Result{}, err
 			}
 		}
@@ -293,36 +350,58 @@ func (r *SystemReconciler) reconcile(
 
 	system.SetCondition(v1beta1.ConditionTypeCreatedInStyra, metav1.ConditionTrue)
 
-	if result, err := r.reconcileCredentials(ctx, log, system); err != nil {
+	reconcileCredentialsStart := time.Now()
+	result, err := r.reconcileCredentials(ctx, log, system)
+	r.Metrics.ReconcileSegmentTime.WithLabelValues("reconcileCredentials").
+		Observe(time.Since(reconcileCredentialsStart).Seconds())
+	if err != nil {
 		return result, err
 	}
 	system.SetCondition(v1beta1.ConditionTypeGitCredentialsUpdated, metav1.ConditionTrue)
 
 	if r.systemNeedsUpdate(log, system, cfg) {
-		if cfg, err = r.updateSystem(ctx, log, system); err != nil {
+		updateSystemStart := time.Now()
+		cfg, err = r.updateSystem(ctx, log, system)
+		r.Metrics.ReconcileSegmentTime.WithLabelValues("updateSystem").
+			Observe(time.Since(updateSystemStart).Seconds())
+		if err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 	system.SetCondition(v1beta1.ConditionTypeSystemConfigUpdated, metav1.ConditionTrue)
 
-	if result, err := r.reconcileSubjects(ctx, log, system); err != nil {
+	reconcileSubjectsStart := time.Now()
+	result, err = r.reconcileSubjects(ctx, log, system)
+	r.Metrics.ReconcileSegmentTime.WithLabelValues("reconcileSubjects").
+		Observe(time.Since(reconcileSubjectsStart).Seconds())
+	if err != nil {
 		return result, err
 	}
 	system.SetCondition(v1beta1.ConditionTypeSubjectsUpdated, metav1.ConditionTrue)
 
-	if result, err := r.reconcileDatasources(ctx, log, system, cfg); err != nil {
+	reconcileDatasourcesStart := time.Now()
+	result, err = r.reconcileDatasources(ctx, log, system, cfg)
+	r.Metrics.ReconcileSegmentTime.WithLabelValues("reconcileDatasources").
+		Observe(time.Since(reconcileDatasourcesStart).Seconds())
+	if err != nil {
 		return result, err
 	}
 	system.SetCondition(v1beta1.ConditionTypeDatasourcesUpdated, metav1.ConditionTrue)
 
+	getOPAConfigStart := time.Now()
 	opaConfig, err := r.Styra.GetOPAConfig(ctx, system.Status.ID)
+	r.Metrics.ReconcileSegmentTime.WithLabelValues("getOPAConfig").
+		Observe(time.Since(getOPAConfigStart).Seconds())
 	if err != nil {
 		return ctrl.Result{}, ctrlerr.Wrap(err, "Could not get OPA config from styra API").
 			WithEvent("ErrorFetchOPAConfig").
 			WithSystemCondition(v1beta1.ConditionTypeOPATokenUpdated)
 	}
 
+	reconcileOPATokenStart := time.Now()
 	result, updatedToken, err := r.reconcileOPAToken(ctx, log, system, opaConfig.Token)
+	r.Metrics.ReconcileSegmentTime.WithLabelValues("reconcileOPAToken").
+		Observe(time.Since(reconcileOPATokenStart).Seconds())
 	if err != nil {
 		return result, err
 	}
@@ -331,7 +410,10 @@ func (r *SystemReconciler) reconcile(
 	}
 	system.SetCondition(v1beta1.ConditionTypeOPATokenUpdated, metav1.ConditionTrue)
 
+	reconcileOPAConfigMapStart := time.Now()
 	result, updatedOPAConfigMap, err := r.reconcileOPAConfigMap(ctx, log, system, opaConfig)
+	r.Metrics.ReconcileSegmentTime.WithLabelValues("reconcileOPAConfigMap").
+		Observe(time.Since(reconcileOPAConfigMapStart).Seconds())
 	if err != nil {
 		return result, err
 	}
@@ -340,7 +422,10 @@ func (r *SystemReconciler) reconcile(
 	}
 	system.SetCondition(v1beta1.ConditionTypeOPAConfigMapUpdated, metav1.ConditionTrue)
 
+	reconcileSLPConfigMapStart := time.Now()
 	result, updatedSLPConfigMap, err := r.reconcileSLPConfigMap(ctx, log, system, opaConfig)
+	r.Metrics.ReconcileSegmentTime.WithLabelValues("reconcileSLPConfigMap").
+		Observe(time.Since(reconcileSLPConfigMapStart).Seconds())
 	if err != nil {
 		return result, err
 	}
@@ -352,7 +437,11 @@ func (r *SystemReconciler) reconcile(
 	system.Status.Ready = true
 	system.Status.Phase = v1beta1.SystemPhaseCreated
 	system.Status.FailureMessage = ""
-	if err := r.Status().Update(ctx, system); err != nil {
+
+	updateStatusStart := time.Now()
+	err = r.Status().Update(ctx, system)
+	r.Metrics.ReconcileSegmentTime.WithLabelValues("updateStatus").Observe(time.Since(updateStatusStart).Seconds())
+	if err != nil {
 		return ctrl.Result{}, ctrlerr.Wrap(err, "Could not change status.phase to Created").
 			WithEvent("ErrorPhaseToCreated")
 	}
