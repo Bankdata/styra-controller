@@ -163,7 +163,7 @@ func main() {
 		},
 		[]string{"system", "namespace", "system_id"},
 	)
-	
+
 	if err := metrics.Registry.Register(systemReadymetric); err != nil {
 		err := errors.Wrap(err, "could not register controller_system_status_ready metric")
 		log.Error(err, err.Error())
@@ -171,8 +171,8 @@ func main() {
 	}
 	totalReconcileTime := prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name: "controller_system_reconcile_time",
-			Help: "Time taken to reconcile a system",
+			Name:    "controller_system_reconcile_time",
+			Help:    "Time taken to reconcile a system",
 			Buckets: prometheus.DefBuckets,
 		}, []string{"system", "namespace", "system_id"},
 	)
@@ -181,17 +181,17 @@ func main() {
 		err := errors.Wrap(err, "could not register totalReconcileTime")
 		log.Error(err, err.Error())
 		exit(err)
-
+	}
 	systemMetrcis := &controllers.SystemReconcillerMetrics{
 		ControllerSystemStatusReady: systemReadymetric,
-		TotalReconcileTime: totalReconcileTime,
+		TotalReconcileTime:          totalReconcileTime,
 	}
 	r1 := &controllers.SystemReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		Styra:    styraClient,
 		Recorder: mgr.GetEventRecorderFor("system-controller"),
-		Metrics:   systemMetrcis,
+		Metrics:  systemMetrcis,
 		Config:   ctrlConfig,
 	}
 
@@ -248,7 +248,7 @@ func main() {
 		log.Error(err, "problem running manager")
 		exit(err)
 	}
-}}
+}
 
 func exit(err error) {
 	sentry.CaptureException(err)
