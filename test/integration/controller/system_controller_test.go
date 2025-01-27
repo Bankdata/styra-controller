@@ -210,6 +210,7 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"
 			if err := k8sClient.Get(ctx, key, fetched); err != nil {
 				return false
 			}
+
 			return finalizer.IsSet(fetched) &&
 				fetched.Status.ID != "" &&
 				fetched.Status.Phase == styrav1beta1.SystemPhaseCreated &&

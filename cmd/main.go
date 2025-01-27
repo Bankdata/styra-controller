@@ -156,18 +156,52 @@ func main() {
 	}
 
 	// System Controller
-	metric := prometheus.NewGaugeVec(
+	systemReadyMetric := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "controller_system_status_ready",
 			Help: "Show if a system is in status ready",
 		},
-		[]string{"system", "namespace"},
+		[]string{"system_name", "namespace", "system_id"},
 	)
 
-	if err := metrics.Registry.Register(metric); err != nil {
+	if err := metrics.Registry.Register(systemReadyMetric); err != nil {
 		err := errors.Wrap(err, "could not register controller_system_status_ready metric")
 		log.Error(err, err.Error())
 		exit(err)
+	}
+
+	reconcileSegmentTimeMetric := prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "controller_system_reconcile_segment_seconds",
+			Help:    "Time taken to perform one segment of reconciling a system",
+			Buckets: prometheus.DefBuckets,
+		}, []string{"segment"},
+	)
+
+	if err := metrics.Registry.Register(reconcileSegmentTimeMetric); err != nil {
+		err := errors.Wrap(err, "could not register reconcileSegmentTimeMetric")
+		log.Error(err, err.Error())
+		exit(err)
+	}
+
+	reconcileTimeMetric := prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "controller_system_reconcile_seconds",
+			Help:    "Time taken to reconcile a system",
+			Buckets: prometheus.DefBuckets,
+		}, []string{"result"},
+	)
+
+	if err := metrics.Registry.Register(reconcileTimeMetric); err != nil {
+		err := errors.Wrap(err, "could not register reconcileTimeMetric")
+		log.Error(err, err.Error())
+		exit(err)
+	}
+
+	systemMetrics := &controllers.SystemReconcilerMetrics{
+		ControllerSystemStatusReady: systemReadyMetric,
+		ReconcileSegmentTime:        reconcileSegmentTimeMetric,
+		ReconcileTime:               reconcileTimeMetric,
 	}
 
 	r1 := &controllers.SystemReconciler{
@@ -175,7 +209,7 @@ func main() {
 		Scheme:   mgr.GetScheme(),
 		Styra:    styraClient,
 		Recorder: mgr.GetEventRecorderFor("system-controller"),
-		Metric:   metric,
+		Metrics:  systemMetrics,
 		Config:   ctrlConfig,
 	}
 
