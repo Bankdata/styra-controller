@@ -24,6 +24,7 @@ import (
 
 	ginkgo "github.com/onsi/ginkgo/v2"
 	gomega "github.com/onsi/gomega"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/stretchr/testify/mock"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -124,6 +125,30 @@ var _ = ginkgo.BeforeSuite(func() {
 			},
 			ReadOnly:                  true,
 			EnableDeltaBundlesDefault: ptr.Bool(false),
+		},
+
+		Metrics: &styractrls.SystemReconcilerMetrics{
+			ControllerSystemStatusReady: prometheus.NewGaugeVec(
+				prometheus.GaugeOpts{
+					Name: "controller_system_status_ready",
+					Help: "Show if a system is in status ready",
+				},
+				[]string{"system_name", "namespace", "system_id"},
+			),
+			ReconcileSegmentTime: prometheus.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name:    "controller_system_reconcile_segment_seconds",
+					Help:    "Time taken to perform one segment of reconciling a system",
+					Buckets: prometheus.DefBuckets,
+				}, []string{"segment"},
+			),
+			ReconcileTime: prometheus.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name:    "controller_system_reconcile_seconds",
+					Help:    "Time taken to reconcile a system",
+					Buckets: prometheus.DefBuckets,
+				}, []string{"result"},
+			),
 		},
 	}
 
