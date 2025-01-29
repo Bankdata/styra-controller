@@ -41,8 +41,15 @@ import (
 
 var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"), func() {
 	ginkgo.It("should reconcile", func() {
+		sourceControl := styrav1beta1.SourceControl{
+			Origin: styrav1beta1.GitRepo{
+				URL: "https://github.com/test/repo.git",
+			},
+		}
+
 		spec := styrav1beta1.SystemSpec{
 			DeletionProtection: ptr.Bool(false),
+			SourceControl:      &sourceControl,
 		}
 
 		key := types.NamespacedName{
@@ -91,6 +98,15 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"
 				Type:           "custom",
 				ReadOnly:       true,
 				BundleDownload: &styra.BundleDownloadConfig{DeltaBundles: false},
+				SourceControl: &styra.SourceControlConfig{
+					Origin: styra.GitRepoConfig{
+						URL:         sourceControl.Origin.URL,
+						Credentials: "systems/system_id/git",
+						Path:        "",
+						Commit:      "",
+						Reference:   "",
+					},
+				},
 			},
 		}).Return(&styra.UpdateSystemResponse{
 			StatusCode: http.StatusOK,
@@ -100,6 +116,15 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"
 				ReadOnly:       true,
 				ID:             cfg.ID,
 				BundleDownload: &styra.BundleDownloadConfig{DeltaBundles: false},
+				SourceControl: &styra.SourceControlConfig{
+					Origin: styra.GitRepoConfig{
+						URL:         sourceControl.Origin.URL,
+						Credentials: "systems/system_id/git",
+						Path:        "",
+						Commit:      "",
+						Reference:   "",
+					},
+				},
 			},
 		}, nil).Once()
 
@@ -144,6 +169,15 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"
 					Name:           key.String(),
 					ReadOnly:       true,
 					BundleDownload: &styra.BundleDownloadConfig{DeltaBundles: false},
+					SourceControl: &styra.SourceControlConfig{
+						Origin: styra.GitRepoConfig{
+							URL:         sourceControl.Origin.URL,
+							Credentials: "systems/system_id/git",
+							Path:        "",
+							Commit:      "",
+							Reference:   "",
+						},
+					},
 				},
 			}, nil).Once()
 
@@ -178,6 +212,15 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"
 					Name:           key.String(),
 					ReadOnly:       true,
 					BundleDownload: &styra.BundleDownloadConfig{DeltaBundles: false},
+					SourceControl: &styra.SourceControlConfig{
+						Origin: styra.GitRepoConfig{
+							URL:         sourceControl.Origin.URL,
+							Credentials: "systems/system_id/git",
+							Path:        "",
+							Commit:      "",
+							Reference:   "",
+						},
+					},
 				},
 			}, nil).Once()
 
@@ -268,6 +311,7 @@ discovery:
 				getSystem          int
 				getSystemByName    int
 				createSystem       int
+				updateSystem       int
 				deletePolicy       int
 				getUsers           int
 				rolebindingsListed int
@@ -280,6 +324,8 @@ discovery:
 					getSystem++
 				case "CreateSystem":
 					createSystem++
+				case "UpdateSystem":
+					updateSystem++
 				case "GetSystemByName":
 					getSystemByName++
 				case "DeletePolicy":
@@ -297,6 +343,7 @@ discovery:
 			return getSystem == 2 &&
 				getSystemByName == 1 &&
 				createSystem == 1 &&
+				updateSystem == 1 &&
 				deletePolicy == 2 &&
 				getUsers == 3 &&
 				rolebindingsListed == 3 &&
@@ -323,6 +370,15 @@ discovery:
 					Type:           "custom",
 					ReadOnly:       true,
 					BundleDownload: &styra.BundleDownloadConfig{DeltaBundles: false},
+					SourceControl: &styra.SourceControlConfig{
+						Origin: styra.GitRepoConfig{
+							URL:         sourceControl.Origin.URL,
+							Credentials: "systems/system_id/git",
+							Path:        "",
+							Commit:      "",
+							Reference:   "",
+						},
+					},
 				},
 			}, nil).Once()
 
@@ -349,7 +405,6 @@ discovery:
 		}, nil).Once()
 
 		// new reconcile as we create opa configmap that we watch
-
 		styraClientMock.On("GetSystem", mock.Anything, "system_id").Return(
 			&styra.GetSystemResponse{
 				StatusCode: http.StatusOK,
@@ -358,6 +413,15 @@ discovery:
 					Type:           "custom",
 					ReadOnly:       true,
 					BundleDownload: &styra.BundleDownloadConfig{DeltaBundles: false},
+					SourceControl: &styra.SourceControlConfig{
+						Origin: styra.GitRepoConfig{
+							URL:         sourceControl.Origin.URL,
+							Credentials: "systems/system_id/git",
+							Path:        "",
+							Commit:      "",
+							Reference:   "",
+						},
+					},
 				},
 			}, nil).Once()
 
@@ -384,7 +448,6 @@ discovery:
 		}, nil).Once()
 
 		// new reconcile as we create slp configmap that we watch
-
 		styraClientMock.On("GetSystem", mock.Anything, "system_id").Return(
 			&styra.GetSystemResponse{
 				StatusCode: http.StatusOK,
@@ -393,6 +456,15 @@ discovery:
 					Type:           "custom",
 					ReadOnly:       true,
 					BundleDownload: &styra.BundleDownloadConfig{DeltaBundles: false},
+					SourceControl: &styra.SourceControlConfig{
+						Origin: styra.GitRepoConfig{
+							URL:         sourceControl.Origin.URL,
+							Credentials: "systems/system_id/git",
+							Path:        "",
+							Commit:      "",
+							Reference:   "",
+						},
+					},
 				},
 			}, nil).Once()
 
@@ -542,6 +614,15 @@ discovery:
 				Type:           "custom",
 				ReadOnly:       true,
 				BundleDownload: &styra.BundleDownloadConfig{DeltaBundles: false},
+				SourceControl: &styra.SourceControlConfig{
+					Origin: styra.GitRepoConfig{
+						URL:         sourceControl.Origin.URL,
+						Credentials: "systems/system_id/git",
+						Path:        "",
+						Commit:      "",
+						Reference:   "",
+					},
+				},
 				DecisionMappings: map[string]styra.DecisionMapping{
 					"": {},
 					"test": {
@@ -564,6 +645,15 @@ discovery:
 				ID:             "system_id",
 				Name:           key.String(),
 				BundleDownload: &styra.BundleDownloadConfig{DeltaBundles: false},
+				SourceControl: &styra.SourceControlConfig{
+					Origin: styra.GitRepoConfig{
+						URL:         sourceControl.Origin.URL,
+						Credentials: "systems/system_id/git",
+						Path:        "",
+						Commit:      "",
+						Reference:   "",
+					},
+				},
 				DecisionMappings: map[string]styra.DecisionMapping{
 					"": {},
 					"test": {
@@ -654,6 +744,15 @@ discovery:
 				Name:           key.String(),
 				ReadOnly:       true,
 				BundleDownload: &styra.BundleDownloadConfig{DeltaBundles: false},
+				SourceControl: &styra.SourceControlConfig{
+					Origin: styra.GitRepoConfig{
+						URL:         sourceControl.Origin.URL,
+						Credentials: "systems/system_id/git",
+						Path:        "",
+						Commit:      "",
+						Reference:   "",
+					},
+				},
 				DecisionMappings: map[string]styra.DecisionMapping{
 					"": {},
 					"test": {
@@ -771,6 +870,15 @@ discovery:
 				Name:           key.String(),
 				ReadOnly:       true,
 				BundleDownload: &styra.BundleDownloadConfig{DeltaBundles: false},
+				SourceControl: &styra.SourceControlConfig{
+					Origin: styra.GitRepoConfig{
+						URL:         sourceControl.Origin.URL,
+						Credentials: "systems/system_id/git",
+						Path:        "",
+						Commit:      "",
+						Reference:   "",
+					},
+				},
 				DecisionMappings: map[string]styra.DecisionMapping{
 					"": {},
 					"test": {
@@ -878,6 +986,15 @@ discovery:
 				ID:             "system_id",
 				Name:           key.String(),
 				ReadOnly:       true,
+				SourceControl: &styra.SourceControlConfig{
+					Origin: styra.GitRepoConfig{
+						URL:         sourceControl.Origin.URL,
+						Credentials: "systems/system_id/git",
+						Path:        "",
+						Commit:      "",
+						Reference:   "",
+					},
+				},
 				DecisionMappings: map[string]styra.DecisionMapping{
 					"": {},
 					"test": {
@@ -1008,6 +1125,15 @@ discovery:
 					Name:           key.String(),
 					ReadOnly:       true,
 					BundleDownload: &styra.BundleDownloadConfig{DeltaBundles: false},
+					SourceControl: &styra.SourceControlConfig{
+						Origin: styra.GitRepoConfig{
+							URL:         sourceControl.Origin.URL,
+							Credentials: "systems/system_id/git",
+							Path:        "",
+							Commit:      "",
+							Reference:   "",
+						},
+					},
 					DecisionMappings: map[string]styra.DecisionMapping{
 						"": {},
 						"test": {
@@ -1137,6 +1263,7 @@ discovery:
 				Name:           key.String(),
 				ReadOnly:       true,
 				BundleDownload: &styra.BundleDownloadConfig{DeltaBundles: false},
+
 				DecisionMappings: map[string]styra.DecisionMapping{
 					"": {},
 					"test": {
@@ -1380,6 +1507,10 @@ discovery:
 
 		ginkgo.By("Connecting to an existing Styra System by name with wrong deltabundle setting")
 
+		spec2 := styrav1beta1.SystemSpec{
+			DeletionProtection: ptr.Bool(false),
+		}
+
 		key2 := types.NamespacedName{
 			Name:      "test2",
 			Namespace: "default",
@@ -1390,7 +1521,7 @@ discovery:
 				Name:      key2.Name,
 				Namespace: key2.Namespace,
 			},
-			Spec: spec,
+			Spec: spec2,
 		}
 
 		cfg2 := &styra.SystemConfig{
@@ -1535,7 +1666,6 @@ discovery:
 		resetMock(&styraClientMock.Mock)
 
 		// Create new system, which was not ReadOnly, so it gets updated
-
 		ginkgo.By("Changing ReadOnly flag in system")
 
 		key3 := types.NamespacedName{
@@ -1549,7 +1679,7 @@ discovery:
 				Name:      key3.Name,
 				Namespace: key3.Namespace,
 			},
-			Spec: spec,
+			Spec: spec2,
 		}
 
 		cfg3 := &styra.SystemConfig{
@@ -2003,6 +2133,67 @@ distributed_tracing:
 				rolebindingsListed == 3 &&
 				createRoleBinding == 1 &&
 				getOPAConfig == 3
+		}, timeout, interval).Should(gomega.BeTrue())
+
+		resetMock(&styraClientMock.Mock)
+
+		ginkgo.By("Creating the system will fail due to invalid url")
+
+		key5 := types.NamespacedName{
+			Name:      "test5",
+			Namespace: "default",
+		}
+
+		sourceControl5 := styrav1beta1.SourceControl{
+			Origin: styrav1beta1.GitRepo{
+				URL: "https://github.com/[test]/repo.git",
+			},
+		}
+		spec5 := styrav1beta1.SystemSpec{
+			DeletionProtection: ptr.Bool(false),
+			SourceControl:      &sourceControl5,
+		}
+
+		toCreate5 := &styrav1beta1.System{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      key5.Name,
+				Namespace: key5.Namespace,
+			},
+			Spec: spec5,
+		}
+
+		// Mock the GetSystemByName call to return nil, indicating the system does not exist
+		styraClientMock.On("GetSystemByName", mock.Anything, key5.String()).Return(&styra.GetSystemResponse{
+			StatusCode:   http.StatusOK,
+			SystemConfig: nil,
+		}, nil).Times(13)
+
+		// Create the system in the Kubernetes cluster
+		gomega.Expect(k8sClient.Create(ctx, toCreate5)).To(gomega.Succeed())
+
+		// Verify that the system creation failed due to invalid URL
+		gomega.Eventually(func() bool {
+			fetched := &styrav1beta1.System{}
+			err := k8sClient.Get(ctx, key5, fetched)
+			if err != nil {
+				return false
+			}
+
+			return fetched.Status.Phase == styrav1beta1.SystemPhaseFailed && !fetched.Status.Ready
+		}, timeout, interval).Should(gomega.BeTrue())
+
+		gomega.Eventually(func() bool {
+			var (
+				getSystemByName int
+			)
+			for _, call := range styraClientMock.Calls {
+				switch call.Method {
+				case "GetSystemByName":
+					getSystemByName++
+				}
+			}
+
+			return getSystemByName == 13
 		}, timeout, interval).Should(gomega.BeTrue())
 
 		resetMock(&styraClientMock.Mock)

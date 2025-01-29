@@ -21,8 +21,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"path"
 	"reflect"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -359,7 +362,11 @@ func (r *SystemReconciler) reconcile(
 	}
 	system.SetCondition(v1beta1.ConditionTypeGitCredentialsUpdated, metav1.ConditionTrue)
 
-	if r.systemNeedsUpdate(log, system, cfg) {
+	needsUpdate, err := r.systemNeedsUpdate(log, system, cfg)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if needsUpdate {
 		updateSystemStart := time.Now()
 		cfg, err = r.updateSystem(ctx, log, system)
 		r.Metrics.ReconcileSegmentTime.WithLabelValues("updateSystem").
@@ -496,7 +503,12 @@ func (r *SystemReconciler) createSystem(
 ) (*styra.CreateSystemResponse, error) {
 	log.Info("Creating system in Styra")
 
-	cfg := r.specToSystemConfig(system)
+	cfg, err := r.specToSystemConfig(system)
+	if err != nil {
+		return nil, ctrlerr.Wrap(err, "Error while reading system spec").
+			WithEvent("ErrorCreateSystemInStyra").
+			WithSystemCondition(v1beta1.ConditionTypeCreatedInStyra)
+	}
 
 	// We dont set the sourcecontrol settings on system creation, as we havent
 	// created the git secret yet.
@@ -1181,7 +1193,12 @@ func (r *SystemReconciler) updateSystem(
 	system *v1beta1.System,
 ) (*styra.SystemConfig, error) {
 	log.Info("Updating system")
-	cfg := r.specToSystemConfig(system)
+	cfg, err := r.specToSystemConfig(system)
+	if err != nil {
+		return nil, ctrlerr.Wrap(err, "Error while reading system spec").
+			WithEvent("ErrorUpdateSystem").
+			WithSystemCondition(v1beta1.ConditionTypeSystemConfigUpdated)
+	}
 
 	if log.V(1).Enabled() {
 		log := log.V(1)
@@ -1208,7 +1225,7 @@ func (r *SystemReconciler) updateSystem(
 	return res.SystemConfig, nil
 }
 
-func (r *SystemReconciler) specToSystemConfig(system *v1beta1.System) *styra.SystemConfig {
+func (r *SystemReconciler) specToSystemConfig(system *v1beta1.System) (*styra.SystemConfig, error) {
 	cfg := &styra.SystemConfig{
 		Name:     system.DisplayName(r.Config.SystemPrefix, r.Config.SystemSuffix),
 		Type:     "custom",
@@ -1262,6 +1279,10 @@ func (r *SystemReconciler) specToSystemConfig(system *v1beta1.System) *styra.Sys
 	}
 
 	if system.Spec.SourceControl != nil {
+		if !isURLValid(system.Spec.SourceControl.Origin.URL) {
+			return nil, ctrlerr.New("Invalid URL for source control")
+		}
+
 		cfg.SourceControl = &styra.SourceControlConfig{
 			Origin: styra.GitRepoConfig{
 				Credentials: system.GitSecretID(),
@@ -1284,44 +1305,72 @@ func (r *SystemReconciler) specToSystemConfig(system *v1beta1.System) *styra.Sys
 		cfg.DeploymentParameters.Discovery = system.Spec.DiscoveryOverrides
 	}
 
-	return cfg
+	return cfg, nil
 }
 
-func (r *SystemReconciler) systemNeedsUpdate(log logr.Logger, system *v1beta1.System, cfg *styra.SystemConfig) bool {
+func isURLValid(u string) bool {
+	//empty url is valid
+	if strings.TrimSpace(u) == "" {
+		return true
+	}
+
+	parsedURL, err := url.Parse(u)
+	if err != nil {
+		return false
+	}
+	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+		return false
+	}
+
+	// Regular expression to match valid URL path characters
+	re := regexp.MustCompile(`^[a-zA-Z0-9\-._~!$&'()*+,;=:@/]*$`)
+	return re.MatchString(parsedURL.Path)
+}
+
+func (r *SystemReconciler) systemNeedsUpdate(
+	log logr.Logger,
+	system *v1beta1.System,
+	cfg *styra.SystemConfig,
+) (bool, error) {
 	if cfg == nil {
 		log.Info("System needs update: cfg is nil")
-		return true
+		return true, nil
 	}
 
 	if cfg.ReadOnly != r.Config.ReadOnly {
 		log.Info("System needs update: read only is not equal")
-		return true
+		return true, nil
 	}
 
-	expectedModel := r.specToSystemConfig(system)
+	expectedModel, err := r.specToSystemConfig(system)
+	if err != nil {
+		return true, ctrlerr.Wrap(err, "Error while reading system spec").
+			WithEvent("ErrorUpdateSystem").
+			WithSystemCondition(v1beta1.ConditionTypeSystemConfigUpdated)
+	}
 
 	if cfg.BundleDownload == nil || cfg.BundleDownload.DeltaBundles != expectedModel.BundleDownload.DeltaBundles {
 		log.Info("System needs update: Deltabundle setting not equal")
-		return true
+		return true, nil
 	}
 
 	if !reflect.DeepEqual(expectedModel.SourceControl, cfg.SourceControl) {
 		log.Info("System needs update: source control is not equal")
-		return true
+		return true, nil
 	}
 
 	namesAreEqual := expectedModel.Name == cfg.Name
 	if !namesAreEqual {
 		log.Info("System needs update: system names are not are not equal")
-		return true
+		return true, nil
 	}
 
 	dmsAreEqual := styra.DecisionMappingsEquals(expectedModel.DecisionMappings, cfg.DecisionMappings)
 	if !dmsAreEqual {
 		log.Info("System needs update: decision mappings are not equal")
-		return true
+		return true, nil
 	}
-	return false
+	return false, nil
 }
 
 // SetupWithManager registers the the System controller with the Manager.
