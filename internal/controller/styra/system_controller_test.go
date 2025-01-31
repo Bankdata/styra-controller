@@ -116,3 +116,18 @@ var _ = ginkgo.DescribeTable("createRolebindingSubjects",
 		},
 	),
 )
+
+// test the isURLValid method
+var _ = ginkgo.DescribeTable("isURLValid",
+	func(url string, expected bool) {
+		gomega.Ω(isURLValid(url)).To(gomega.Equal(expected))
+	},
+	ginkgo.Entry("valid url", "", true),
+	ginkgo.Entry("valid url", "https://www.github.com/test/repo.git", true),
+	ginkgo.Entry("valid url", "https://www.github.com/test/repo", true),
+	ginkgo.Entry("invalid url", "https://www.github.com/[test]/repo", false),
+	ginkgo.Entry("invalid url", "https://www.github.com/[test]/repo.git", false),
+	ginkgo.Entry("invalid url", "www.google.com", false),
+	ginkgo.Entry("invalid url", "google.com", false),
+	ginkgo.Entry("invalid url", "google", false),
+)
