@@ -6,7 +6,7 @@ toolchain go1.23.5
 
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
-	github.com/getsentry/sentry-go v0.30.0
+	github.com/getsentry/sentry-go v0.31.1
 	github.com/go-logr/logr v1.4.2
 	github.com/golangci/golangci-lint v1.63.4
 	github.com/google/uuid v1.6.0
