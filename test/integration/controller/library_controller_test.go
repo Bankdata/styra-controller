@@ -125,7 +125,16 @@ var _ = ginkgo.Describe("LibraryReconciler.Reconcile", ginkgo.Label("integration
 		styraClientMock.On("GetLibrary", mock.Anything, key.Name).Return(&styra.GetLibraryResponse{
 			Statuscode: http.StatusOK,
 			LibraryEntityExpanded: &styra.LibraryEntityExpanded{
-				DataSources:   []styra.LibraryDatasourceConfig{},
+				DataSources: []styra.LibraryDatasourceConfig{
+					{
+						Category: "rest",
+						ID:       path.Join("libraries", key.Name, "ignore"),
+					},
+					{
+						Category: "rest",
+						ID:       path.Join("libraries", key.Name, "delete"),
+					},
+				},
 				Description:   "description",
 				ID:            key.Name,
 				ReadOnly:      true,
@@ -140,6 +149,14 @@ var _ = ginkgo.Describe("LibraryReconciler.Reconcile", ginkgo.Label("integration
 			}).Return(&styra.UpsertDatasourceResponse{
 			StatusCode: http.StatusOK,
 		}, nil).Once()
+
+		styraClientMock.On(
+			"DeleteDatasource",
+			mock.Anything,
+			path.Join("libraries", key.Name, "delete")).
+			Return(&styra.DeleteDatasourceResponse{
+				StatusCode: http.StatusOK,
+			}, nil).Once()
 
 		webhookMock.On(
 			"LibraryDatasourceChanged",
@@ -267,6 +284,7 @@ var _ = ginkgo.Describe("LibraryReconciler.Reconcile", ginkgo.Label("integration
 				createInvitation   int
 				createRoleBinding  int
 				listRoleBindings   int
+				deleteDatasource   int
 			)
 
 			for _, call := range styraClientMock.Calls {
@@ -287,6 +305,8 @@ var _ = ginkgo.Describe("LibraryReconciler.Reconcile", ginkgo.Label("integration
 					createRoleBinding++
 				case "ListRoleBindingsV2":
 					listRoleBindings++
+				case "DeleteDatasource":
+					deleteDatasource++
 				}
 			}
 
@@ -296,7 +316,6 @@ var _ = ginkgo.Describe("LibraryReconciler.Reconcile", ginkgo.Label("integration
 					datasourceChanged++
 				}
 			}
-
 			return createUpdateSecret == 2 &&
 				getLibrary == 2 &&
 				upsertLibrary == 1 &&
@@ -305,7 +324,8 @@ var _ = ginkgo.Describe("LibraryReconciler.Reconcile", ginkgo.Label("integration
 				getUser == 2 &&
 				createInvitation == 1 &&
 				listRoleBindings == 3 &&
-				createRoleBinding == 1
+				createRoleBinding == 1 &&
+				deleteDatasource == 1
 		}, timeout, interval).Should(gomega.BeTrue())
 
 		resetMock(&webhookMock.Mock)

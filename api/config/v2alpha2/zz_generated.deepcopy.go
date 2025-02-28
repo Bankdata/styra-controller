@@ -178,6 +178,11 @@ func (in *ProjectConfig) DeepCopyInto(out *ProjectConfig) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.DatasourceIgnorePatterns != nil {
+		in, out := &in.DatasourceIgnorePatterns, &out.DatasourceIgnorePatterns
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.GitCredentials != nil {
 		in, out := &in.GitCredentials, &out.GitCredentials
 		*out = make([]*GitCredential, len(*in))
