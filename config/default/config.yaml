@@ -28,6 +28,9 @@ systemUserRoles:
   - SystemMetadataManager
 
 #decisionsExporter:
+# datasourceIgnorePatterns:
+#   - "^systems/[a-z0-9]+/dontdeleteme.*"
+#   - "^libraries/[a-z0-9_]+/deletemenot.*"
 
 #opa:
 #  decision_logs:

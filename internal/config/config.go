@@ -118,11 +118,11 @@ func deserialize(data []byte, scheme *runtime.Scheme) (*v2alpha2.ProjectConfig, 
 
 func MatchesIgnorePattern(ignorePatterns []string, id string) (bool, error) {
 	for _, patternString := range ignorePatterns {
-		patternRegex, err := regexp.Compile(patternString)
+		matches, err := regexp.MatchString(patternString, id)
 		if err != nil {
 			return false, errors.Wrapf(err, "could not compile regex pattern: %s", patternString)
 		}
-		if patternRegex.MatchString(id) {
+		if matches {
 			return true, nil
 		}
 	}

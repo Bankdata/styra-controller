@@ -255,7 +255,7 @@ func (r *LibraryReconciler) reconcileDatasources(ctx context.Context, log logr.L
 			continue
 		}
 
-		ignore, err := config.MatchesIgnorePattern(r.Config.DatasourceIgnorePattern, ds.ID)
+		ignore, err := config.MatchesIgnorePattern(r.Config.DatasourceIgnorePatterns, ds.ID)
 		if err != nil {
 			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not check if library datasource should be ignored")
 		}
