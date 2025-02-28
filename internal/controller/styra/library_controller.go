@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"path"
 
+	"github.com/bankdata/styra-controller/internal/config"
 	ctrlerr "github.com/bankdata/styra-controller/internal/errors"
 	"github.com/bankdata/styra-controller/internal/predicate"
 	"github.com/bankdata/styra-controller/internal/sentry"
@@ -251,6 +252,16 @@ func (r *LibraryReconciler) reconcileDatasources(ctx context.Context, log logr.L
 	for _, ds := range styraLib.DataSources {
 		if ds.ID == "" {
 			log.Info("There exists some datasource without id?")
+			continue
+		}
+
+		ignore, err := config.MatchesIgnorePattern(r.Config.DatasourceIgnorePattern, ds.ID)
+		if err != nil {
+			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not check if library datasource should be ignored")
+		}
+
+		if ignore {
+			log.Info("Datasource is ignored", "id", ds.ID)
 			continue
 		}
 

@@ -49,6 +49,7 @@ import (
 
 	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
 	"github.com/bankdata/styra-controller/api/styra/v1beta1"
+	"github.com/bankdata/styra-controller/internal/config"
 	ctrlerr "github.com/bankdata/styra-controller/internal/errors"
 	"github.com/bankdata/styra-controller/internal/fields"
 	"github.com/bankdata/styra-controller/internal/finalizer"
@@ -927,6 +928,17 @@ func (r *SystemReconciler) reconcileDatasources(
 		if ds.Optional {
 			continue
 		}
+
+		ignore, err := config.MatchesIgnorePattern(r.Config.DatasourceIgnorePattern, ds.ID)
+		if err != nil {
+			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not check if system datasource should be ignored")
+		}
+
+		if ignore {
+			log.Info("Datasource is ignored", "id", ds.ID)
+			continue
+		}
+
 		if _, ok := expectedByID[ds.ID]; !ok {
 			log := log.WithValues("datasourceID", ds.ID)
 			log.Info("Deleting undeclared datasource")
