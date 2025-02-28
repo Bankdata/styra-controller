@@ -18,6 +18,7 @@ package styra
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"path"
 
@@ -125,7 +126,16 @@ var _ = ginkgo.Describe("LibraryReconciler.Reconcile", ginkgo.Label("integration
 		styraClientMock.On("GetLibrary", mock.Anything, key.Name).Return(&styra.GetLibraryResponse{
 			Statuscode: http.StatusOK,
 			LibraryEntityExpanded: &styra.LibraryEntityExpanded{
-				DataSources:   []styra.LibraryDatasourceConfig{},
+				DataSources: []styra.LibraryDatasourceConfig{
+					{
+						Category: "rest",
+						ID:       fmt.Sprintf("libraries/%s/ignore", key.Name),
+					},
+					{
+						Category: "rest",
+						ID:       fmt.Sprintf("libraries/%s/delete", key.Name),
+					},
+				},
 				Description:   "description",
 				ID:            key.Name,
 				ReadOnly:      true,
@@ -140,6 +150,14 @@ var _ = ginkgo.Describe("LibraryReconciler.Reconcile", ginkgo.Label("integration
 			}).Return(&styra.UpsertDatasourceResponse{
 			StatusCode: http.StatusOK,
 		}, nil).Once()
+
+		styraClientMock.On(
+			"DeleteDatasource",
+			mock.Anything,
+			path.Join("libraries", key.Name, "delete")).
+			Return(&styra.DeleteDatasourceResponse{
+				StatusCode: http.StatusOK,
+			}, nil).Once()
 
 		webhookMock.On(
 			"LibraryDatasourceChanged",
@@ -267,6 +285,7 @@ var _ = ginkgo.Describe("LibraryReconciler.Reconcile", ginkgo.Label("integration
 				createInvitation   int
 				createRoleBinding  int
 				listRoleBindings   int
+				deleteDatasource   int
 			)
 
 			for _, call := range styraClientMock.Calls {
@@ -287,6 +306,8 @@ var _ = ginkgo.Describe("LibraryReconciler.Reconcile", ginkgo.Label("integration
 					createRoleBinding++
 				case "ListRoleBindingsV2":
 					listRoleBindings++
+				case "DeleteDatasource":
+					deleteDatasource++
 				}
 			}
 
@@ -296,7 +317,12 @@ var _ = ginkgo.Describe("LibraryReconciler.Reconcile", ginkgo.Label("integration
 					datasourceChanged++
 				}
 			}
-
+			fmt.Println("createUpdateSecret: = 2", createUpdateSecret, "getLibrary 2", getLibrary,
+				"upsertLibrary 1", upsertLibrary,
+				"upsertDatasource 2", upsertDatasource, "datasourceChanged 2", datasourceChanged,
+				"getUser 2", getUser,
+				"createInvitation 1", createInvitation, "listRoleBindings 3", listRoleBindings,
+				"createRoleBinding 1", createRoleBinding, "deleteDatasource: 1", deleteDatasource)
 			return createUpdateSecret == 2 &&
 				getLibrary == 2 &&
 				upsertLibrary == 1 &&
@@ -305,7 +331,8 @@ var _ = ginkgo.Describe("LibraryReconciler.Reconcile", ginkgo.Label("integration
 				getUser == 2 &&
 				createInvitation == 1 &&
 				listRoleBindings == 3 &&
-				createRoleBinding == 1
+				createRoleBinding == 1 &&
+				deleteDatasource == 1
 		}, timeout, interval).Should(gomega.BeTrue())
 
 		resetMock(&webhookMock.Mock)

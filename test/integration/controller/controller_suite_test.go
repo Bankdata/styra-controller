@@ -123,6 +123,7 @@ var _ = ginkgo.BeforeSuite(func() {
 				IdentityProvider: "AzureAD Bankdata",
 				JWTGroupsClaim:   "groups",
 			},
+			DatasourceIgnorePatterns:  []string{"^.*/ignore$"},
 			ReadOnly:                  true,
 			EnableDeltaBundlesDefault: ptr.Bool(false),
 		},
@@ -161,6 +162,7 @@ var _ = ginkgo.BeforeSuite(func() {
 				IdentityProvider: "AzureAD Bankdata",
 				JWTGroupsClaim:   "groups",
 			},
+			DatasourceIgnorePatterns: []string{"^.*/ignore$"},
 			GitCredentials: []*configv2alpha2.GitCredential{
 				{User: "test-user", Password: "test-secret"},
 			},

@@ -53,6 +53,10 @@ type ProjectConfig struct {
 	// kept disabled unless migrations need to be done.
 	EnableMigrations bool `json:"enableMigrations"`
 
+	// DatasourceIgnorePatterns is a list of regex patterns, that allow datasources in styra
+	// to be ignored based on their datasource id.
+	DatasourceIgnorePatterns []string `json:"datasourceIgnorePatterns,omitempty"`
+
 	// GitCredentials holds a list of git credential configurations. The
 	// RepoPrefix of the GitCredential will be matched angainst repository URL in
 	// order to determine which credential to use. The GitCredential with the

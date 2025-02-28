@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"path"
 
+	"github.com/bankdata/styra-controller/internal/config"
 	ctrlerr "github.com/bankdata/styra-controller/internal/errors"
 	"github.com/bankdata/styra-controller/internal/predicate"
 	"github.com/bankdata/styra-controller/internal/sentry"
@@ -254,8 +255,18 @@ func (r *LibraryReconciler) reconcileDatasources(ctx context.Context, log logr.L
 			continue
 		}
 
+		ignore, err := config.MatchesIgnorePattern(r.Config.DatasourceIgnorePatterns, ds.ID)
+		if err != nil {
+			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not check if library datasource should be ignored")
+		}
+
+		if ignore {
+			log.Info("Datasource is ignored", "id", ds.ID)
+			continue
+		}
+
 		if _, expected := expectedByID[ds.ID]; !expected {
-			log.Info("Deleting undeclared datasource")
+			log.Info("Deleting undeclared datasource", "id", ds.ID)
 
 			if _, err := r.Styra.DeleteDatasource(ctx, ds.ID); err != nil {
 				return ctrl.Result{}, ctrlerr.Wrap(err, "Could not delete library datasource")
