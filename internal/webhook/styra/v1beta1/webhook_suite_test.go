@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package webhook
+package v1beta1
 
 import (
 	"context"
@@ -75,10 +75,10 @@ var _ = ginkgo.BeforeSuite(func() {
 
 	ginkgo.By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
+		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "..", "..", "config", "crd", "bases")},
 		ErrorIfCRDPathMissing: false,
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
-			Paths: []string{filepath.Join("..", "..", "..", "config", "webhook")},
+			Paths: []string{filepath.Join("..", "..", "..", "..", "config", "webhook")},
 		},
 		CRDInstallOptions: envtest.CRDInstallOptions{
 			Scheme: scheme,
@@ -109,7 +109,7 @@ var _ = ginkgo.BeforeSuite(func() {
 	})
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-	err = (&v1beta1.System{}).SetupWebhookWithManager(mgr)
+	err = SetupSystemWebhookWithManager(mgr)
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	//+kubebuilder:scaffold:webhook
