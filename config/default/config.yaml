@@ -27,6 +27,10 @@ systemUserRoles:
   - SystemOwner
   - SystemMetadataManager
 
+#datasourceIgnorePatterns:
+# - "^systems/[a-z0-9]+/dontdeleteme/.*"
+# - "^libraries/[a-z0-9_]+/deletemenot/.*"
+
 #decisionsExporter:
 
 #opa:

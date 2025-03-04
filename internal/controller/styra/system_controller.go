@@ -49,6 +49,7 @@ import (
 
 	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
 	"github.com/bankdata/styra-controller/api/styra/v1beta1"
+	"github.com/bankdata/styra-controller/internal/config"
 	ctrlerr "github.com/bankdata/styra-controller/internal/errors"
 	"github.com/bankdata/styra-controller/internal/fields"
 	"github.com/bankdata/styra-controller/internal/finalizer"
@@ -927,9 +928,20 @@ func (r *SystemReconciler) reconcileDatasources(
 		if ds.Optional {
 			continue
 		}
+
+		ignore, err := config.MatchesIgnorePattern(r.Config.DatasourceIgnorePatterns, ds.ID)
+		if err != nil {
+			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not check if system datasource should be ignored")
+		}
+
+		if ignore {
+			log.Info("Datasource is ignored", "id", ds.ID)
+			continue
+		}
+
 		if _, ok := expectedByID[ds.ID]; !ok {
 			log := log.WithValues("datasourceID", ds.ID)
-			log.Info("Deleting undeclared datasource")
+			log.Info("Deleting undeclared datasource", "id", ds.ID)
 			if _, err := r.Styra.DeleteDatasource(ctx, ds.ID); err != nil {
 				return ctrl.Result{}, ctrlerr.Wrap(err, "Could not delete datasource").
 					WithEvent("ErrorDeleteDatasource").
@@ -1279,8 +1291,17 @@ func (r *SystemReconciler) specToSystemConfig(system *v1beta1.System) (*styra.Sy
 	}
 
 	if system.Spec.SourceControl != nil {
-		if !isURLValid(system.Spec.SourceControl.Origin.URL) {
-			return nil, ctrlerr.New("Invalid URL for source control")
+		valid, err := isURLValid(system.Spec.SourceControl.Origin.URL)
+		if err != nil {
+			return nil, ctrlerr.Wrap(err, "Error while validating URL").
+				WithEvent("ErrorUpdateSystem").
+				WithSystemCondition(v1beta1.ConditionTypeSystemConfigUpdated)
+		}
+
+		if !valid {
+			return nil, ctrlerr.New("Invalid URL for source control").
+				WithEvent("ErrorUpdateSystem").
+				WithSystemCondition(v1beta1.ConditionTypeSystemConfigUpdated)
 		}
 
 		cfg.SourceControl = &styra.SourceControlConfig{
@@ -1308,23 +1329,27 @@ func (r *SystemReconciler) specToSystemConfig(system *v1beta1.System) (*styra.Sy
 	return cfg, nil
 }
 
-func isURLValid(u string) bool {
+func isURLValid(u string) (bool, error) {
 	//empty url is valid
 	if strings.TrimSpace(u) == "" {
-		return true
+		return true, nil
 	}
 
 	parsedURL, err := url.Parse(u)
 	if err != nil {
-		return false
+		return false, err
 	}
 	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
-		return false
+		return false, nil
 	}
 
 	// Regular expression to match valid URL path characters
-	re := regexp.MustCompile(`^[a-zA-Z0-9\-._~!$&'()*+,;=:@/]*$`)
-	return re.MatchString(parsedURL.Path)
+	valid, err := regexp.MatchString(`^[a-zA-Z0-9\-._~!$&'()*+,;=:@/]*$`, parsedURL.Path)
+	if err != nil {
+		return false, err
+	}
+
+	return valid, nil
 }
 
 func (r *SystemReconciler) systemNeedsUpdate(
