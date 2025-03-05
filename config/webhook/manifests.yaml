@@ -12,7 +12,7 @@ webhooks:
       namespace: system
       path: /mutate-styra-bankdata-dk-v1alpha1-library
   failurePolicy: Fail
-  name: mlibrary.kb.io
+  name: mlibrary-v1alpha1.kb.io
   rules:
   - apiGroups:
     - styra.bankdata.dk
@@ -32,7 +32,7 @@ webhooks:
       namespace: system
       path: /mutate-styra-bankdata-dk-v1beta1-system
   failurePolicy: Fail
-  name: msystem.kb.io
+  name: msystem-v1beta1.kb.io
   rules:
   - apiGroups:
     - styra.bankdata.dk
@@ -58,7 +58,7 @@ webhooks:
       namespace: system
       path: /validate-styra-bankdata-dk-v1alpha1-library
   failurePolicy: Fail
-  name: vlibrary.kb.io
+  name: vlibrary-v1alpha1.kb.io
   rules:
   - apiGroups:
     - styra.bankdata.dk
@@ -78,7 +78,7 @@ webhooks:
       namespace: system
       path: /validate-styra-bankdata-dk-v1beta1-system
   failurePolicy: Fail
-  name: vsystem.kb.io
+  name: vsystem-v1beta1.kb.io
   rules:
   - apiGroups:
     - styra.bankdata.dk
