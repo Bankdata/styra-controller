@@ -48,6 +48,8 @@ import (
 	"github.com/bankdata/styra-controller/internal/config"
 	controllers "github.com/bankdata/styra-controller/internal/controller/styra"
 	"github.com/bankdata/styra-controller/internal/webhook"
+	webhookstyrav1alpha1 "github.com/bankdata/styra-controller/internal/webhook/styra/v1alpha1"
+	webhookstyrav1beta1 "github.com/bankdata/styra-controller/internal/webhook/styra/v1beta1"
 	"github.com/bankdata/styra-controller/pkg/styra"
 	//+kubebuilder:scaffold:imports
 )
@@ -223,7 +225,7 @@ func main() {
 	}
 
 	if !ctrlConfig.DisableCRDWebhooks {
-		if err = (&styrav1beta1.System{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = webhookstyrav1beta1.SetupSystemWebhookWithManager(mgr); err != nil {
 			log.Error(err, "unable to create webhook", "webhook", "System")
 			os.Exit(1)
 		}
@@ -246,7 +248,7 @@ func main() {
 	}
 
 	if !ctrlConfig.DisableCRDWebhooks {
-		if err = (&styrav1alpha1.Library{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = webhookstyrav1alpha1.SetupLibraryWebhookWithManager(mgr); err != nil {
 			log.Error(err, "unable to create webhook", "webhook", "Library")
 			os.Exit(1)
 		}
