@@ -19,6 +19,7 @@ package config
 
 import (
 	"os"
+	"regexp"
 
 	"github.com/bankdata/styra-controller/api/config/v2alpha2"
 	"github.com/pkg/errors"
@@ -113,4 +114,18 @@ func deserialize(data []byte, scheme *runtime.Scheme) (*v2alpha2.ProjectConfig, 
 	}
 
 	return cfg, nil
+}
+
+// MatchesIgnorePattern matches a specified ignore pattern, and excludes matches from being deleted
+func MatchesIgnorePattern(ignorePatterns []string, id string) (bool, error) {
+	for _, patternString := range ignorePatterns {
+		matches, err := regexp.MatchString(patternString, id)
+		if err != nil {
+			return false, errors.Wrapf(err, "could not compile regex pattern: %s", patternString)
+		}
+		if matches {
+			return true, nil
+		}
+	}
+	return false, nil
 }

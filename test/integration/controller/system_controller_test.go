@@ -1134,6 +1134,16 @@ discovery:
 							Reference:   "",
 						},
 					},
+					Datasources: []*styra.DatasourceConfig{
+						{
+							Category: "rest",
+							ID:       "systems/system_id/ignore",
+						},
+						{
+							Category: "rest",
+							ID:       "systems/system_id/delete",
+						},
+					},
 					DecisionMappings: map[string]styra.DecisionMapping{
 						"": {},
 						"test": {
@@ -1183,6 +1193,12 @@ discovery:
 			StatusCode: http.StatusOK,
 		}, nil).Once()
 
+		styraClientMock.On(
+			"DeleteDatasource",
+			mock.Anything,
+			"systems/system_id/delete",
+		).Return(&styra.DeleteDatasourceResponse{}, nil).Once()
+
 		webhookMock.On(
 			"SystemDatasourceChanged",
 			mock.Anything,
@@ -1200,6 +1216,7 @@ discovery:
 				upsertDatasource   int
 				getOPAConfig       int
 				datasourceChanged  int
+				deleteDatasource   int
 			)
 			for _, call := range styraClientMock.Calls {
 				switch call.Method {
@@ -1213,6 +1230,8 @@ discovery:
 					getOPAConfig++
 				case "UpsertDatasource":
 					upsertDatasource++
+				case "DeleteDatasource":
+					deleteDatasource++
 				}
 			}
 
@@ -1228,7 +1247,8 @@ discovery:
 				listRolebindingsV2 == 1 &&
 				upsertDatasource == 1 &&
 				getOPAConfig == 1 &&
-				datasourceChanged == 1
+				datasourceChanged == 1 &&
+				deleteDatasource == 1
 		}, timeout, interval).Should(gomega.BeTrue())
 
 		resetMock(&styraClientMock.Mock)

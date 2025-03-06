@@ -17,5 +17,6 @@ spec:
       name: api/authz/decision
       reason:
         path: result.reasons
-
+  datasources:
+    - path: "test"
   # TODO(user): Add fields here
