@@ -2,8 +2,6 @@ module github.com/bankdata/styra-controller
 
 go 1.24
 
-toolchain go1.24.0
-
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
 	github.com/getsentry/sentry-go v0.31.1
@@ -23,7 +21,7 @@ require (
 	k8s.io/api v0.32.3
 	k8s.io/apimachinery v0.32.3
 	k8s.io/client-go v0.32.3
-	sigs.k8s.io/controller-runtime v0.20.2
+	sigs.k8s.io/controller-runtime v0.20.3
 	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20230307042619-c304e7ec2ee7
 	sigs.k8s.io/controller-tools v0.17.2
 	sigs.k8s.io/kind v0.27.0
