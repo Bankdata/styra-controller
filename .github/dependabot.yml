@@ -25,3 +25,8 @@ updates:
       interval: "daily"
     commit-message:
       prefix: ":arrow_up: "
+    groups:
+      k8s-controller-dependencies:
+        patterns:
+          - "k8s.io/*"
+          
