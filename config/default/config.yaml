@@ -33,6 +33,8 @@ systemUserRoles:
 
 #decisionsExporter:
 
+#activityExporter:
+
 #opa:
 #  decision_logs:
 #    request_context:

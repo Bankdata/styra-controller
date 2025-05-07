@@ -29,6 +29,13 @@ const (
 	endpointV1Secrets = "/v1/secrets"
 )
 
+// DeleteSecretResponse is the response type for calls to the
+// DELETE /v1/secrets/{secretId} endpoint in the Styra API.
+type DeleteSecretResponse struct {
+	StatusCode int
+	Body       []byte
+}
+
 // CreateUpdateSecretResponse is the response type for calls to the
 // PUT /v1/secrets/{secretId} endpoint in the Styra API.
 type CreateUpdateSecretResponse struct {
@@ -72,6 +79,40 @@ func (c *Client) CreateUpdateSecret(
 	}
 
 	r := CreateUpdateSecretResponse{
+		StatusCode: res.StatusCode,
+		Body:       body,
+	}
+
+	return &r, nil
+}
+
+// DeleteSecret calls the DELETE /v1/secrets/{secretId} endpoint in the
+// Styra API.
+func (c *Client) DeleteSecret(
+	ctx context.Context,
+	secretID string,
+) (*DeleteSecretResponse, error) {
+	res, err := c.request(
+		ctx,
+		http.MethodDelete,
+		fmt.Sprintf("%s/%s", endpointV1Secrets, secretID),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not read body")
+	}
+
+	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusNotFound {
+		err := NewHTTPError(res.StatusCode, string(body))
+		return nil, err
+	}
+
+	r := DeleteSecretResponse{
 		StatusCode: res.StatusCode,
 		Body:       body,
 	}

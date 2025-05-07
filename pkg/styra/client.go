@@ -38,6 +38,10 @@ type ClientInterface interface {
 		secretID string,
 		request *CreateUpdateSecretsRequest,
 	) (*CreateUpdateSecretResponse, error)
+	DeleteSecret(
+		ctx context.Context,
+		secretID string,
+	) (*DeleteSecretResponse, error)
 
 	GetUser(ctx context.Context, name string) (*GetUserResponse, error)
 	GetUsers(ctx context.Context) (*GetUsersResponse, bool, error)
@@ -83,6 +87,7 @@ type ClientInterface interface {
 	DeletePolicy(ctx context.Context, policyName string) (*DeletePolicyResponse, error)
 
 	UpdateWorkspace(ctx context.Context, request *UpdateWorkspaceRequest) (*UpdateWorkspaceResponse, error)
+	UpdateWorkspaceRaw(ctx context.Context, request interface{}) (*UpdateWorkspaceResponse, error)
 }
 
 // Client is a client for the Styra APIs.

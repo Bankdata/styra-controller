@@ -48,7 +48,7 @@ var _ = ginkgo.Describe("UpdateWorkspace", func() {
 			gomega.Expect(json.NewEncoder(&b).Encode(test.request)).To(gomega.Succeed())
 			gomega.Expect(bs).To(gomega.Equal(b.Bytes()))
 
-			gomega.Expect(r.Method).To(gomega.Equal(http.MethodPut))
+			gomega.Expect(r.Method).To(gomega.Equal(http.MethodPatch))
 			gomega.Expect(r.URL.String()).To(gomega.Equal("http://test.com/v1/workspace"))
 
 			return &http.Response{
@@ -68,10 +68,10 @@ var _ = ginkgo.Describe("UpdateWorkspace", func() {
 			gomega.Expect(res.StatusCode).To(gomega.Equal(test.responseCode))
 		}
 	},
-
-		ginkgo.Entry("update workspace", test{
+		//update DecisionsExporter
+		ginkgo.Entry("update workspace DecisionsExporter", test{
 			request: &styra.UpdateWorkspaceRequest{
-				DecisionsExporter: &styra.DecisionExportConfig{
+				DecisionsExporter: &styra.ExporterConfig{
 					Interval: "1m",
 					Kafka: &styra.KafkaConfig{
 						Authentication: "auth",
@@ -91,6 +91,29 @@ var _ = ginkgo.Describe("UpdateWorkspace", func() {
 				}`,
 		}),
 
+		//update ActivityExporter
+		ginkgo.Entry("update workspace ActivityExporter", test{
+			request: &styra.UpdateWorkspaceRequest{
+				ActivityExporter: &styra.ExporterConfig{
+					Interval: "1m",
+					Kafka: &styra.KafkaConfig{
+						Authentication: "auth",
+						Brokers:        []string{"broker"},
+						RequredAcks:    "acks",
+						Topic:          "topic",
+						TLS: &styra.KafkaTLS{
+							ClientCert:         "clientcert",
+							RootCA:             "rootca",
+							InsecureSkipVerify: true,
+						},
+					},
+				},
+			},
+			responseCode: http.StatusOK,
+			responseBody: `{
+				"request_id": "id"
+				}`,
+		}),
 		ginkgo.Entry("styra http error", test{
 			responseCode:   http.StatusInternalServerError,
 			expectStyraErr: true,

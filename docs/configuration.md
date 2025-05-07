@@ -18,6 +18,7 @@ This document describes the different configuration options for the Styra Contro
 * `systemSuffix`
 * `systemUserRoles`
 * `decisionsExporter`
+* `activityExporter`
 
 ## Observability
 
@@ -111,11 +112,12 @@ An annotation that allows configuring Systems in Kubernetes to link to a specifi
 ## Leader Election
 If multiple instances of the controller are running together, leader election can be configured by setting `leaderElection.leaseDuration`, `leaderElection.renewDeadline`, `leaderElection.retryPeriod`.
 
-## Decisions Exporter
-It is possible to configure all decisions to be exported to a Kafka cluster. This is achieved by setting the `decisionsExporter` in the controller configuration. For example, if `decisionsExporter` is set to this:
+## Decisions & Activity Exporter
+It is possible to configure all decisions and/or activities to be exported to a Kafka cluster. This is achieved by setting the `decisionsExporter` and/or `activityExporter` in the controller configuration. For example, if `decisionsExporter` is set to this:
 
 ```yaml
 decisionsExporter: 
+  enabled: true
   interval: 30s
   kafka:
     brokers:
@@ -138,4 +140,4 @@ decisionsExporter:
         Root Certificate
         -----END CERTIFICATE-----
 ```
-It will configure Styra to export all decisions to the brokers and connect via mTLS using the provided certs and key. The decision exporter configuration will be uploaded to Styra each time the controller boots.
+It will configure Styra to export all decisions to the brokers and connect via mTLS using the provided certs and key. The decision exporter configuration will be uploaded to Styra each time the controller boots. If `decisionsExporter.enabled` is set to `false`, the controller will remove the decision exporter config from Styra. The same applies when using `activityExporter`, it will export all user activities and the controller will remove the user activity exporter config from Styra when setting `activityExporter.enabled` to `false`.
