@@ -36,7 +36,7 @@ var _ = ginkgo.Describe("ConfigureDecisionsExporter", func() {
 		expectedErrorMsg        string
 	}
 
-	// Test cases for ConfigureExporter Decisions
+	// Test cases for ConfigureExporter for Decisions
 	ginkgo.DescribeTable("ConfigureDecisionsExporter", func(test test) {
 		// Arrange
 		ctrlConfig := &configv2alpha2.ProjectConfig{
@@ -126,7 +126,7 @@ var _ = ginkgo.Describe("ConfigureActivityExporter", func() {
 		deleteSecretError       error
 	}
 
-	// Test cases for ConfigureExporter Decisions
+	// Test cases for ConfigureExporter for Activity
 	ginkgo.DescribeTable("ConfigureActivityExporter", func(test test) {
 		// Arrange
 		ctrlConfig := &configv2alpha2.ProjectConfig{
@@ -180,7 +180,7 @@ var _ = ginkgo.Describe("ConfigureActivityExporter", func() {
 			mockStyraClient.On("DeleteSecret", mock.Anything, "test-cert-name").Return(nil, test.deleteSecretError)
 
 			if test.deleteSecretError == nil {
-				rawJSON := json.RawMessage("{\"activity_exporter\":null}")
+				rawJSON := json.RawMessage("{\"activity_exporter\": null}")
 				mockStyraClient.On("UpdateWorkspaceRaw", mock.Anything, rawJSON).Return(nil, test.updateWorkspaceError)
 			}
 		}

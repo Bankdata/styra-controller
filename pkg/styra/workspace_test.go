@@ -68,7 +68,7 @@ var _ = ginkgo.Describe("UpdateWorkspace", func() {
 			gomega.Expect(res.StatusCode).To(gomega.Equal(test.responseCode))
 		}
 	},
-		//update DecisionsExporter
+
 		ginkgo.Entry("update workspace DecisionsExporter", test{
 			request: &styra.UpdateWorkspaceRequest{
 				DecisionsExporter: &styra.ExporterConfig{
@@ -91,7 +91,6 @@ var _ = ginkgo.Describe("UpdateWorkspace", func() {
 				}`,
 		}),
 
-		//update ActivityExporter
 		ginkgo.Entry("update workspace ActivityExporter", test{
 			request: &styra.UpdateWorkspaceRequest{
 				ActivityExporter: &styra.ExporterConfig{

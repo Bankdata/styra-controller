@@ -296,15 +296,15 @@ func configureExporter(
 
 		_, err := styraClient.DeleteSecret(context.Background(), clientCertName)
 		if err != nil {
-			ctrl.Log.Error(err, fmt.Sprintf("could not delete client certificate and key for %s", exporterType))
+			ctrl.Log.Error(err, fmt.Sprintf("failed to delete secret %s for %s", clientCertName, exporterType))
 			return err
 		}
 
 		if exporterType == "ActivityExporter" {
-			rawJSON := json.RawMessage("{\"activity_exporter\":null}")
+			rawJSON := json.RawMessage("{\"activity_exporter\": null}")
 			_, err = styraClient.UpdateWorkspaceRaw(context.Background(), rawJSON)
 		} else if exporterType == "DecisionsExporter" {
-			rawJSON := json.RawMessage("{\"decisions_exporter\":null}")
+			rawJSON := json.RawMessage("{\"decisions_exporter\": null}")
 			_, err = styraClient.UpdateWorkspaceRaw(context.Background(), rawJSON)
 		}
 		if err != nil {
@@ -326,7 +326,7 @@ func configureExporter(
 	},
 	)
 	if err != nil {
-		ctrl.Log.Info(fmt.Sprintf("could not upload client certificate and key for %s", exporterType))
+		ctrl.Log.Error(err, fmt.Sprintf("failed to upload secret %s for %s", clientCertName, exporterType))
 		return err
 	}
 
@@ -356,7 +356,7 @@ func configureExporter(
 	}
 
 	if err != nil {
-		ctrl.Log.Info(fmt.Sprintf("could not update workspace configuration for %s", exporterType))
+		ctrl.Log.Error(err, fmt.Sprintf("could not update workspace configuration for %s", exporterType))
 		return err
 	}
 

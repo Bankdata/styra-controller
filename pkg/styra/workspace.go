@@ -42,7 +42,7 @@ type UpdateWorkspaceResponse struct {
 	Body       []byte
 }
 
-// ExporterConfig is the configuration for the decision exporter in the Styra API.
+// ExporterConfig is the configuration for the decision and activity exporter in the Styra API.
 type ExporterConfig struct {
 	Interval string       `json:"interval,omitempty"`
 	Kafka    *KafkaConfig `json:"kafka,omitempty"`
@@ -64,7 +64,7 @@ type KafkaTLS struct {
 	InsecureSkipVerify bool   `json:"insecure_skip_verify"`
 }
 
-// UpdateWorkspace calls the PUT /v1/workspace endpoint in the Styra API.
+// UpdateWorkspace calls the PATCH /v1/workspace endpoint in the Styra API.
 func (c *Client) UpdateWorkspace(
 	ctx context.Context,
 	request *UpdateWorkspaceRequest,
@@ -72,7 +72,7 @@ func (c *Client) UpdateWorkspace(
 	return c.UpdateWorkspaceRaw(ctx, request)
 }
 
-// UpdateWorkspaceRaw calls the PUT /v1/workspace endpoint in the Styra API.
+// UpdateWorkspaceRaw calls the PATCH /v1/workspace endpoint in the Styra API.
 func (c *Client) UpdateWorkspaceRaw(
 	ctx context.Context,
 	request interface{},
