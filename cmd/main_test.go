@@ -17,6 +17,8 @@ limitations under the License.
 package main
 
 import (
+	"encoding/json"
+
 	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
 	"github.com/bankdata/styra-controller/pkg/styra"
 	styraclientmock "github.com/bankdata/styra-controller/pkg/styra/mocks"
@@ -32,12 +34,16 @@ var _ = ginkgo.Describe("ConfigureDecisionsExporter", func() {
 		createUpdateSecretError error
 		updateWorkspaceError    error
 		expectedErrorMsg        string
+		enabled                 bool
+		deleteSecretError       error
 	}
 
+	// Test cases for ConfigureExporter for Decisions
 	ginkgo.DescribeTable("ConfigureDecisionsExporter", func(test test) {
 		// Arrange
 		ctrlConfig := &configv2alpha2.ProjectConfig{
-			DecisionsExporter: &configv2alpha2.DecisionsExporterConfig{
+			DecisionsExporter: &configv2alpha2.ExporterConfig{
+				Enabled: test.enabled,
 				Kafka: &configv2alpha2.KafkaConfig{
 					TLS: &configv2alpha2.TLSConfig{
 						ClientCertificateName: "test-cert-name",
@@ -55,38 +61,48 @@ var _ = ginkgo.Describe("ConfigureDecisionsExporter", func() {
 		}
 
 		mockStyraClient := &styraclientmock.ClientInterface{}
-		mockStyraClient.On("CreateUpdateSecret", mock.Anything, "test-cert-name", &styra.CreateUpdateSecretsRequest{
-			Description: "Client certificate for Kafka",
-			Name:        "test-cert",
-			Secret:      "test-key",
-		}).Return(nil, test.createUpdateSecretError)
 
-		// If createUpdateSecret fails, we should not expect call to UpdateWorkspace
-		if test.createUpdateSecretError == nil {
-			mockStyraClient.On("UpdateWorkspace", mock.Anything, &styra.UpdateWorkspaceRequest{
-				DecisionsExporter: &styra.DecisionExportConfig{
-					Interval: "1m",
-					Kafka: &styra.KafkaConfig{
-						Authentication: "TLS",
-						Brokers:        []string{"broker1", "broker2"},
-						RequredAcks:    "WaitForAll",
-						Topic:          "test-topic",
-						TLS: &styra.KafkaTLS{
-							ClientCert:         "test-cert-name",
-							RootCA:             "test-ca",
-							InsecureSkipVerify: true,
+		if test.enabled {
+			mockStyraClient.On("CreateUpdateSecret", mock.Anything, "test-cert-name", &styra.CreateUpdateSecretsRequest{
+				Description: "Client certificate for Kafka",
+				Name:        "test-cert",
+				Secret:      "test-key",
+			}).Return(nil, test.createUpdateSecretError)
+
+			// If createUpdateSecret fails, we should not expect call to UpdateWorkspace
+			if test.createUpdateSecretError == nil {
+				mockStyraClient.On("UpdateWorkspace", mock.Anything, &styra.UpdateWorkspaceRequest{
+					DecisionsExporter: &styra.ExporterConfig{
+						Interval: "1m",
+						Kafka: &styra.KafkaConfig{
+							Authentication: "TLS",
+							Brokers:        []string{"broker1", "broker2"},
+							RequredAcks:    "WaitForAll",
+							Topic:          "test-topic",
+							TLS: &styra.KafkaTLS{
+								ClientCert:         "test-cert-name",
+								RootCA:             "test-ca",
+								InsecureSkipVerify: true,
+							},
 						},
 					},
-				},
-			}).Return(nil, test.updateWorkspaceError)
+				}).Return(nil, test.updateWorkspaceError)
+			}
+		} else {
+			mockStyraClient.On("DeleteSecret", mock.Anything, "test-cert-name").Return(nil, test.deleteSecretError)
+
+			if test.deleteSecretError == nil {
+				rawJSON := json.RawMessage("{\"decisions_exporter\": null}")
+				mockStyraClient.On("UpdateWorkspaceRaw", mock.Anything, rawJSON).Return(nil, test.updateWorkspaceError)
+			}
 		}
 
 		// Act
-		err := configureDecisionsExporter(mockStyraClient, ctrlConfig)
+		err := configureExporter(mockStyraClient, ctrlConfig.DecisionsExporter, "DecisionsExporter")
 
 		// Assert
 		mockStyraClient.AssertExpectations(ginkgo.GinkgoT())
-		if test.createUpdateSecretError != nil || test.updateWorkspaceError != nil {
+		if test.createUpdateSecretError != nil || test.updateWorkspaceError != nil || test.deleteSecretError != nil {
 			gomega.Ω(err).Should(gomega.HaveOccurred())
 			gomega.Ω(err.Error()).Should(gomega.Equal(test.expectedErrorMsg))
 		} else {
@@ -98,16 +114,170 @@ var _ = ginkgo.Describe("ConfigureDecisionsExporter", func() {
 			createUpdateSecretError: nil,
 			updateWorkspaceError:    nil,
 			expectedErrorMsg:        "",
+			enabled:                 true,
+			deleteSecretError:       nil,
 		}),
 		ginkgo.Entry("CreateUpdateSecretFails", test{
 			createUpdateSecretError: errors.New("CreateUpdateSecret failed"),
 			updateWorkspaceError:    nil,
 			expectedErrorMsg:        "CreateUpdateSecret failed",
+			enabled:                 true,
+			deleteSecretError:       nil,
 		}),
 		ginkgo.Entry("UpdateWorkspaceFails", test{
-			createUpdateSecretError: errors.New("UpdateWorkspace failed"),
-			updateWorkspaceError:    nil,
+			createUpdateSecretError: nil,
+			updateWorkspaceError:    errors.New("UpdateWorkspace failed"),
 			expectedErrorMsg:        "UpdateWorkspace failed",
+			enabled:                 true,
+			deleteSecretError:       nil,
+		}),
+		ginkgo.Entry("OKRemovingExporter", test{
+			createUpdateSecretError: nil,
+			updateWorkspaceError:    nil,
+			expectedErrorMsg:        "",
+			enabled:                 false,
+			deleteSecretError:       nil,
+		}),
+		ginkgo.Entry("DeleteSecretFails", test{
+			createUpdateSecretError: nil,
+			updateWorkspaceError:    nil,
+			expectedErrorMsg:        "DeleteSecret failed",
+			enabled:                 false,
+			deleteSecretError:       errors.New("DeleteSecret failed"),
+		}),
+		ginkgo.Entry("UpdateWorkspaceRemoveExporterFails", test{
+			createUpdateSecretError: nil,
+			updateWorkspaceError:    errors.New("UpdateWorkspaceRemoveExporter failed"),
+			expectedErrorMsg:        "UpdateWorkspaceRemoveExporter failed",
+			enabled:                 false,
+			deleteSecretError:       nil,
+		}),
+	)
+})
+
+var _ = ginkgo.Describe("ConfigureActivityExporter", func() {
+
+	type test struct {
+		createUpdateSecretError error
+		updateWorkspaceError    error
+		expectedErrorMsg        string
+		enabled                 bool
+		deleteSecretError       error
+	}
+
+	// Test cases for ConfigureExporter for Activity
+	ginkgo.DescribeTable("ConfigureActivityExporter", func(test test) {
+		// Arrange
+		ctrlConfig := &configv2alpha2.ProjectConfig{
+			ActivityExporter: &configv2alpha2.ExporterConfig{
+				Enabled: test.enabled,
+				Kafka: &configv2alpha2.KafkaConfig{
+					TLS: &configv2alpha2.TLSConfig{
+						ClientCertificateName: "test-cert-name",
+						ClientCertificate:     "test-cert",
+						ClientKey:             "test-key",
+						RootCA:                "test-ca",
+						InsecureSkipVerify:    true,
+					},
+					Brokers:      []string{"broker1", "broker2"},
+					RequiredAcks: "WaitForAll",
+					Topic:        "test-topic",
+				},
+				Interval: "1m",
+			},
+		}
+
+		mockStyraClient := &styraclientmock.ClientInterface{}
+
+		if test.enabled {
+			mockStyraClient.On("CreateUpdateSecret", mock.Anything, "test-cert-name", &styra.CreateUpdateSecretsRequest{
+				Description: "Client certificate for Kafka",
+				Name:        "test-cert",
+				Secret:      "test-key",
+			}).Return(nil, test.createUpdateSecretError)
+
+			// If createUpdateSecret fails, we should not expect call to UpdateWorkspace
+			if test.createUpdateSecretError == nil {
+				mockStyraClient.On("UpdateWorkspace", mock.Anything, &styra.UpdateWorkspaceRequest{
+					ActivityExporter: &styra.ExporterConfig{
+						Interval: "1m",
+						Kafka: &styra.KafkaConfig{
+							Authentication: "TLS",
+							Brokers:        []string{"broker1", "broker2"},
+							RequredAcks:    "WaitForAll",
+							Topic:          "test-topic",
+							TLS: &styra.KafkaTLS{
+								ClientCert:         "test-cert-name",
+								RootCA:             "test-ca",
+								InsecureSkipVerify: true,
+							},
+						},
+					},
+				}).Return(nil, test.updateWorkspaceError)
+			}
+		} else {
+			mockStyraClient.On("DeleteSecret", mock.Anything, "test-cert-name").Return(nil, test.deleteSecretError)
+
+			if test.deleteSecretError == nil {
+				rawJSON := json.RawMessage("{\"activity_exporter\": null}")
+				mockStyraClient.On("UpdateWorkspaceRaw", mock.Anything, rawJSON).Return(nil, test.updateWorkspaceError)
+			}
+		}
+
+		// Act
+		err := configureExporter(mockStyraClient, ctrlConfig.ActivityExporter, "ActivityExporter")
+
+		// Assert
+		mockStyraClient.AssertExpectations(ginkgo.GinkgoT())
+		if test.createUpdateSecretError != nil || test.updateWorkspaceError != nil || test.deleteSecretError != nil {
+			gomega.Ω(err).Should(gomega.HaveOccurred())
+			gomega.Ω(err.Error()).Should(gomega.Equal(test.expectedErrorMsg))
+		} else {
+			gomega.Ω(err).ShouldNot(gomega.HaveOccurred())
+		}
+	},
+
+		ginkgo.Entry("OK", test{
+			createUpdateSecretError: nil,
+			updateWorkspaceError:    nil,
+			expectedErrorMsg:        "",
+			enabled:                 true,
+			deleteSecretError:       nil,
+		}),
+		ginkgo.Entry("CreateUpdateSecretFails", test{
+			createUpdateSecretError: errors.New("CreateUpdateSecret failed"),
+			updateWorkspaceError:    nil,
+			expectedErrorMsg:        "CreateUpdateSecret failed",
+			enabled:                 true,
+			deleteSecretError:       nil,
+		}),
+		ginkgo.Entry("UpdateWorkspaceFails", test{
+			createUpdateSecretError: nil,
+			updateWorkspaceError:    errors.New("UpdateWorkspace failed"),
+			expectedErrorMsg:        "UpdateWorkspace failed",
+			enabled:                 true,
+			deleteSecretError:       nil,
+		}),
+		ginkgo.Entry("OKRemovingExporter", test{
+			createUpdateSecretError: nil,
+			updateWorkspaceError:    nil,
+			expectedErrorMsg:        "",
+			enabled:                 false,
+			deleteSecretError:       nil,
+		}),
+		ginkgo.Entry("DeleteSecretFails", test{
+			createUpdateSecretError: nil,
+			updateWorkspaceError:    nil,
+			expectedErrorMsg:        "DeleteSecret failed",
+			enabled:                 false,
+			deleteSecretError:       errors.New("DeleteSecret failed"),
+		}),
+		ginkgo.Entry("UpdateWorkspaceRemoveExporterFails", test{
+			createUpdateSecretError: nil,
+			updateWorkspaceError:    errors.New("UpdateWorkspaceRemoveExporter failed"),
+			expectedErrorMsg:        "UpdateWorkspaceRemoveExporter failed",
+			enabled:                 false,
+			deleteSecretError:       nil,
 		}),
 	)
 })

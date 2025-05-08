@@ -94,7 +94,8 @@ type ProjectConfig struct {
 	// a system will be granted.
 	SystemUserRoles []string `json:"systemUserRoles"`
 
-	DecisionsExporter *DecisionsExporterConfig `json:"decisionsExporter,omitempty"`
+	DecisionsExporter *ExporterConfig `json:"decisionsExporter,omitempty"`
+	ActivityExporter  *ExporterConfig `json:"activityExporter,omitempty"`
 }
 
 // LeaderElectionConfig contains configuration for leader election
@@ -192,9 +193,10 @@ type GitCredential struct {
 	RepoPrefix string `json:"repoPrefix"`
 }
 
-// DecisionsExporterConfig contains configuration for decisions export
-type DecisionsExporterConfig struct {
-	Interval string       `json:"interval"`
+// ExporterConfig contains configuration for decisions and user activity export
+type ExporterConfig struct {
+	Enabled  bool         `json:"enabled,omitempty"`
+	Interval string       `json:"interval,omitempty"`
 	Kafka    *KafkaConfig `json:"kafka,omitempty"`
 }
 

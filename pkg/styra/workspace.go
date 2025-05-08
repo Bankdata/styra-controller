@@ -31,7 +31,8 @@ const (
 // UpdateWorkspaceRequest is the request type for calls to the PUT /v1/workspace endpoint
 // in the Styra API.
 type UpdateWorkspaceRequest struct {
-	DecisionsExporter *DecisionExportConfig `json:"decisions_exporter,omitempty"`
+	DecisionsExporter *ExporterConfig `json:"decisions_exporter,omitempty"`
+	ActivityExporter  *ExporterConfig `json:"activity_exporter,omitempty"`
 }
 
 // UpdateWorkspaceResponse is the response type for calls to the PUT /v1/workspace endpoint
@@ -41,9 +42,9 @@ type UpdateWorkspaceResponse struct {
 	Body       []byte
 }
 
-// DecisionExportConfig is the configuration for the decision exporter in the Styra API.
-type DecisionExportConfig struct {
-	Interval string       `json:"interval"`
+// ExporterConfig is the configuration for the decision and activity exporter in the Styra API.
+type ExporterConfig struct {
+	Interval string       `json:"interval,omitempty"`
 	Kafka    *KafkaConfig `json:"kafka,omitempty"`
 }
 
@@ -63,12 +64,20 @@ type KafkaTLS struct {
 	InsecureSkipVerify bool   `json:"insecure_skip_verify"`
 }
 
-// UpdateWorkspace calls the PUT /v1/workspace endpoint in the Styra API.
+// UpdateWorkspace calls the PATCH /v1/workspace endpoint in the Styra API.
 func (c *Client) UpdateWorkspace(
 	ctx context.Context,
 	request *UpdateWorkspaceRequest,
 ) (*UpdateWorkspaceResponse, error) {
-	res, err := c.request(ctx, http.MethodPut, endpointV1Workspace, request)
+	return c.UpdateWorkspaceRaw(ctx, request)
+}
+
+// UpdateWorkspaceRaw calls the PATCH /v1/workspace endpoint in the Styra API.
+func (c *Client) UpdateWorkspaceRaw(
+	ctx context.Context,
+	request interface{},
+) (*UpdateWorkspaceResponse, error) {
+	res, err := c.request(ctx, http.MethodPatch, endpointV1Workspace, request)
 	if err != nil {
 		return nil, err
 	}

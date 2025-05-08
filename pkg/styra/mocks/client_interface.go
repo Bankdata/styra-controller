@@ -224,6 +224,36 @@ func (_m *ClientInterface) DeleteRoleBindingV2(ctx context.Context, id string) (
 	return r0, r1
 }
 
+// DeleteSecret provides a mock function with given fields: ctx, secretID
+func (_m *ClientInterface) DeleteSecret(ctx context.Context, secretID string) (*styra.DeleteSecretResponse, error) {
+	ret := _m.Called(ctx, secretID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteSecret")
+	}
+
+	var r0 *styra.DeleteSecretResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*styra.DeleteSecretResponse, error)); ok {
+		return rf(ctx, secretID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *styra.DeleteSecretResponse); ok {
+		r0 = rf(ctx, secretID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*styra.DeleteSecretResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, secretID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // DeleteSystem provides a mock function with given fields: ctx, id
 func (_m *ClientInterface) DeleteSystem(ctx context.Context, id string) (*styra.DeleteSystemResponse, error) {
 	ret := _m.Called(ctx, id)
@@ -586,6 +616,36 @@ func (_m *ClientInterface) UpdateWorkspace(ctx context.Context, request *styra.U
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, *styra.UpdateWorkspaceRequest) error); ok {
+		r1 = rf(ctx, request)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UpdateWorkspaceRaw provides a mock function with given fields: ctx, request
+func (_m *ClientInterface) UpdateWorkspaceRaw(ctx context.Context, request interface{}) (*styra.UpdateWorkspaceResponse, error) {
+	ret := _m.Called(ctx, request)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateWorkspaceRaw")
+	}
+
+	var r0 *styra.UpdateWorkspaceResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, interface{}) (*styra.UpdateWorkspaceResponse, error)); ok {
+		return rf(ctx, request)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, interface{}) *styra.UpdateWorkspaceResponse); ok {
+		r0 = rf(ctx, request)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*styra.UpdateWorkspaceResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, interface{}) error); ok {
 		r1 = rf(ctx, request)
 	} else {
 		r1 = ret.Error(1)

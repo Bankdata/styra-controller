@@ -19,6 +19,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -153,8 +154,12 @@ func main() {
 	styraHostURL := strings.TrimSuffix(ctrlConfig.Styra.Address, "/")
 	styraClient := styra.New(styraHostURL, styraToken)
 
-	if err := configureDecisionsExporter(styraClient, ctrlConfig); err != nil {
-		log.Error(err, "unable to configure decisions exporter")
+	if err := configureExporter(styraClient, ctrlConfig.DecisionsExporter, "DecisionsExporter"); err != nil {
+		log.Error(err, "unable to configure DecisionsExporter")
+	}
+
+	if err := configureExporter(styraClient, ctrlConfig.ActivityExporter, "ActivityExporter"); err != nil {
+		log.Error(err, "unable to configure ActivityExporter")
 	}
 
 	// System Controller
@@ -276,47 +281,85 @@ func exit(err error) {
 	os.Exit(1)
 }
 
-// Issue: https://github.com/Bankdata/styra-controller/issues/353
-func configureDecisionsExporter(styraClient styra.ClientInterface, ctrlConfig *configv2alpha2.ProjectConfig) error {
-	if ctrlConfig.DecisionsExporter == nil {
-		ctrl.Log.Info("no decisions exporter configuration found")
+func configureExporter(
+	styraClient styra.ClientInterface,
+	exporterConfig *configv2alpha2.ExporterConfig,
+	exporterType string) error {
+	if exporterConfig == nil {
+		ctrl.Log.Info(fmt.Sprintf("no exporter configuration found for %s", exporterType))
 		return nil
 	}
-	ctrl.Log.Info("configuring decisions exporter")
+	clientCertName := exporterConfig.Kafka.TLS.ClientCertificateName
 
-	clientCertName := ctrlConfig.DecisionsExporter.Kafka.TLS.ClientCertificateName
+	if !exporterConfig.Enabled {
+		ctrl.Log.Info(fmt.Sprintf("Now removing exporter %s", exporterType))
+
+		_, err := styraClient.DeleteSecret(context.Background(), clientCertName)
+		if err != nil {
+			ctrl.Log.Error(err, fmt.Sprintf("failed to delete secret %s for %s", clientCertName, exporterType))
+			return err
+		}
+
+		if exporterType == "ActivityExporter" {
+			rawJSON := json.RawMessage("{\"activity_exporter\": null}")
+			_, err = styraClient.UpdateWorkspaceRaw(context.Background(), rawJSON)
+		} else if exporterType == "DecisionsExporter" {
+			rawJSON := json.RawMessage("{\"decisions_exporter\": null}")
+			_, err = styraClient.UpdateWorkspaceRaw(context.Background(), rawJSON)
+		}
+		if err != nil {
+			ctrl.Log.Error(err, fmt.Sprintf("could not remove %s", exporterType))
+			return err
+		}
+		ctrl.Log.Info(fmt.Sprintf("%s removed", exporterType))
+
+		return nil
+	}
+
+	ctrl.Log.Info(fmt.Sprintf("configuring %s", exporterType))
 
 	_, err := styraClient.CreateUpdateSecret(context.Background(), clientCertName, &styra.CreateUpdateSecretsRequest{
 		Description: "Client certificate for Kafka",
 		// Secret name should be client cert and secret should be client key
-		Name:   strings.TrimSuffix(ctrlConfig.DecisionsExporter.Kafka.TLS.ClientCertificate, "\n"),
-		Secret: strings.TrimSuffix(ctrlConfig.DecisionsExporter.Kafka.TLS.ClientKey, "\n"),
+		Name:   strings.TrimSuffix(exporterConfig.Kafka.TLS.ClientCertificate, "\n"),
+		Secret: strings.TrimSuffix(exporterConfig.Kafka.TLS.ClientKey, "\n"),
 	},
 	)
 	if err != nil {
-		ctrl.Log.Error(err, "could not upload client certificate and key")
+		ctrl.Log.Error(err, fmt.Sprintf("failed to upload secret %s for %s", clientCertName, exporterType))
 		return err
 	}
 
-	_, err = styraClient.UpdateWorkspace(context.Background(), &styra.UpdateWorkspaceRequest{
-		DecisionsExporter: &styra.DecisionExportConfig{
-			Interval: ctrlConfig.DecisionsExporter.Interval,
-			Kafka: &styra.KafkaConfig{
-				Authentication: "TLS",
-				Brokers:        ctrlConfig.DecisionsExporter.Kafka.Brokers,
-				RequredAcks:    ctrlConfig.DecisionsExporter.Kafka.RequiredAcks,
-				Topic:          ctrlConfig.DecisionsExporter.Kafka.Topic,
-				TLS: &styra.KafkaTLS{
-					ClientCert:         clientCertName,
-					RootCA:             strings.TrimSuffix(ctrlConfig.DecisionsExporter.Kafka.TLS.RootCA, "\n"),
-					InsecureSkipVerify: ctrlConfig.DecisionsExporter.Kafka.TLS.InsecureSkipVerify,
-				}},
-		}})
+	exportConfig := &styra.ExporterConfig{
+		Interval: exporterConfig.Interval,
+		Kafka: &styra.KafkaConfig{
+			Authentication: "TLS",
+			Brokers:        exporterConfig.Kafka.Brokers,
+			RequredAcks:    exporterConfig.Kafka.RequiredAcks,
+			Topic:          exporterConfig.Kafka.Topic,
+			TLS: &styra.KafkaTLS{
+				ClientCert:         clientCertName,
+				RootCA:             strings.TrimSuffix(exporterConfig.Kafka.TLS.RootCA, "\n"),
+				InsecureSkipVerify: exporterConfig.Kafka.TLS.InsecureSkipVerify,
+			},
+		},
+	}
+
+	if exporterType == "ActivityExporter" {
+		_, err = styraClient.UpdateWorkspace(context.Background(), &styra.UpdateWorkspaceRequest{
+			ActivityExporter: exportConfig,
+		})
+	} else if exporterType == "DecisionsExporter" {
+		_, err = styraClient.UpdateWorkspace(context.Background(), &styra.UpdateWorkspaceRequest{
+			DecisionsExporter: exportConfig,
+		})
+	}
+
 	if err != nil {
-		ctrl.Log.Error(err, "could not update workspace configuration")
+		ctrl.Log.Error(err, fmt.Sprintf("could not update workspace configuration for %s", exporterType))
 		return err
 	}
 
-	ctrl.Log.Info("successfully configured decisions exporter")
+	ctrl.Log.Info(fmt.Sprintf("successfully configured %s", exporterType))
 	return nil
 }

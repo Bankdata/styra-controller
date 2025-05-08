@@ -6,4 +6,3 @@ images:
 - name: controller
   newName: controller
   newTag: latest
-
