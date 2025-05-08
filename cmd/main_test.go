@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/kind/pkg/errors"
 )
 
-var _ = ginkgo.Describe("ConfigureDecisionExporter", func() {
+var _ = ginkgo.Describe("ConfigureDecisionsExporter", func() {
 
 	type test struct {
 		createUpdateSecretError error
@@ -37,7 +37,7 @@ var _ = ginkgo.Describe("ConfigureDecisionExporter", func() {
 	}
 
 	// Test cases for ConfigureExporter Decisions
-	ginkgo.DescribeTable("ConfigureDecisionExporter", func(test test) {
+	ginkgo.DescribeTable("ConfigureDecisionsExporter", func(test test) {
 		// Arrange
 		ctrlConfig := &configv2alpha2.ProjectConfig{
 			DecisionsExporter: &configv2alpha2.ExporterConfig{

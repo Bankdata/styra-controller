@@ -140,4 +140,4 @@ decisionsExporter:
         Root Certificate
         -----END CERTIFICATE-----
 ```
-It will configure Styra to export all decisions to the brokers and connect via mTLS using the provided certs and key. The decision exporter configuration will be uploaded to Styra each time the controller boots. If `decisionsExporter.enabled` is set to `false`, the controller will remove the decision exporter config from Styra. The same applies when using `activityExporter`, it will export all user activities and the controller will remove the user activity exporter config from Styra when setting `activityExporter.enabled` to `false`.
+It will configure Styra to export all decisions to the brokers and connect via mTLS using the provided certs and key. The decision exporter configuration will be uploaded to Styra each time the controller boots. If `decisionsExporter.enabled` is set to `false`, the controller will remove the decision exporter config from Styra. The same applies when using `activityExporter`, the controller will remove the user activity exporter config from Styra when setting `activityExporter.enabled` to `false`.

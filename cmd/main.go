@@ -296,7 +296,7 @@ func configureExporter(
 
 		_, err := styraClient.DeleteSecret(context.Background(), clientCertName)
 		if err != nil {
-			ctrl.Log.Info(fmt.Sprintf("could not upload client certificate and key for %s", exporterType))
+			ctrl.Log.Error(err, fmt.Sprintf("could not delete client certificate and key for %s", exporterType))
 			return err
 		}
 
@@ -308,7 +308,7 @@ func configureExporter(
 			_, err = styraClient.UpdateWorkspaceRaw(context.Background(), rawJSON)
 		}
 		if err != nil {
-			ctrl.Log.Info(fmt.Sprintf("could not remove %s", exporterType))
+			ctrl.Log.Error(err, fmt.Sprintf("could not remove %s", exporterType))
 			return err
 		}
 		ctrl.Log.Info(fmt.Sprintf("%s removed", exporterType))
