@@ -212,9 +212,17 @@ the ConfigMap for the OPA are updated in the cluster.</p>
 <td><p>ConditionTypeOPATokenUpdated is a ConditionType used when
 the secret with the Styra token has been updated in the cluster.</p>
 </td>
+</tr><tr><td><p>&#34;OPAUpToDate&#34;</p></td>
+<td><p>ConditionTypeOPAUpToDate is a ConditionType used to say whether
+the OPA is up to date or needs to be restarted.</p>
+</td>
 </tr><tr><td><p>&#34;SLPConfigMapUpdated&#34;</p></td>
 <td><p>ConditionTypeSLPConfigMapUpdated is a COnditionType used when
 the ConfigMap for the SLP are updated in the cluster.</p>
+</td>
+</tr><tr><td><p>&#34;SLPUpToDate&#34;</p></td>
+<td><p>ConditionTypeSLPUpToDate is a ConditionType used to say whether
+the SLP is up to date or needs to be restarted.</p>
 </td>
 </tr><tr><td><p>&#34;SubjectsUpdated&#34;</p></td>
 <td><p>ConditionTypeSubjectsUpdated is a ConditionType used when the subjects of
@@ -1218,5 +1226,5 @@ System.</p>
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>a620e9f</code>.
+on git commit <code>f1136ff2</code>.
 </em></p>

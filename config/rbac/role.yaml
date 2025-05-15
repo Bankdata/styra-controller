@@ -25,6 +25,13 @@ rules:
   - create
   - patch
 - apiGroups:
+  - apps
+  resources:
+  - statefulset
+  verbs:
+  - get
+  - patch
+- apiGroups:
   - styra.bankdata.dk
   resources:
   - libraries

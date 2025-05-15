@@ -534,6 +534,36 @@ func (_m *ClientInterface) ListRoleBindingsV2(ctx context.Context, params *styra
 	return r0, r1
 }
 
+// PutSystem provides a mock function with given fields: ctx, request, id, headers
+func (_m *ClientInterface) PutSystem(ctx context.Context, request *styra.PutSystemRequest, id string, headers map[string]string) (*styra.PutSystemResponse, error) {
+	ret := _m.Called(ctx, request, id, headers)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PutSystem")
+	}
+
+	var r0 *styra.PutSystemResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *styra.PutSystemRequest, string, map[string]string) (*styra.PutSystemResponse, error)); ok {
+		return rf(ctx, request, id, headers)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *styra.PutSystemRequest, string, map[string]string) *styra.PutSystemResponse); ok {
+		r0 = rf(ctx, request, id, headers)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*styra.PutSystemResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *styra.PutSystemRequest, string, map[string]string) error); ok {
+		r1 = rf(ctx, request, id, headers)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // UpdateRoleBindingSubjects provides a mock function with given fields: ctx, id, request
 func (_m *ClientInterface) UpdateRoleBindingSubjects(ctx context.Context, id string, request *styra.UpdateRoleBindingSubjectsRequest) (*styra.UpdateRoleBindingSubjectsResponse, error) {
 	ret := _m.Called(ctx, id, request)

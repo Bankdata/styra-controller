@@ -32,6 +32,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/yaml.v2"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -84,6 +85,7 @@ type SystemReconciler struct {
 //+kubebuilder:rbac:groups=styra.bankdata.dk,resources=systems/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="apps",resources=statefulset,verbs=get;patch
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 // Reconcile implements renconcile.Renconciler and has responsibility of
@@ -461,9 +463,8 @@ func (r *SystemReconciler) reconcile(
 	}
 
 	if *system.GetCondition(v1beta1.ConditionTypeSLPUpToDate) == metav1.ConditionFalse {
-		if r.Config.PodRestart.SLPRestart != nil &&
-			r.Config.PodRestart.SLPRestart.Enabled {
-			// TODO: restart the SLP
+		if r.Config.PodRestart.SLPRestart != nil && r.Config.PodRestart.SLPRestart.Enabled {
+			r.restartSLPs(ctx, log, system)
 		}
 		system.SetCondition(v1beta1.ConditionTypeSLPUpToDate, metav1.ConditionTrue)
 	}
@@ -471,7 +472,7 @@ func (r *SystemReconciler) reconcile(
 	if *system.GetCondition(v1beta1.ConditionTypeOPAUpToDate) == metav1.ConditionFalse {
 		if r.Config.PodRestart.OPARestart != nil &&
 			r.Config.PodRestart.OPARestart.Enabled {
-			// TODO: restart the OPA
+			// TODO: restart the OPA is not implemented yet
 		}
 		system.SetCondition(v1beta1.ConditionTypeOPAUpToDate, metav1.ConditionTrue)
 	}
@@ -487,10 +488,25 @@ func (r *SystemReconciler) restartSLPs(
 	log logr.Logger,
 	system *v1beta1.System,
 ) (ctrl.Result, error) {
+	if strings.ToLower(r.Config.PodRestart.SLPRestart.DeploymentType) != "statefulset" {
+		log.Info("Restarting SLPs is not supported for this deployment type", "deploymentType", r.Config.PodRestart.SLPRestart.DeploymentType)
+		return ctrl.Result{}, nil
+	}
 	log.Info("Restarting SLPs")
+	nsName := types.NamespacedName{Name: system.Spec.LocalPlane.Name, Namespace: system.Namespace}
+	var sts *appsv1.StatefulSet
+	if err := r.Get(ctx, nsName, sts); err != nil {
+		return ctrl.Result{}, ctrlerr.Wrap(err, "Could not get StatefulSet").
+			WithEvent("ErrorGetStatefulSet").
+			WithSystemCondition(v1beta1.ConditionTypeSLPUpToDate)
+	}
+	patch := []byte(fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt": "%d"}}}}}`, time.Now().UnixNano()))
 
-	// This function is equivalent to `kubectl rollout restart deployment -n <namespace> <name>`
-
+	if err := r.Patch(ctx, sts, client.RawPatch(types.StrategicMergePatchType, patch)); err != nil {
+		return ctrl.Result{}, ctrlerr.Wrap(err, "Could not patch StatefulSet").
+			WithEvent("ErrorPatchStatefulSet").
+			WithSystemCondition(v1beta1.ConditionTypeSLPUpToDate)
+	}
 	return ctrl.Result{}, nil
 }
 
@@ -1608,8 +1624,4 @@ func (r *SystemReconciler) findSystemsForConfigMap(ctx context.Context, configma
 	}
 
 	return requests
-}
-
-func (r *SystemReconciler) restartPods(ctx context.Context) {
-	// if !metav1.IsControlledBy(&s, system) might make sense if you think about it.
 }
