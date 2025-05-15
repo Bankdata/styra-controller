@@ -96,6 +96,26 @@ type ProjectConfig struct {
 
 	DecisionsExporter *ExporterConfig `json:"decisionsExporter,omitempty"`
 	ActivityExporter  *ExporterConfig `json:"activityExporter,omitempty"`
+
+	PodRestart *PodRestartConfig `json:"podRestart,omitempty"`
+}
+
+// PodRestartConfig contains configuration for restarting OPA and SLP pods
+type PodRestartConfig struct {
+	SLPRestart *SLPRestartConfig `json:"slpRestart,omitempty"`
+	OPARestart *OPARestartConfig `json:"opaRestart,omitempty"`
+}
+
+// SLPRestartConfig contains configuration for restarting SLP pods
+type SLPRestartConfig struct {
+	Enabled        bool   `json:"enabled"`
+	DeploymentType string `json:"deploymentType"` // DeploymentType only currently supports "StatefulSet""
+}
+
+// OPARestartConfig contains configuration for restarting OPA pods -- This is not yet implemented
+type OPARestartConfig struct {
+	Enabled        bool   `json:"enabled"`
+	DeploymentType string `json:"deploymentType"`
 }
 
 // LeaderElectionConfig contains configuration for leader election
@@ -241,6 +261,22 @@ func (c *ProjectConfig) GetGitCredentialForRepo(repo string) *GitCredential {
 	}
 
 	return nil
+}
+
+// SLPRestartEnabled returns true if the OPA restart is enabled
+func (c *ProjectConfig) SLPRestartEnabled() bool {
+	if c.PodRestart == nil || c.PodRestart.SLPRestart == nil {
+		return false
+	}
+	return c.PodRestart.SLPRestart.Enabled
+}
+
+// OPARestartEnabled returns true if the OPA restart is enabled
+func (c *ProjectConfig) OPARestartEnabled() bool {
+	if c.PodRestart == nil || c.PodRestart.OPARestart == nil {
+		return false
+	}
+	return c.PodRestart.OPARestart.Enabled
 }
 
 func init() {

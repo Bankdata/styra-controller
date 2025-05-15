@@ -18,7 +18,7 @@ type DeletePolicyResponse struct {
 
 // DeletePolicy calls the DELETE /v1/policies/{policy} endpoint in the Styra API.
 func (c *Client) DeletePolicy(ctx context.Context, policyName string) (*DeletePolicyResponse, error) {
-	res, err := c.request(ctx, http.MethodDelete, fmt.Sprintf("/v1/policies/%s", policyName), nil)
+	res, err := c.request(ctx, http.MethodDelete, fmt.Sprintf("/v1/policies/%s", policyName), nil, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("could not delete policy: %s", policyName))
 	}
