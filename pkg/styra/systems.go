@@ -49,13 +49,19 @@ type UpdateSystemResponse struct {
 
 // CreateSystemRequest is the request body for the POST /v1/systems
 // endpoint in the Styra API.
-type CreateSystemRequest struct {
+type PutSystemRequest struct {
 	*SystemConfig
+}
+
+type PutSystemResponse struct {
+	StatusCode   int
+	Body         []byte
+	SystemConfig *SystemConfig
 }
 
 // CreateSystemRequest is the request body for the POST /v1/systems
 // endpoint in the Styra API.
-type PutSystemRequest struct {
+type CreateSystemRequest struct {
 	*SystemConfig
 }
 
@@ -237,6 +243,39 @@ func (c *Client) GetSystemByName(ctx context.Context, name string) (*GetSystemRe
 
 	if len(js.Result) > 0 {
 		r.SystemConfig = &js.Result[0]
+	}
+
+	return &r, nil
+}
+
+// PutSystem calls the PUT /v1/systems/{id} endpoint in the Styra API. TODO: move below getsysbyname
+func (c *Client) PutSystem(ctx context.Context, request *PutSystemRequest, id string, headers map[string]string) (*PutSystemResponse, error) {
+	res, err := c.request(ctx, http.MethodPut, fmt.Sprintf("%s/%s", endpointV1Systems, id), request, headers)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to call post system")
+	}
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not read body")
+	}
+
+	if res.StatusCode != http.StatusOK {
+		err := NewHTTPError(res.StatusCode, string(body))
+		return nil, err
+	}
+
+	r := PutSystemResponse{
+		StatusCode: res.StatusCode,
+		Body:       body,
+	}
+
+	if r.StatusCode == http.StatusOK {
+		var js getSystemJSONResponse
+		if err := json.Unmarshal(r.Body, &js); err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("could not unmarshal body, %v", string(r.Body)))
+		}
+		r.SystemConfig = js.Result
 	}
 
 	return &r, nil

@@ -283,14 +283,13 @@ func (r *SystemReconciler) reconcile(
 			if errors.As(err, &serr) && serr.StatusCode == http.StatusNotFound {
 				createSystemStart := time.Now()
 				res, err := r.createSystemWithId(ctx, log, system, systemID)
-				res, err = r.createSystem(ctx, log, system)
 
-				r.Metrics.ReconcileSegmentTime.WithLabelValues("createSystem").
+				r.Metrics.ReconcileSegmentTime.WithLabelValues("createSystemWithId").
 					Observe(time.Since(createSystemStart).Seconds())
-
 				if err != nil {
 					return ctrl.Result{}, err
 				}
+
 				deleteDefaultPolicyStart := time.Now()
 				err = r.deleteDefaultPolicies(ctx, log, res.SystemConfig.ID)
 				r.Metrics.ReconcileSegmentTime.WithLabelValues("deleteDefaultPolicies").
@@ -298,13 +297,7 @@ func (r *SystemReconciler) reconcile(
 				if err != nil {
 					return ctrl.Result{}, err
 				}
-				reconcileIDStart := time.Now()
-				err = r.reconcileID(ctx, log, system, res.SystemConfig.ID)
-				r.Metrics.ReconcileSegmentTime.WithLabelValues("reconcileID").
-					Observe(time.Since(reconcileIDStart).Seconds())
-				if err != nil {
-					return ctrl.Result{}, err
-				}
+
 			} else {
 				return ctrl.Result{}, err
 			}
@@ -502,7 +495,9 @@ func (r *SystemReconciler) getSystemByName(
 func (r *SystemReconciler) createSystemWithId(
 	ctx context.Context,
 	log logr.Logger,
-	system *v1beta1.System) (*styra.CreateSystemResponse, error) {
+	system *v1beta1.System,
+	id string,
+) (*styra.PutSystemResponse, error) {
 	log.Info("Creating system in Styra with ID")
 	cfg, err := r.specToSystemConfig(system)
 
@@ -528,9 +523,14 @@ func (r *SystemReconciler) createSystemWithId(
 		log.Info("Create system request", "request", string(bs))
 	}
 
-	res, err := r.Styra.PutSystem(ctx, &styra.PutSystemRequest{SystemConfig: cfg})
-
-	return nil, nil
+	headers := map[string]string{"If-None-Match": "*"}
+	res, err := r.Styra.PutSystem(ctx, &styra.PutSystemRequest{SystemConfig: cfg}, id, headers)
+	if err != nil {
+		return nil, ctrlerr.Wrap(err, fmt.Sprintf("Could not create system in Styra with id %s", id)).
+			WithEvent("ErrorCreateSystemInStyra").
+			WithSystemCondition(v1beta1.ConditionTypeCreatedInStyra)
+	}
+	return res, nil
 }
 
 func (r *SystemReconciler) createSystem(

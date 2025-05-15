@@ -80,6 +80,8 @@ type ClientInterface interface {
 
 	CreateSystem(ctx context.Context, request *CreateSystemRequest) (*CreateSystemResponse, error)
 
+	PutSystem(ctx context.Context, request *PutSystemRequest, id string, headers map[string]string) (*PutSystemResponse, error)
+
 	GetOPAConfig(ctx context.Context, systemID string) (OPAConfig, error)
 
 	VerifyGitConfiguration(ctx context.Context, request *VerfiyGitConfigRequest) (*VerfiyGitConfigResponse, error)
