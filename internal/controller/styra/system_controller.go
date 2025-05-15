@@ -282,7 +282,9 @@ func (r *SystemReconciler) reconcile(
 			var serr *styra.HTTPError
 			if errors.As(err, &serr) && serr.StatusCode == http.StatusNotFound {
 				createSystemStart := time.Now()
-				res, err := r.createSystem(ctx, log, system)
+				res, err := r.createSystemWithId(ctx, log, system, systemID)
+				res, err = r.createSystem(ctx, log, system)
+
 				r.Metrics.ReconcileSegmentTime.WithLabelValues("createSystem").
 					Observe(time.Since(createSystemStart).Seconds())
 
@@ -495,6 +497,40 @@ func (r *SystemReconciler) getSystemByName(
 		log.Info(fmt.Sprintf("System %v does not exist in Styra DAS.", name))
 	}
 	return res.SystemConfig, nil
+}
+
+func (r *SystemReconciler) createSystemWithId(
+	ctx context.Context,
+	log logr.Logger,
+	system *v1beta1.System) (*styra.CreateSystemResponse, error) {
+	log.Info("Creating system in Styra with ID")
+	cfg, err := r.specToSystemConfig(system)
+
+	if err != nil {
+		return nil, ctrlerr.Wrap(err, "Error while reading system spec").
+			WithEvent("ErrorCreateSystemInStyra").
+			WithSystemCondition(v1beta1.ConditionTypeCreatedInStyra)
+	}
+
+	// We dont set the sourcecontrol settings on system creation, as we havent
+	// created the git secret yet.
+	cfg.SourceControl = nil
+
+	// Styra does not seem to allow setting deltaBundles before the system is created
+	cfg.BundleDownload = nil
+
+	if log.V(1).Enabled() {
+		log := log.V(1)
+		bs, err := json.Marshal(cfg)
+		if err != nil {
+			log.Error(err, "Could not marshal request")
+		}
+		log.Info("Create system request", "request", string(bs))
+	}
+
+	res, err := r.Styra.PutSystem(ctx, &styra.PutSystemRequest{SystemConfig: cfg})
+
+	return nil, nil
 }
 
 func (r *SystemReconciler) createSystem(
@@ -1533,4 +1569,8 @@ func (r *SystemReconciler) findSystemsForConfigMap(ctx context.Context, configma
 	}
 
 	return requests
+}
+
+func (r *SystemReconciler) restartPods(ctx context.Context) {
+	// if !metav1.IsControlledBy(&s, system) might make sense if you think about it.
 }
