@@ -408,7 +408,13 @@ func (r *SystemReconciler) reconcile(
 	if err != nil {
 		return result, err
 	}
+
 	if updatedToken {
+		if system.Spec.LocalPlane == nil {
+			system.SetCondition(v1beta1.ConditionTypeOPAUpToDate, metav1.ConditionFalse)
+		} else {
+			system.SetCondition(v1beta1.ConditionTypeSLPUpToDate, metav1.ConditionFalse)
+		}
 		return result, nil
 	}
 	system.SetCondition(v1beta1.ConditionTypeOPATokenUpdated, metav1.ConditionTrue)
@@ -421,8 +427,11 @@ func (r *SystemReconciler) reconcile(
 		return result, err
 	}
 	if updatedOPAConfigMap {
+		system.SetCondition(v1beta1.ConditionTypeOPAUpToDate, metav1.ConditionFalse)
+
 		return result, nil
 	}
+
 	system.SetCondition(v1beta1.ConditionTypeOPAConfigMapUpdated, metav1.ConditionTrue)
 
 	reconcileSLPConfigMapStart := time.Now()
@@ -433,6 +442,8 @@ func (r *SystemReconciler) reconcile(
 		return result, err
 	}
 	if updatedSLPConfigMap {
+		system.SetCondition(v1beta1.ConditionTypeSLPUpToDate, metav1.ConditionFalse)
+
 		return result, nil
 	}
 	system.SetCondition(v1beta1.ConditionTypeSLPConfigMapUpdated, metav1.ConditionTrue)
@@ -449,9 +460,37 @@ func (r *SystemReconciler) reconcile(
 			WithEvent("ErrorPhaseToCreated")
 	}
 
+	if *system.GetCondition(v1beta1.ConditionTypeSLPUpToDate) == metav1.ConditionFalse {
+		if r.Config.PodRestart.SLPRestart != nil &&
+			r.Config.PodRestart.SLPRestart.Enabled {
+			// TODO: restart the SLP
+		}
+		system.SetCondition(v1beta1.ConditionTypeSLPUpToDate, metav1.ConditionTrue)
+	}
+
+	if *system.GetCondition(v1beta1.ConditionTypeOPAUpToDate) == metav1.ConditionFalse {
+		if r.Config.PodRestart.OPARestart != nil &&
+			r.Config.PodRestart.OPARestart.Enabled {
+			// TODO: restart the OPA
+		}
+		system.SetCondition(v1beta1.ConditionTypeOPAUpToDate, metav1.ConditionTrue)
+	}
+
 	msg := "Reconciliation completed"
 	r.Recorder.Event(system, corev1.EventTypeNormal, "ReconciliationCompleted", msg)
 	log.Info(msg)
+	return ctrl.Result{}, nil
+}
+
+func (r *SystemReconciler) restartSLPs(
+	ctx context.Context,
+	log logr.Logger,
+	system *v1beta1.System,
+) (ctrl.Result, error) {
+	log.Info("Restarting SLPs")
+
+	// This function is equivalent to `kubectl rollout restart deployment -n <namespace> <name>`
+
 	return ctrl.Result{}, nil
 }
 

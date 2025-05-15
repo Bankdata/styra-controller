@@ -96,6 +96,28 @@ type ProjectConfig struct {
 
 	DecisionsExporter *ExporterConfig `json:"decisionsExporter,omitempty"`
 	ActivityExporter  *ExporterConfig `json:"activityExporter,omitempty"`
+
+	PodRestart *PodRestartConfig `json:"podRestart,omitempty"`
+}
+
+// PodRestartConfig contains configuration for restarting OPA and SLP pods
+type PodRestartConfig struct {
+	SLPRestart *SLPRestartConfig `json:"slpRestart,omitempty"`
+	OPARestart *OPARestartConfig `json:"opaRestart,omitempty"`
+}
+
+// SLPRestartConfig contains configuration for restarting SLP pods
+type SLPRestartConfig struct {
+	Enabled        bool                 `json:"enabled"`
+	DeploymentType string               `json:"deploymentType"` // DeploymentType only currently supports "StatefulSet""
+	LabelSelector  metav1.LabelSelector `json:"labelSelector"`
+}
+
+// OPARestartConfig contains configuration for restarting OPA pods -- This is not yet implemented
+type OPARestartConfig struct {
+	Enabled        bool                 `json:"enabled"`
+	DeploymentType string               `json:"deploymentType"` // DeploymentType only currently supports "StatefulSet""
+	LabelSelector  metav1.LabelSelector `json:"labelSelector"`
 }
 
 // LeaderElectionConfig contains configuration for leader election

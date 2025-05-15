@@ -310,17 +310,25 @@ const (
 	// the datasources of the System are updated in Styra.
 	ConditionTypeDatasourcesUpdated ConditionType = "DatasourcesUpdated"
 
-	// ConditionTypeOPAConfigMapUpdated is a ConditionType used when
-	// the ConfigMap for the OPA are updated in the cluster.
-	ConditionTypeOPAConfigMapUpdated ConditionType = "OPAConfigMapUpdated"
-
 	// ConditionTypeOPATokenUpdated is a ConditionType used when
 	// the secret with the Styra token has been updated in the cluster.
 	ConditionTypeOPATokenUpdated ConditionType = "OPATokenUpdated"
 
+	// ConditionTypeOPAConfigMapUpdated is a ConditionType used when
+	// the ConfigMap for the OPA are updated in the cluster.
+	ConditionTypeOPAConfigMapUpdated ConditionType = "OPAConfigMapUpdated"
+
+	// ConditionTypeOPAUpToDate is a ConditionType used to say whether
+	// the OPA is up to date or needs to be restarted.
+	ConditionTypeOPAUpToDate ConditionType = "OPAUpToDate"
+
 	// ConditionTypeSLPConfigMapUpdated is a COnditionType used when
 	// the ConfigMap for the SLP are updated in the cluster.
 	ConditionTypeSLPConfigMapUpdated ConditionType = "SLPConfigMapUpdated"
+
+	// ConditionTypeSLPUpToDate is a ConditionType used to say whether
+	// the SLP is up to date or needs to be restarted.
+	ConditionTypeSLPUpToDate ConditionType = "SLPUpToDate"
 
 	// ConditionTypeSystemConfigUpdated is a ConditionType used when
 	// the configuration of the System are updated in Styra.
@@ -361,6 +369,15 @@ func init() {
 // SetCondition updates the matching condition under the System's status field.
 func (s *System) SetCondition(conditionType ConditionType, status metav1.ConditionStatus) {
 	s.setCondition(time.Now, conditionType, status)
+}
+
+func (s *System) GetCondition(conditionType ConditionType) *metav1.ConditionStatus {
+	for _, con := range s.Status.Conditions {
+		if con.Type == conditionType {
+			return &con.Status
+		}
+	}
+	return nil
 }
 
 func (s *System) setCondition(timeNow func() time.Time, conditionType ConditionType, status metav1.ConditionStatus) {
