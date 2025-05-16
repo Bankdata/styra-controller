@@ -100,7 +100,6 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		r.Metrics.ReconcileTime.WithLabelValues("delete").Observe(time.Since(start).Seconds())
 		if k8serrors.IsNotFound(err) {
 			log.Info("Could not find System in kubernetes")
-			r.deleteMetrics(req)
 			return ctrl.Result{}, nil
 		}
 		r.deleteMetrics(req)
@@ -178,7 +177,7 @@ func (r *SystemReconciler) deleteMetrics(req ctrl.Request) {
 		return
 	}
 	if deleted := r.Metrics.ControllerSystemStatusReady.DeletePartialMatch(
-		prometheus.Labels{"System": req.Name, "namespace": req.Namespace},
+		prometheus.Labels{"system_name": req.Name, "namespace": req.Namespace},
 	); deleted != 1 {
 		log.Log.Error(errors.New("Failed to delete metric"), "Incorrect number of deleted metrics", "deleted", deleted)
 	}
