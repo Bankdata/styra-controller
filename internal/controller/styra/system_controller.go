@@ -85,7 +85,7 @@ type SystemReconciler struct {
 //+kubebuilder:rbac:groups=styra.bankdata.dk,resources=systems/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="apps",resources=statefulset,verbs=get;patch
+//+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;patch;
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 // Reconcile implements renconcile.Renconciler and has responsibility of
@@ -412,10 +412,18 @@ func (r *SystemReconciler) reconcile(
 	}
 
 	if updatedToken {
+		var conditionType v1beta1.ConditionType
 		if system.Spec.LocalPlane == nil {
-			system.SetCondition(v1beta1.ConditionTypeOPAUpToDate, metav1.ConditionFalse)
+			conditionType = v1beta1.ConditionTypeOPAUpToDate
 		} else {
-			system.SetCondition(v1beta1.ConditionTypeSLPUpToDate, metav1.ConditionFalse)
+			conditionType = v1beta1.ConditionTypeSLPUpToDate
+		}
+		system.SetCondition(conditionType, metav1.ConditionFalse)
+		err = r.Status().Update(ctx, system)
+		if err != nil {
+			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not change status.phase to Created").
+				WithEvent("ErrorPhaseToCreated").
+				WithSystemCondition(conditionType)
 		}
 		return result, nil
 	}
@@ -431,12 +439,17 @@ func (r *SystemReconciler) reconcile(
 	if updatedOPAConfigMap {
 		system.SetCondition(v1beta1.ConditionTypeOPAUpToDate, metav1.ConditionFalse)
 
+		err = r.Status().Update(ctx, system)
+		if err != nil {
+			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not change status.phase to Created").
+				WithEvent("ErrorPhaseToCreated").
+				WithSystemCondition(v1beta1.ConditionTypeOPAUpToDate)
+		}
 		return result, nil
 	}
 
 	system.SetCondition(v1beta1.ConditionTypeOPAConfigMapUpdated, metav1.ConditionTrue)
 
-	fmt.Println("hest1")
 	reconcileSLPConfigMapStart := time.Now()
 	result, updatedSLPConfigMap, err := r.reconcileSLPConfigMap(ctx, log, system, opaConfig)
 	r.Metrics.ReconcileSegmentTime.WithLabelValues("reconcileSLPConfigMap").
@@ -445,8 +458,14 @@ func (r *SystemReconciler) reconcile(
 		return result, err
 	}
 	if updatedSLPConfigMap {
-		fmt.Println("updated SLP config map")
 		system.SetCondition(v1beta1.ConditionTypeSLPUpToDate, metav1.ConditionFalse)
+
+		err = r.Status().Update(ctx, system)
+		if err != nil {
+			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not change status.phase to Created").
+				WithEvent("ErrorPhaseToCreated").
+				WithSystemCondition(v1beta1.ConditionTypeSLPUpToDate)
+		}
 
 		return result, nil
 	}
@@ -466,7 +485,6 @@ func (r *SystemReconciler) reconcile(
 
 	if system.GetCondition(v1beta1.ConditionTypeSLPUpToDate) != nil && *system.GetCondition(v1beta1.ConditionTypeSLPUpToDate) == metav1.ConditionFalse {
 		if r.Config.PodRestart.SLPRestart != nil && r.Config.PodRestart.SLPRestart.Enabled {
-			fmt.Println("restarting SLPs")
 			r.restartSLPs(ctx, log, system)
 		}
 		system.SetCondition(v1beta1.ConditionTypeSLPUpToDate, metav1.ConditionTrue)
@@ -497,19 +515,20 @@ func (r *SystemReconciler) restartSLPs(
 	}
 	log.Info("Restarting SLPs")
 	nsName := types.NamespacedName{Name: system.Spec.LocalPlane.Name, Namespace: system.Namespace}
-	var sts *appsv1.StatefulSet
-	if err := r.Get(ctx, nsName, sts); err != nil {
+	var sts appsv1.StatefulSet
+	if err := r.Get(ctx, nsName, &sts); err != nil {
 		return ctrl.Result{}, ctrlerr.Wrap(err, "Could not get StatefulSet").
 			WithEvent("ErrorGetStatefulSet").
 			WithSystemCondition(v1beta1.ConditionTypeSLPUpToDate)
 	}
-	patch := []byte(fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt": "%d"}}}}}`, time.Now().UnixNano()))
 
-	if err := r.Patch(ctx, sts, client.RawPatch(types.StrategicMergePatchType, patch)); err != nil {
+	patch := []byte(fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt": "%d"}}}}}`, time.Now().Format(time.RFC3339)))
+	if err := r.Patch(ctx, &sts, client.RawPatch(types.StrategicMergePatchType, patch)); err != nil {
 		return ctrl.Result{}, ctrlerr.Wrap(err, "Could not patch StatefulSet").
 			WithEvent("ErrorPatchStatefulSet").
 			WithSystemCondition(v1beta1.ConditionTypeSLPUpToDate)
 	}
+	log.Info("Restarted SLPs")
 	return ctrl.Result{}, nil
 }
 

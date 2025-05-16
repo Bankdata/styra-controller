@@ -27,10 +27,12 @@ rules:
 - apiGroups:
   - apps
   resources:
-  - statefulset
+  - statefulsets
   verbs:
   - get
+  - list
   - patch
+  - watch
 - apiGroups:
   - styra.bankdata.dk
   resources:
