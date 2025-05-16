@@ -68,7 +68,7 @@ type getOPAConfigServiceBearerCredentials struct {
 // GetOPAConfig calls the GET /v1/systems/{systemId}/assets/opa-config endpoint
 // in the Styra API.
 func (c *Client) GetOPAConfig(ctx context.Context, systemID string) (OPAConfig, error) {
-	res, err := c.request(ctx, http.MethodGet, fmt.Sprintf("/v1/systems/%s/assets/opa-config", systemID), nil)
+	res, err := c.request(ctx, http.MethodGet, fmt.Sprintf("/v1/systems/%s/assets/opa-config", systemID), nil, nil)
 	if err != nil {
 		return OPAConfig{}, errors.Wrap(err, "could not get opaconf file")
 	}

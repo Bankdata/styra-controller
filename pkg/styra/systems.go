@@ -49,6 +49,18 @@ type UpdateSystemResponse struct {
 
 // CreateSystemRequest is the request body for the POST /v1/systems
 // endpoint in the Styra API.
+type PutSystemRequest struct {
+	*SystemConfig
+}
+
+type PutSystemResponse struct {
+	StatusCode   int
+	Body         []byte
+	SystemConfig *SystemConfig
+}
+
+// CreateSystemRequest is the request body for the POST /v1/systems
+// endpoint in the Styra API.
 type CreateSystemRequest struct {
 	*SystemConfig
 }
@@ -168,7 +180,7 @@ type VerfiyGitConfigResponse struct {
 
 // GetSystem calls the GET /v1/systems{system} endpoint in the Styra API.
 func (c *Client) GetSystem(ctx context.Context, id string) (*GetSystemResponse, error) {
-	res, err := c.request(ctx, http.MethodGet, fmt.Sprintf("%s/%s", endpointV1Systems, id), nil)
+	res, err := c.request(ctx, http.MethodGet, fmt.Sprintf("%s/%s", endpointV1Systems, id), nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +214,7 @@ func (c *Client) GetSystem(ctx context.Context, id string) (*GetSystemResponse, 
 // GetSystemByName calls the GET /v1/systems?name=<name> endpoint in the Styra API. If a system exists with this
 // name it will be returned in the response. Otherwise, r.SystemConfig will be nil.
 func (c *Client) GetSystemByName(ctx context.Context, name string) (*GetSystemResponse, error) {
-	res, err := c.request(ctx, http.MethodGet, fmt.Sprintf("%s?name=%s", endpointV1Systems, name), nil)
+	res, err := c.request(ctx, http.MethodGet, fmt.Sprintf("%s?name=%s", endpointV1Systems, name), nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -236,9 +248,42 @@ func (c *Client) GetSystemByName(ctx context.Context, name string) (*GetSystemRe
 	return &r, nil
 }
 
+// PutSystem calls the PUT /v1/systems/{id} endpoint in the Styra API. TODO: move below getsysbyname
+func (c *Client) PutSystem(ctx context.Context, request *PutSystemRequest, id string, headers map[string]string) (*PutSystemResponse, error) {
+	res, err := c.request(ctx, http.MethodPut, fmt.Sprintf("%s/%s", endpointV1Systems, id), request, headers)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to call post system")
+	}
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not read body")
+	}
+
+	if res.StatusCode != http.StatusOK {
+		err := NewHTTPError(res.StatusCode, string(body))
+		return nil, err
+	}
+
+	r := PutSystemResponse{
+		StatusCode: res.StatusCode,
+		Body:       body,
+	}
+
+	if r.StatusCode == http.StatusOK {
+		var js getSystemJSONResponse
+		if err := json.Unmarshal(r.Body, &js); err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("could not unmarshal body, %v", string(r.Body)))
+		}
+		r.SystemConfig = js.Result
+	}
+
+	return &r, nil
+}
+
 // CreateSystem calls the POST /v1/systems endpoint in the Styra API.
 func (c *Client) CreateSystem(ctx context.Context, request *CreateSystemRequest) (*CreateSystemResponse, error) {
-	res, err := c.request(ctx, http.MethodPost, endpointV1Systems, request)
+	res, err := c.request(ctx, http.MethodPost, endpointV1Systems, request, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call post system")
 	}
@@ -275,7 +320,7 @@ func (c *Client) UpdateSystem(
 	id string,
 	request *UpdateSystemRequest,
 ) (*UpdateSystemResponse, error) {
-	res, err := c.request(ctx, http.MethodPut, fmt.Sprintf("%s/%s", endpointV1Systems, id), request)
+	res, err := c.request(ctx, http.MethodPut, fmt.Sprintf("%s/%s", endpointV1Systems, id), request, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call update system")
 	}
@@ -312,7 +357,7 @@ func (c *Client) VerifyGitConfiguration(
 	ctx context.Context,
 	request *VerfiyGitConfigRequest,
 ) (*VerfiyGitConfigResponse, error) {
-	res, err := c.request(ctx, http.MethodPost, fmt.Sprintf("%s/source-control/verify-config", endpointV1Systems), request)
+	res, err := c.request(ctx, http.MethodPost, fmt.Sprintf("%s/source-control/verify-config", endpointV1Systems), request, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call validate git config ")
 	}
@@ -338,7 +383,7 @@ func (c *Client) VerifyGitConfiguration(
 // DeleteSystem calls the DELETE /v1/systems/{system} endpoint in the Styra
 // API.
 func (c *Client) DeleteSystem(ctx context.Context, id string) (*DeleteSystemResponse, error) {
-	res, err := c.request(ctx, http.MethodDelete, fmt.Sprintf("%s/%s", endpointV1Systems, id), nil)
+	res, err := c.request(ctx, http.MethodDelete, fmt.Sprintf("%s/%s", endpointV1Systems, id), nil, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call delete system")
 	}

@@ -63,6 +63,7 @@ func (c *Client) CreateUpdateSecret(
 		http.MethodPut,
 		fmt.Sprintf("%s/%s", endpointV1Secrets, secretID),
 		createUpdateSecretsRequest,
+		nil,
 	)
 	if err != nil {
 		return nil, err
@@ -96,6 +97,7 @@ func (c *Client) DeleteSecret(
 		ctx,
 		http.MethodDelete,
 		fmt.Sprintf("%s/%s", endpointV1Secrets, secretID),
+		nil,
 		nil,
 	)
 	if err != nil {

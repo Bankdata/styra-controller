@@ -35,6 +35,12 @@ systemUserRoles:
 
 #activityExporter:
 
+podRestart:
+  slpRestart:
+    enabled: true
+    deploymentType: StatefulSet
+
+
 #opa:
 #  decision_logs:
 #    request_context:

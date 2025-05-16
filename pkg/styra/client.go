@@ -80,6 +80,8 @@ type ClientInterface interface {
 
 	CreateSystem(ctx context.Context, request *CreateSystemRequest) (*CreateSystemResponse, error)
 
+	PutSystem(ctx context.Context, request *PutSystemRequest, id string, headers map[string]string) (*PutSystemResponse, error)
+
 	GetOPAConfig(ctx context.Context, systemID string) (OPAConfig, error)
 
 	VerifyGitConfiguration(ctx context.Context, request *VerfiyGitConfigRequest) (*VerfiyGitConfigResponse, error)
@@ -115,7 +117,7 @@ func (c *Client) InvalidateCache() {
 	c.Cache.Flush()
 }
 
-func (c *Client) newRequest(ctx context.Context, method, endpoint string, body interface{}) (*http.Request, error) {
+func (c *Client) newRequest(ctx context.Context, method, endpoint string, body interface{}, headers map[string]string) (*http.Request, error) {
 	u := fmt.Sprintf("%s%s", c.URL, endpoint)
 
 	var b bytes.Buffer
@@ -133,11 +135,17 @@ func (c *Client) newRequest(ctx context.Context, method, endpoint string, body i
 	r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token))
 	r.Header.Set("Content-Type", "application/json")
 
+	if headers != nil {
+		for k, v := range headers {
+			r.Header.Set(k, v)
+		}
+	}
+
 	return r, nil
 }
 
-func (c *Client) request(ctx context.Context, method, endpoint string, body interface{}) (*http.Response, error) {
-	req, err := c.newRequest(ctx, method, endpoint, body)
+func (c *Client) request(ctx context.Context, method, endpoint string, body interface{}, headers map[string]string) (*http.Response, error) {
+	req, err := c.newRequest(ctx, method, endpoint, body, headers)
 	if err != nil {
 		return nil, err
 	}

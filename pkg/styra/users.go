@@ -90,7 +90,7 @@ func (c *Client) GetUser(ctx context.Context, name string) (*GetUserResponse, er
 
 // GetUserEndpoint is a helper function to call the Styra API.
 func (c *Client) GetUserEndpoint(ctx context.Context, endpoint string) (*GetUserResponse, error) {
-	res, err := c.request(ctx, http.MethodGet, endpoint, nil)
+	res, err := c.request(ctx, http.MethodGet, endpoint, nil, nil)
 	if err != nil {
 		return nil, err
 	}

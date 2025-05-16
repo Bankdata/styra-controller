@@ -54,6 +54,7 @@ func (c *Client) CreateInvitation(ctx context.Context, email bool, name string) 
 		http.MethodPost,
 		fmt.Sprintf("%s?email=%s", endpointV1Invitations, strconv.FormatBool(email)),
 		createInvitationData,
+		nil,
 	)
 	if err != nil {
 		return nil, err

@@ -90,7 +90,7 @@ type UpsertLibraryResponse struct {
 // GetLibrary calls the GET /v1/libraries/{id} endpoint in the
 // Styra API.
 func (c *Client) GetLibrary(ctx context.Context, id string) (*GetLibraryResponse, error) {
-	res, err := c.request(ctx, http.MethodGet, fmt.Sprintf("%s/%s", endpointV1Libraries, id), nil)
+	res, err := c.request(ctx, http.MethodGet, fmt.Sprintf("%s/%s", endpointV1Libraries, id), nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func (c *Client) GetLibrary(ctx context.Context, id string) (*GetLibraryResponse
 // Styra API.
 func (c *Client) UpsertLibrary(ctx context.Context, id string, request *UpsertLibraryRequest,
 ) (*UpsertLibraryResponse, error) {
-	res, err := c.request(ctx, http.MethodPut, fmt.Sprintf("%s/%s", endpointV1Libraries, id), request)
+	res, err := c.request(ctx, http.MethodPut, fmt.Sprintf("%s/%s", endpointV1Libraries, id), request, nil)
 	if err != nil {
 		return nil, err
 	}

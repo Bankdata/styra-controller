@@ -77,7 +77,7 @@ func (c *Client) UpdateWorkspaceRaw(
 	ctx context.Context,
 	request interface{},
 ) (*UpdateWorkspaceResponse, error) {
-	res, err := c.request(ctx, http.MethodPatch, endpointV1Workspace, request)
+	res, err := c.request(ctx, http.MethodPatch, endpointV1Workspace, request, nil)
 	if err != nil {
 		return nil, err
 	}

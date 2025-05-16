@@ -32,6 +32,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/yaml.v2"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -84,6 +85,7 @@ type SystemReconciler struct {
 //+kubebuilder:rbac:groups=styra.bankdata.dk,resources=systems/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;patch;
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 // Reconcile implements renconcile.Renconciler and has responsibility of
@@ -282,13 +284,14 @@ func (r *SystemReconciler) reconcile(
 			var serr *styra.HTTPError
 			if errors.As(err, &serr) && serr.StatusCode == http.StatusNotFound {
 				createSystemStart := time.Now()
-				res, err := r.createSystem(ctx, log, system)
-				r.Metrics.ReconcileSegmentTime.WithLabelValues("createSystem").
-					Observe(time.Since(createSystemStart).Seconds())
+				res, err := r.createSystemWithId(ctx, log, system, systemID)
 
+				r.Metrics.ReconcileSegmentTime.WithLabelValues("createSystemWithId").
+					Observe(time.Since(createSystemStart).Seconds())
 				if err != nil {
 					return ctrl.Result{}, err
 				}
+
 				deleteDefaultPolicyStart := time.Now()
 				err = r.deleteDefaultPolicies(ctx, log, res.SystemConfig.ID)
 				r.Metrics.ReconcileSegmentTime.WithLabelValues("deleteDefaultPolicies").
@@ -296,13 +299,7 @@ func (r *SystemReconciler) reconcile(
 				if err != nil {
 					return ctrl.Result{}, err
 				}
-				reconcileIDStart := time.Now()
-				err = r.reconcileID(ctx, log, system, res.SystemConfig.ID)
-				r.Metrics.ReconcileSegmentTime.WithLabelValues("reconcileID").
-					Observe(time.Since(reconcileIDStart).Seconds())
-				if err != nil {
-					return ctrl.Result{}, err
-				}
+
 			} else {
 				return ctrl.Result{}, err
 			}
@@ -413,7 +410,21 @@ func (r *SystemReconciler) reconcile(
 	if err != nil {
 		return result, err
 	}
+
 	if updatedToken {
+		var conditionType v1beta1.ConditionType
+		if system.Spec.LocalPlane == nil {
+			conditionType = v1beta1.ConditionTypeOPAUpToDate
+		} else {
+			conditionType = v1beta1.ConditionTypeSLPUpToDate
+		}
+		system.SetCondition(conditionType, metav1.ConditionFalse)
+		err = r.Status().Update(ctx, system)
+		if err != nil {
+			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not change status.phase to Created").
+				WithEvent("ErrorPhaseToCreated").
+				WithSystemCondition(conditionType)
+		}
 		return result, nil
 	}
 	system.SetCondition(v1beta1.ConditionTypeOPATokenUpdated, metav1.ConditionTrue)
@@ -426,8 +437,17 @@ func (r *SystemReconciler) reconcile(
 		return result, err
 	}
 	if updatedOPAConfigMap {
+		system.SetCondition(v1beta1.ConditionTypeOPAUpToDate, metav1.ConditionFalse)
+
+		err = r.Status().Update(ctx, system)
+		if err != nil {
+			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not change status.phase to Created").
+				WithEvent("ErrorPhaseToCreated").
+				WithSystemCondition(v1beta1.ConditionTypeOPAUpToDate)
+		}
 		return result, nil
 	}
+
 	system.SetCondition(v1beta1.ConditionTypeOPAConfigMapUpdated, metav1.ConditionTrue)
 
 	reconcileSLPConfigMapStart := time.Now()
@@ -438,6 +458,15 @@ func (r *SystemReconciler) reconcile(
 		return result, err
 	}
 	if updatedSLPConfigMap {
+		system.SetCondition(v1beta1.ConditionTypeSLPUpToDate, metav1.ConditionFalse)
+
+		err = r.Status().Update(ctx, system)
+		if err != nil {
+			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not change status.phase to Created").
+				WithEvent("ErrorPhaseToCreated").
+				WithSystemCondition(v1beta1.ConditionTypeSLPUpToDate)
+		}
+
 		return result, nil
 	}
 	system.SetCondition(v1beta1.ConditionTypeSLPConfigMapUpdated, metav1.ConditionTrue)
@@ -454,9 +483,52 @@ func (r *SystemReconciler) reconcile(
 			WithEvent("ErrorPhaseToCreated")
 	}
 
+	if system.GetCondition(v1beta1.ConditionTypeSLPUpToDate) != nil && *system.GetCondition(v1beta1.ConditionTypeSLPUpToDate) == metav1.ConditionFalse {
+		if r.Config.PodRestart.SLPRestart != nil && r.Config.PodRestart.SLPRestart.Enabled {
+			r.restartSLPs(ctx, log, system)
+		}
+		system.SetCondition(v1beta1.ConditionTypeSLPUpToDate, metav1.ConditionTrue)
+	}
+
+	if system.GetCondition(v1beta1.ConditionTypeOPAUpToDate) != nil && *system.GetCondition(v1beta1.ConditionTypeOPAUpToDate) == metav1.ConditionFalse {
+		if r.Config.PodRestart.OPARestart != nil &&
+			r.Config.PodRestart.OPARestart.Enabled {
+			// TODO: restart the OPA is not implemented yet
+		}
+		system.SetCondition(v1beta1.ConditionTypeOPAUpToDate, metav1.ConditionTrue)
+	}
+
 	msg := "Reconciliation completed"
 	r.Recorder.Event(system, corev1.EventTypeNormal, "ReconciliationCompleted", msg)
 	log.Info(msg)
+	return ctrl.Result{}, nil
+}
+
+func (r *SystemReconciler) restartSLPs(
+	ctx context.Context,
+	log logr.Logger,
+	system *v1beta1.System,
+) (ctrl.Result, error) {
+	if strings.ToLower(r.Config.PodRestart.SLPRestart.DeploymentType) != "statefulset" {
+		log.Info("Restarting SLPs is not supported for this deployment type", "deploymentType", r.Config.PodRestart.SLPRestart.DeploymentType)
+		return ctrl.Result{}, nil
+	}
+	log.Info("Restarting SLPs")
+	nsName := types.NamespacedName{Name: system.Spec.LocalPlane.Name, Namespace: system.Namespace}
+	var sts appsv1.StatefulSet
+	if err := r.Get(ctx, nsName, &sts); err != nil {
+		return ctrl.Result{}, ctrlerr.Wrap(err, "Could not get StatefulSet").
+			WithEvent("ErrorGetStatefulSet").
+			WithSystemCondition(v1beta1.ConditionTypeSLPUpToDate)
+	}
+
+	patch := []byte(fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt": "%d"}}}}}`, time.Now().Format(time.RFC3339)))
+	if err := r.Patch(ctx, &sts, client.RawPatch(types.StrategicMergePatchType, patch)); err != nil {
+		return ctrl.Result{}, ctrlerr.Wrap(err, "Could not patch StatefulSet").
+			WithEvent("ErrorPatchStatefulSet").
+			WithSystemCondition(v1beta1.ConditionTypeSLPUpToDate)
+	}
+	log.Info("Restarted SLPs")
 	return ctrl.Result{}, nil
 }
 
@@ -495,6 +567,47 @@ func (r *SystemReconciler) getSystemByName(
 		log.Info(fmt.Sprintf("System %v does not exist in Styra DAS.", name))
 	}
 	return res.SystemConfig, nil
+}
+
+func (r *SystemReconciler) createSystemWithId(
+	ctx context.Context,
+	log logr.Logger,
+	system *v1beta1.System,
+	id string,
+) (*styra.PutSystemResponse, error) {
+	log.Info("Creating system in Styra with ID")
+	cfg, err := r.specToSystemConfig(system)
+
+	if err != nil {
+		return nil, ctrlerr.Wrap(err, "Error while reading system spec").
+			WithEvent("ErrorCreateSystemInStyra").
+			WithSystemCondition(v1beta1.ConditionTypeCreatedInStyra)
+	}
+
+	// We dont set the sourcecontrol settings on system creation, as we havent
+	// created the git secret yet.
+	cfg.SourceControl = nil
+
+	// Styra does not seem to allow setting deltaBundles before the system is created
+	cfg.BundleDownload = nil
+
+	if log.V(1).Enabled() {
+		log := log.V(1)
+		bs, err := json.Marshal(cfg)
+		if err != nil {
+			log.Error(err, "Could not marshal request")
+		}
+		log.Info("Create system request", "request", string(bs))
+	}
+
+	headers := map[string]string{"If-None-Match": "*"}
+	res, err := r.Styra.PutSystem(ctx, &styra.PutSystemRequest{SystemConfig: cfg}, id, headers)
+	if err != nil {
+		return nil, ctrlerr.Wrap(err, fmt.Sprintf("Could not create system in Styra with id %s", id)).
+			WithEvent("ErrorCreateSystemInStyra").
+			WithSystemCondition(v1beta1.ConditionTypeCreatedInStyra)
+	}
+	return res, nil
 }
 
 func (r *SystemReconciler) createSystem(
