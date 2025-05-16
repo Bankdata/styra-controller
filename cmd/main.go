@@ -43,6 +43,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 
+	"github.com/bankdata/styra-controller/api/config/v2alpha2"
 	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
 	styrav1alpha1 "github.com/bankdata/styra-controller/api/styra/v1alpha1"
 	styrav1beta1 "github.com/bankdata/styra-controller/api/styra/v1beta1"
@@ -154,12 +155,12 @@ func main() {
 	styraHostURL := strings.TrimSuffix(ctrlConfig.Styra.Address, "/")
 	styraClient := styra.New(styraHostURL, styraToken)
 
-	if err := configureExporter(styraClient, ctrlConfig.DecisionsExporter, "DecisionsExporter"); err != nil {
-		log.Error(err, "unable to configure DecisionsExporter")
+	if err := configureExporter(styraClient, ctrlConfig.DecisionsExporter, configv2alpha2.ExporterConfigTypeDecisions); err != nil {
+		log.Error(err, fmt.Sprintf("unable to configure %s", configv2alpha2.ExporterConfigTypeDecisions))
 	}
 
-	if err := configureExporter(styraClient, ctrlConfig.ActivityExporter, "ActivityExporter"); err != nil {
-		log.Error(err, "unable to configure ActivityExporter")
+	if err := configureExporter(styraClient, ctrlConfig.ActivityExporter, configv2alpha2.ExporterConfigTypeActivity); err != nil {
+		log.Error(err, fmt.Sprintf("unable to configure %s", configv2alpha2.ExporterConfigTypeActivity))
 	}
 
 	// System Controller
@@ -284,7 +285,7 @@ func exit(err error) {
 func configureExporter(
 	styraClient styra.ClientInterface,
 	exporterConfig *configv2alpha2.ExporterConfig,
-	exporterType string) error {
+	exporterType v2alpha2.ExporterConfigType) error {
 	if exporterConfig == nil {
 		ctrl.Log.Info(fmt.Sprintf("no exporter configuration found for %s", exporterType))
 		return nil
@@ -300,10 +301,10 @@ func configureExporter(
 			return err
 		}
 
-		if exporterType == "ActivityExporter" {
+		if exporterType == configv2alpha2.ExporterConfigTypeActivity {
 			rawJSON := json.RawMessage("{\"activity_exporter\": null}")
 			_, err = styraClient.UpdateWorkspaceRaw(context.Background(), rawJSON)
-		} else if exporterType == "DecisionsExporter" {
+		} else if exporterType == configv2alpha2.ExporterConfigTypeDecisions {
 			rawJSON := json.RawMessage("{\"decisions_exporter\": null}")
 			_, err = styraClient.UpdateWorkspaceRaw(context.Background(), rawJSON)
 		}
