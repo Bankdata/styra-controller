@@ -436,6 +436,7 @@ func (r *SystemReconciler) reconcile(
 
 	system.SetCondition(v1beta1.ConditionTypeOPAConfigMapUpdated, metav1.ConditionTrue)
 
+	fmt.Println("hest1")
 	reconcileSLPConfigMapStart := time.Now()
 	result, updatedSLPConfigMap, err := r.reconcileSLPConfigMap(ctx, log, system, opaConfig)
 	r.Metrics.ReconcileSegmentTime.WithLabelValues("reconcileSLPConfigMap").
@@ -444,6 +445,7 @@ func (r *SystemReconciler) reconcile(
 		return result, err
 	}
 	if updatedSLPConfigMap {
+		fmt.Println("updated SLP config map")
 		system.SetCondition(v1beta1.ConditionTypeSLPUpToDate, metav1.ConditionFalse)
 
 		return result, nil
@@ -462,14 +464,15 @@ func (r *SystemReconciler) reconcile(
 			WithEvent("ErrorPhaseToCreated")
 	}
 
-	if *system.GetCondition(v1beta1.ConditionTypeSLPUpToDate) == metav1.ConditionFalse {
+	if system.GetCondition(v1beta1.ConditionTypeSLPUpToDate) != nil && *system.GetCondition(v1beta1.ConditionTypeSLPUpToDate) == metav1.ConditionFalse {
 		if r.Config.PodRestart.SLPRestart != nil && r.Config.PodRestart.SLPRestart.Enabled {
+			fmt.Println("restarting SLPs")
 			r.restartSLPs(ctx, log, system)
 		}
 		system.SetCondition(v1beta1.ConditionTypeSLPUpToDate, metav1.ConditionTrue)
 	}
 
-	if *system.GetCondition(v1beta1.ConditionTypeOPAUpToDate) == metav1.ConditionFalse {
+	if system.GetCondition(v1beta1.ConditionTypeOPAUpToDate) != nil && *system.GetCondition(v1beta1.ConditionTypeOPAUpToDate) == metav1.ConditionFalse {
 		if r.Config.PodRestart.OPARestart != nil &&
 			r.Config.PodRestart.OPARestart.Enabled {
 			// TODO: restart the OPA is not implemented yet

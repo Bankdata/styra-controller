@@ -17,6 +17,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	"fmt"
 	"path"
 	"time"
 
@@ -322,7 +323,7 @@ const (
 	// the OPA is up to date or needs to be restarted.
 	ConditionTypeOPAUpToDate ConditionType = "OPAUpToDate"
 
-	// ConditionTypeSLPConfigMapUpdated is a COnditionType used when
+	// ConditionTypeSLPConfigMapUpdated is a ConditionType used when
 	// the ConfigMap for the SLP are updated in the cluster.
 	ConditionTypeSLPConfigMapUpdated ConditionType = "SLPConfigMapUpdated"
 
@@ -383,7 +384,10 @@ func (s *System) GetCondition(conditionType ConditionType) *metav1.ConditionStat
 func (s *System) setCondition(timeNow func() time.Time, conditionType ConditionType, status metav1.ConditionStatus) {
 	now := metav1.NewTime(timeNow())
 
+	fmt.Println("Conditions", s.Status.Conditions)
+
 	for i, con := range s.Status.Conditions {
+		fmt.Println("Condition", con.Type, conditionType)
 		if con.Type != conditionType {
 			continue
 		}
@@ -393,9 +397,11 @@ func (s *System) setCondition(timeNow func() time.Time, conditionType ConditionT
 		}
 		con.LastProbeTime = now
 		s.Status.Conditions[i] = con
+		fmt.Println("Returning condition", con.Type, conditionType)
 		return
 	}
 
+	fmt.Println("Condition", conditionType, "not found")
 	s.Status.Conditions = append(s.Status.Conditions, Condition{
 		LastProbeTime:      now,
 		LastTransitionTime: now,
