@@ -197,8 +197,10 @@ type GitCredential struct {
 type ExporterConfigType string
 
 const (
+	// ExporterConfigTypeDecisions is the type for decisions exporter config
 	ExporterConfigTypeDecisions ExporterConfigType = "DecisionsExporter"
-	ExporterConfigTypeActivity  ExporterConfigType = "ActivityExporter"
+	// ExporterConfigTypeActivity is the type for activity exporter config
+	ExporterConfigTypeActivity ExporterConfigType = "ActivityExporter"
 )
 
 // ExporterConfig contains configuration for exports

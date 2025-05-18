@@ -43,7 +43,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 
-	"github.com/bankdata/styra-controller/api/config/v2alpha2"
 	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
 	styrav1alpha1 "github.com/bankdata/styra-controller/api/styra/v1alpha1"
 	styrav1beta1 "github.com/bankdata/styra-controller/api/styra/v1beta1"
@@ -155,11 +154,13 @@ func main() {
 	styraHostURL := strings.TrimSuffix(ctrlConfig.Styra.Address, "/")
 	styraClient := styra.New(styraHostURL, styraToken)
 
-	if err := configureExporter(styraClient, ctrlConfig.DecisionsExporter, configv2alpha2.ExporterConfigTypeDecisions); err != nil {
+	if err := configureExporter(
+		styraClient, ctrlConfig.DecisionsExporter, configv2alpha2.ExporterConfigTypeDecisions); err != nil {
 		log.Error(err, fmt.Sprintf("unable to configure %s", configv2alpha2.ExporterConfigTypeDecisions))
 	}
 
-	if err := configureExporter(styraClient, ctrlConfig.ActivityExporter, configv2alpha2.ExporterConfigTypeActivity); err != nil {
+	if err := configureExporter(
+		styraClient, ctrlConfig.ActivityExporter, configv2alpha2.ExporterConfigTypeActivity); err != nil {
 		log.Error(err, fmt.Sprintf("unable to configure %s", configv2alpha2.ExporterConfigTypeActivity))
 	}
 
@@ -285,7 +286,7 @@ func exit(err error) {
 func configureExporter(
 	styraClient styra.ClientInterface,
 	exporterConfig *configv2alpha2.ExporterConfig,
-	exporterType v2alpha2.ExporterConfigType) error {
+	exporterType configv2alpha2.ExporterConfigType) error {
 	if exporterConfig == nil {
 		ctrl.Log.Info(fmt.Sprintf("no exporter configuration found for %s", exporterType))
 		return nil
