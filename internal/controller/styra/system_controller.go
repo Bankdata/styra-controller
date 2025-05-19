@@ -97,12 +97,11 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	log.Info("Fetching System")
 	var system v1beta1.System
 	if err := r.Get(ctx, req.NamespacedName, &system); err != nil {
-		r.Metrics.ReconcileTime.WithLabelValues("delete").Observe(time.Since(start).Seconds())
 		if k8serrors.IsNotFound(err) {
 			log.Info("Could not find System in kubernetes")
+			r.Metrics.ReconcileTime.WithLabelValues("delete").Observe(time.Since(start).Seconds())
 			return ctrl.Result{}, nil
 		}
-		r.deleteMetrics(req)
 		return ctrl.Result{}, errors.Wrap(err, "unable to fetch System")
 	}
 
