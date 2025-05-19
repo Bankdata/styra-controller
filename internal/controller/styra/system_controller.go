@@ -475,17 +475,11 @@ func (r *SystemReconciler) reconcile(
 	system.Status.Phase = v1beta1.SystemPhaseCreated
 	system.Status.FailureMessage = ""
 
-	updateStatusStart := time.Now()
-	err = r.Status().Update(ctx, system)
-	r.Metrics.ReconcileSegmentTime.WithLabelValues("updateStatus").Observe(time.Since(updateStatusStart).Seconds())
-	if err != nil {
-		return ctrl.Result{}, ctrlerr.Wrap(err, "Could not change status.phase to Created").
-			WithEvent("ErrorPhaseToCreated")
-	}
-
 	if system.GetCondition(v1beta1.ConditionTypeSLPUpToDate) != nil &&
 		*system.GetCondition(v1beta1.ConditionTypeSLPUpToDate) == metav1.ConditionFalse {
-		if r.Config.PodRestart.SLPRestart != nil && r.Config.PodRestart.SLPRestart.Enabled {
+		if r.Config.PodRestart != nil &&
+			r.Config.PodRestart.SLPRestart != nil &&
+			r.Config.PodRestart.SLPRestart.Enabled {
 			res, err := r.restartSLPs(ctx, log, system)
 			if err != nil {
 				log.Error(err, "Error restarting SLPs")
@@ -499,13 +493,21 @@ func (r *SystemReconciler) reconcile(
 
 	if system.GetCondition(v1beta1.ConditionTypeOPAUpToDate) != nil &&
 		*system.GetCondition(v1beta1.ConditionTypeOPAUpToDate) == metav1.ConditionFalse {
-		if r.Config.PodRestart.OPARestart != nil &&
+		if r.Config.PodRestart != nil &&
+			r.Config.PodRestart.OPARestart != nil &&
 			r.Config.PodRestart.OPARestart.Enabled {
 			log.Error(errors.New("Restarting OPA is not implemented yet"), "Error restarting OPA")
 		}
 		system.SetCondition(v1beta1.ConditionTypeOPAUpToDate, metav1.ConditionTrue)
 	}
 
+	updateStatusStart := time.Now()
+	err = r.Status().Update(ctx, system)
+	r.Metrics.ReconcileSegmentTime.WithLabelValues("updateStatus").Observe(time.Since(updateStatusStart).Seconds())
+	if err != nil {
+		return ctrl.Result{}, ctrlerr.Wrap(err, "Could not change status.phase to Created").
+			WithEvent("ErrorPhaseToCreated")
+	}
 	msg := "Reconciliation completed"
 	r.Recorder.Event(system, corev1.EventTypeNormal, "ReconciliationCompleted", msg)
 	log.Info(msg)

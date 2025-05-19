@@ -1421,7 +1421,7 @@ discovery:
 			}
 
 			numberOfConditions := len(fetched.Status.Conditions)
-			if numberOfConditions != 8 {
+			if numberOfConditions != 10 {
 				return false
 			}
 
@@ -1433,7 +1433,9 @@ discovery:
 				opaTokenUpdated,
 				opaConfigMapUpdated,
 				slpConfigMapUpdated,
-				systemConfigUpdated metav1.ConditionStatus
+				systemConfigUpdated,
+				opaUpToDate,
+				slpUpToDate metav1.ConditionStatus
 			)
 
 			for _, c := range fetched.Status.Conditions {
@@ -1461,6 +1463,12 @@ discovery:
 
 				case styrav1beta1.ConditionTypeSystemConfigUpdated:
 					systemConfigUpdated = c.Status
+
+				case styrav1beta1.ConditionTypeOPAUpToDate:
+					opaUpToDate = c.Status
+
+				case styrav1beta1.ConditionTypeSLPUpToDate:
+					slpUpToDate = c.Status
 				}
 			}
 
@@ -1471,7 +1479,9 @@ discovery:
 				opaTokenUpdated == metav1.ConditionTrue &&
 				opaConfigMapUpdated == metav1.ConditionTrue &&
 				slpConfigMapUpdated == metav1.ConditionTrue &&
-				systemConfigUpdated == metav1.ConditionTrue
+				systemConfigUpdated == metav1.ConditionTrue &&
+				opaUpToDate == metav1.ConditionTrue &&
+				slpUpToDate == metav1.ConditionTrue
 		}, timeout, interval).Should(gomega.BeTrue())
 
 		gomega.Eventually(func() bool {
