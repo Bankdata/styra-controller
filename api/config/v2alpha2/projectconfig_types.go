@@ -193,7 +193,17 @@ type GitCredential struct {
 	RepoPrefix string `json:"repoPrefix"`
 }
 
-// ExporterConfig contains configuration for decisions and user activity export
+// ExporterConfigType defines the type of exporter config
+type ExporterConfigType string
+
+const (
+	// ExporterConfigTypeDecisions is the type for decisions exporter config
+	ExporterConfigTypeDecisions ExporterConfigType = "DecisionsExporter"
+	// ExporterConfigTypeActivity is the type for activity exporter config
+	ExporterConfigTypeActivity ExporterConfigType = "ActivityExporter"
+)
+
+// ExporterConfig contains configuration for exports
 type ExporterConfig struct {
 	Enabled  bool         `json:"enabled,omitempty"`
 	Interval string       `json:"interval,omitempty"`
