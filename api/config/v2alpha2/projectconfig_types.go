@@ -110,7 +110,6 @@ type PodRestartConfig struct {
 type SLPRestartConfig struct {
 	Enabled        bool   `json:"enabled"`
 	DeploymentType string `json:"deploymentType"` // DeploymentType only currently supports "StatefulSet""
-	// LabelSelector  metav1.LabelSelector `json:"labelSelector"` -- 
 }
 
 // OPARestartConfig contains configuration for restarting OPA pods -- This is not yet implemented

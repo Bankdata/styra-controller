@@ -284,7 +284,7 @@ func (r *SystemReconciler) reconcile(
 			var serr *styra.HTTPError
 			if errors.As(err, &serr) && serr.StatusCode == http.StatusNotFound {
 				createSystemStart := time.Now()
-				res, err := r.createSystemWithId(ctx, log, system, systemID)
+				res, err := r.createSystemWithID(ctx, log, system, systemID)
 
 				r.Metrics.ReconcileSegmentTime.WithLabelValues("createSystemWithId").
 					Observe(time.Since(createSystemStart).Seconds())
@@ -483,17 +483,25 @@ func (r *SystemReconciler) reconcile(
 			WithEvent("ErrorPhaseToCreated")
 	}
 
-	if system.GetCondition(v1beta1.ConditionTypeSLPUpToDate) != nil && *system.GetCondition(v1beta1.ConditionTypeSLPUpToDate) == metav1.ConditionFalse {
+	if system.GetCondition(v1beta1.ConditionTypeSLPUpToDate) != nil &&
+		*system.GetCondition(v1beta1.ConditionTypeSLPUpToDate) == metav1.ConditionFalse {
 		if r.Config.PodRestart.SLPRestart != nil && r.Config.PodRestart.SLPRestart.Enabled {
-			r.restartSLPs(ctx, log, system)
+			res, err := r.restartSLPs(ctx, log, system)
+			if err != nil {
+				log.Error(err, "Error restarting SLPs")
+				return res, ctrlerr.Wrap(err, "Error restarting SLPs").
+					WithEvent("ErrorRestartSLPs").
+					WithSystemCondition(v1beta1.ConditionTypeSLPUpToDate)
+			}
 		}
 		system.SetCondition(v1beta1.ConditionTypeSLPUpToDate, metav1.ConditionTrue)
 	}
 
-	if system.GetCondition(v1beta1.ConditionTypeOPAUpToDate) != nil && *system.GetCondition(v1beta1.ConditionTypeOPAUpToDate) == metav1.ConditionFalse {
+	if system.GetCondition(v1beta1.ConditionTypeOPAUpToDate) != nil &&
+		*system.GetCondition(v1beta1.ConditionTypeOPAUpToDate) == metav1.ConditionFalse {
 		if r.Config.PodRestart.OPARestart != nil &&
 			r.Config.PodRestart.OPARestart.Enabled {
-			// TODO: restart the OPA is not implemented yet
+			log.Error(errors.New("Restarting OPA is not implemented yet"), "Error restarting OPA")
 		}
 		system.SetCondition(v1beta1.ConditionTypeOPAUpToDate, metav1.ConditionTrue)
 	}
@@ -510,7 +518,10 @@ func (r *SystemReconciler) restartSLPs(
 	system *v1beta1.System,
 ) (ctrl.Result, error) {
 	if strings.ToLower(r.Config.PodRestart.SLPRestart.DeploymentType) != "statefulset" {
-		log.Info("Restarting SLPs is not supported for this deployment type", "deploymentType", r.Config.PodRestart.SLPRestart.DeploymentType)
+		log.Info("Restarting SLPs is not supported for this deployment type",
+			"deploymentType",
+			r.Config.PodRestart.SLPRestart.DeploymentType,
+		)
 		return ctrl.Result{}, nil
 	}
 	log.Info("Restarting SLPs")
@@ -522,7 +533,10 @@ func (r *SystemReconciler) restartSLPs(
 			WithSystemCondition(v1beta1.ConditionTypeSLPUpToDate)
 	}
 
-	patch := []byte(fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt": "%d"}}}}}`, time.Now().Format(time.RFC3339)))
+	patch := []byte(fmt.Sprintf(
+		`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt": "%s"}}}}}`,
+		time.Now().Format(time.RFC3339),
+	))
 	if err := r.Patch(ctx, &sts, client.RawPatch(types.StrategicMergePatchType, patch)); err != nil {
 		return ctrl.Result{}, ctrlerr.Wrap(err, "Could not patch StatefulSet").
 			WithEvent("ErrorPatchStatefulSet").
@@ -569,7 +583,7 @@ func (r *SystemReconciler) getSystemByName(
 	return res.SystemConfig, nil
 }
 
-func (r *SystemReconciler) createSystemWithId(
+func (r *SystemReconciler) createSystemWithID(
 	ctx context.Context,
 	log logr.Logger,
 	system *v1beta1.System,

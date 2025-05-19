@@ -47,12 +47,14 @@ type UpdateSystemResponse struct {
 	SystemConfig *SystemConfig
 }
 
-// CreateSystemRequest is the request body for the POST /v1/systems
+// PutSystemRequest is the request body for the PUT /v1/systems
 // endpoint in the Styra API.
 type PutSystemRequest struct {
 	*SystemConfig
 }
 
+// PutSystemResponse is the response body for the PUT /v1/systems
+// endpoint in the Styra API.
 type PutSystemResponse struct {
 	StatusCode   int
 	Body         []byte
@@ -249,7 +251,11 @@ func (c *Client) GetSystemByName(ctx context.Context, name string) (*GetSystemRe
 }
 
 // PutSystem calls the PUT /v1/systems/{id} endpoint in the Styra API. TODO: move below getsysbyname
-func (c *Client) PutSystem(ctx context.Context, request *PutSystemRequest, id string, headers map[string]string) (*PutSystemResponse, error) {
+func (c *Client) PutSystem(ctx context.Context,
+	request *PutSystemRequest,
+	id string,
+	headers map[string]string,
+) (*PutSystemResponse, error) {
 	res, err := c.request(ctx, http.MethodPut, fmt.Sprintf("%s/%s", endpointV1Systems, id), request, headers)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call post system")
@@ -357,7 +363,15 @@ func (c *Client) VerifyGitConfiguration(
 	ctx context.Context,
 	request *VerfiyGitConfigRequest,
 ) (*VerfiyGitConfigResponse, error) {
-	res, err := c.request(ctx, http.MethodPost, fmt.Sprintf("%s/source-control/verify-config", endpointV1Systems), request, nil)
+
+	res, err := c.request(
+		ctx,
+		http.MethodPost,
+		fmt.Sprintf("%s/source-control/verify-config", endpointV1Systems),
+		request,
+		nil,
+	)
+
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call validate git config ")
 	}

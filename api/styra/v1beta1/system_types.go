@@ -371,6 +371,7 @@ func (s *System) SetCondition(conditionType ConditionType, status metav1.Conditi
 	s.setCondition(time.Now, conditionType, status)
 }
 
+// GetCondition gets the matching condition under the System's status field.
 func (s *System) GetCondition(conditionType ConditionType) *metav1.ConditionStatus {
 	for _, con := range s.Status.Conditions {
 		if con.Type == conditionType {
