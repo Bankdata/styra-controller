@@ -174,7 +174,7 @@ func (c *Client) ListRoleBindingsV2(
 		values["subject_kind"] = []string{string(params.SubjectKind)}
 	}
 
-	res, err := c.request(ctx, http.MethodGet, fmt.Sprintf("%s?%s", endpointV2Rolebindings, values.Encode()), nil)
+	res, err := c.request(ctx, http.MethodGet, fmt.Sprintf("%s?%s", endpointV2Rolebindings, values.Encode()), nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +208,7 @@ func (c *Client) CreateRoleBinding(
 	ctx context.Context,
 	request *CreateRoleBindingRequest,
 ) (*CreateRoleBindingResponse, error) {
-	res, err := c.request(ctx, http.MethodPost, endpointV2Rolebindings, request)
+	res, err := c.request(ctx, http.MethodPost, endpointV2Rolebindings, request, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -243,7 +243,7 @@ func (c *Client) UpdateRoleBindingSubjects(
 	id string,
 	request *UpdateRoleBindingSubjectsRequest,
 ) (*UpdateRoleBindingSubjectsResponse, error) {
-	res, err := c.request(ctx, http.MethodPost, fmt.Sprintf("%s/%s/subjects", endpointV2Rolebindings, id), request)
+	res, err := c.request(ctx, http.MethodPost, fmt.Sprintf("%s/%s/subjects", endpointV2Rolebindings, id), request, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -267,7 +267,7 @@ func (c *Client) UpdateRoleBindingSubjects(
 // DeleteRoleBindingV2 calls the DELETE /v2/authz/rolebindings/{id}/subjects
 // endpoint in the Styra API.
 func (c *Client) DeleteRoleBindingV2(ctx context.Context, id string) (*DeleteRoleBindingV2Response, error) {
-	res, err := c.request(ctx, http.MethodDelete, fmt.Sprintf("%s/%s", endpointV2Rolebindings, id), nil)
+	res, err := c.request(ctx, http.MethodDelete, fmt.Sprintf("%s/%s", endpointV2Rolebindings, id), nil, nil)
 	if err != nil {
 		return nil, err
 	}

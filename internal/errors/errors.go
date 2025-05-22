@@ -47,8 +47,8 @@ func Wrap(err error, msg string) *ReconcilerErr {
 }
 
 // WithEvent adds event metadata to the ReconcilerErr.
-func (err *ReconcilerErr) WithEvent(event string) *ReconcilerErr {
-	err.Event = event
+func (err *ReconcilerErr) WithEvent(event v1beta1.EventType) *ReconcilerErr {
+	err.Event = string(event)
 	return err
 }
 

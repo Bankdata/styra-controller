@@ -201,6 +201,79 @@ var _ = ginkgo.Describe("UpdateSystem", func() {
 		}),
 	)
 })
+var _ = ginkgo.Describe("PutSystem", func() {
+	type test struct {
+		responseCode         int
+		responseBody         string
+		id                   string
+		request              *styra.PutSystemRequest
+		expectedSystemConfig *styra.SystemConfig
+		expectStyraErr       bool
+	}
+	ginkgo.DescribeTable("PutSystem", func(test test) {
+		c := newTestClient(func(r *http.Request) *http.Response {
+			bs, err := io.ReadAll(r.Body)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			var b bytes.Buffer
+			gomega.Expect(json.NewEncoder(&b).Encode(test.request)).To(gomega.Succeed())
+			gomega.Expect(bs).To(gomega.Equal(b.Bytes()))
+
+			gomega.Expect(r.Method).To(gomega.Equal(http.MethodPut))
+			gomega.Expect(r.URL.String()).To(gomega.Equal("http://test.com/v1/systems/" + test.id))
+			gomega.Expect(r.Header.Get("If-None-Match")).To(gomega.Equal("*"))
+
+			return &http.Response{
+				Header:     make(http.Header),
+				StatusCode: test.responseCode,
+				Body:       io.NopCloser(bytes.NewBufferString(test.responseBody)),
+			}
+		})
+
+		res, err := c.PutSystem(context.Background(), test.request, test.id, map[string]string{"If-None-Match": "*"})
+		if test.expectStyraErr {
+			gomega.Expect(res).To(gomega.BeNil())
+			target := &styra.HTTPError{}
+			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
+		} else {
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			gomega.Expect(res.StatusCode).To(gomega.Equal(test.responseCode))
+			gomega.Expect(res.SystemConfig).To(gomega.Equal(test.expectedSystemConfig))
+		}
+	},
+
+		ginkgo.Entry("something", test{
+			responseCode: http.StatusOK,
+			responseBody: `{
+					"result": {
+						"name": "mysystem",
+						"read_only": true,
+						"type": "systemtype",
+						"id": "systemid"
+					}
+				}`,
+			id: "systemid",
+			request: &styra.PutSystemRequest{
+				SystemConfig: &styra.SystemConfig{
+					Name:     "mysystem",
+					Type:     "systemtype",
+					ReadOnly: true,
+				},
+			},
+			expectedSystemConfig: &styra.SystemConfig{
+				Name:     "mysystem",
+				ReadOnly: true,
+				Type:     "systemtype",
+				ID:       "systemid",
+			},
+		}),
+
+		ginkgo.Entry("styra http error", test{
+			responseCode:   http.StatusInternalServerError,
+			expectStyraErr: true,
+		}),
+	)
+})
 
 var _ = ginkgo.Describe("CreateSystem", func() {
 

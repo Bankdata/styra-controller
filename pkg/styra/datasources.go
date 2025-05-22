@@ -88,7 +88,7 @@ type DatasourceConfig struct {
 // GetDatasource calls the GET /v1/datasources/{datasource} endpoint in the
 // Styra API.
 func (c *Client) GetDatasource(ctx context.Context, id string) (*GetDatasourceResponse, error) {
-	res, err := c.request(ctx, http.MethodGet, path.Join(endpointV1Datasources, id), nil)
+	res, err := c.request(ctx, http.MethodGet, path.Join(endpointV1Datasources, id), nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (c *Client) UpsertDatasource(
 	id string,
 	request *UpsertDatasourceRequest,
 ) (*UpsertDatasourceResponse, error) {
-	res, err := c.request(ctx, http.MethodPut, fmt.Sprintf("%s/%s", endpointV1Datasources, id), request)
+	res, err := c.request(ctx, http.MethodPut, fmt.Sprintf("%s/%s", endpointV1Datasources, id), request, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +148,7 @@ func (c *Client) UpsertDatasource(
 // DeleteDatasource calls the DELETE /v1/datasources/{datasource} endpoint in
 // the Styra API.
 func (c *Client) DeleteDatasource(ctx context.Context, id string) (*DeleteDatasourceResponse, error) {
-	res, err := c.request(ctx, http.MethodDelete, fmt.Sprintf("%s/%s", endpointV1Datasources, id), nil)
+	res, err := c.request(ctx, http.MethodDelete, fmt.Sprintf("%s/%s", endpointV1Datasources, id), nil, nil)
 	if err != nil {
 		return nil, err
 	}

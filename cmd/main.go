@@ -226,7 +226,7 @@ func main() {
 		r1.WebhookClient = webhook.New(ctrlConfig.NotificationWebhooks.SystemDatasourceChanged, "")
 	}
 
-	if err = r1.SetupWithManager(mgr); err != nil {
+	if err = r1.SetupWithManager(mgr, "styra-controller"); err != nil {
 		log.Error(err, "unable to create controller", "controller", "System")
 		exit(err)
 	}

@@ -141,3 +141,16 @@ decisionsExporter:
         -----END CERTIFICATE-----
 ```
 It will configure Styra to export all decisions to the brokers and connect via mTLS using the provided certs and key. The decision exporter configuration will be uploaded to Styra each time the controller boots. If `decisionsExporter.enabled` is set to `false`, the controller will remove the decision exporter config from Styra. The same applies when using `activityExporter`, the controller will remove the user activity exporter config from Styra when setting `activityExporter.enabled` to `false`.
+
+## Restarting Pods
+OPA and SLP pods read their configuration at startup. If the configuration is changed, the pods need to be restarted for the changes to take effect. 
+This can be done manually by either deleting the pods or by using the `kubectl rollout restart` command. 
+If the controller is given the permissions for `statefulsets` defined in `config/rbac/role.yaml`, and the controller configuration has
+```
+podRestart:
+  slpRestart:
+    enabled: true
+    deploymentType: StatefulSet
+```
+it will automatically restart the SLP pods when the configuration is changed. 
+There is not currently support for other deployment types, such as `DaemonSet` or `Deployment`, and there is not support for restarting OPA pods.
