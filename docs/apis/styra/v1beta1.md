@@ -212,9 +212,17 @@ the ConfigMap for the OPA are updated in the cluster.</p>
 <td><p>ConditionTypeOPATokenUpdated is a ConditionType used when
 the secret with the Styra token has been updated in the cluster.</p>
 </td>
+</tr><tr><td><p>&#34;OPAUpToDate&#34;</p></td>
+<td><p>ConditionTypeOPAUpToDate is a ConditionType used to say whether
+the OPA is up to date or needs to be restarted.</p>
+</td>
 </tr><tr><td><p>&#34;SLPConfigMapUpdated&#34;</p></td>
-<td><p>ConditionTypeSLPConfigMapUpdated is a COnditionType used when
+<td><p>ConditionTypeSLPConfigMapUpdated is a ConditionType used when
 the ConfigMap for the SLP are updated in the cluster.</p>
+</td>
+</tr><tr><td><p>&#34;SLPUpToDate&#34;</p></td>
+<td><p>ConditionTypeSLPUpToDate is a ConditionType used to say whether
+the SLP is up to date or needs to be restarted.</p>
 </td>
 </tr><tr><td><p>&#34;SubjectsUpdated&#34;</p></td>
 <td><p>ConditionTypeSubjectsUpdated is a ConditionType used when the subjects of
@@ -377,6 +385,167 @@ OPAConfigDistributedTracing
 </td>
 </tr>
 </tbody>
+</table>
+<h3 id="styra.bankdata.dk/v1beta1.EventType">EventType
+(<code>string</code> alias)</h3>
+<div>
+<p>EventType is a type of event which can be emitted by the System controller.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;ErrorCallWebhook&#34;</p></td>
+<td><p>EventErrorCallWebhook is an EventType used when the controller fails to call the datasource changed webhook.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorConfigMapNotOwnedByController&#34;</p></td>
+<td><p>EventErrorConfigMapNotOwnedByController is an EventType used when the controller tries to update a ConfigMap
+that is not owned by the controller.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorConvertOPAConfig&#34;</p></td>
+<td><p>EventErrorConvertOPAConf is an EventType used when the controller fails to convert the OPA config from Styra
+to a ConfigMap for the OPA or the SLP.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorCreateInvitation&#34;</p></td>
+<td><p>EventErrorCreateInvitation is an EventType used when the controller fails to create an invitation
+for a new user in Styra.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorCreateOPAConfigMap&#34;</p></td>
+<td><p>EventErrorCreateOPAConfigMap is an EventType used when the controller fails to create the OPA ConfigMap.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorCreateOPATokenSecret&#34;</p></td>
+<td><p>EventErrorCreateOPATokenSecret is an EventType used when the controller fails to create the OPA token Secret.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorCreateRolebinding&#34;</p></td>
+<td><p>EventErrorCreateRolebinding is an EventType used when the controller fails to create a rolebinding
+for a user in Styra.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorCreateSLPConfigMap&#34;</p></td>
+<td><p>EventErrorCreateSLPConfigMap is an EventType used when the controller fails to create the SLP ConfigMap.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorCreateSystemInStyra&#34;</p></td>
+<td><p>EventErrorCreateSystemInStyra is an EventType used when the controller fails to create the System in Styra.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorCreateUpdateSecret&#34;</p></td>
+<td><p>EventErrorCreateUpdateSecret is an EventType used when the controller fails to create or update the
+Styra secret containing the Git credentials used to access Git.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorCredentialsSecretCouldNotFetch&#34;</p></td>
+<td><p>EventErrorCredentialsSecretCouldNotFetch is an EventType used when the controller fails to fetch the
+secret referenced by the System resource under Spec.SourceControl.Origin.CredentialsSecretName.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorCredentialsSecretNotFound&#34;</p></td>
+<td><p>EventErrorCredentialsSecretNotFound is an EventType used when the controller gets a 404 when fetching
+secret referenced by the System resource under Spec.SourceControl.Origin.CredentialsSecretName.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorDeleteDatasource&#34;</p></td>
+<td><p>EventErrorDeleteDatasource is an EventType used when the controller fails to delete a datasource in Styra.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorDeleteDefaultPolicy&#34;</p></td>
+<td><p>EventErrorDeleteDefaultPolicy is an EventType used when the controller fails to delete the default policy
+in the System in Styra.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorDeleteSystemInStyra&#34;</p></td>
+<td><p>EventErrorDeleteSystemInStyra is an EventType used when the controller fails
+to delete the System in Styra.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorFetchOPAConfig&#34;</p></td>
+<td><p>EventErrorFetchOPAConfig is an EventType used when the controller fails to fetch
+the OPA configuration from Styra.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorFetchOPAConfigMap&#34;</p></td>
+<td><p>EventErrorFetchOPAConfigMap is an EventType used when the controller fails to fetch the OPA ConfigMap.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorFetchOPATokenSecret&#34;</p></td>
+<td><p>EventErrorFetchOPATokenSecret is an EventType used when the controller fails to fetch the OPA token Secret.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorFetchSLPConfigMap&#34;</p></td>
+<td><p>EventErrorFetchSLPConfigMap is an EventType used when the controller fails to fetch the SLP ConfigMap.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorFetchSystemFromStyra&#34;</p></td>
+<td><p>EventErrorFetchSystemFromStyra is an EventType used when the controller fails to fetch the System from Styra.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorGetStatefulSet&#34;</p></td>
+<td><p>EventErrorGetStatefulSet is an EventType used when the controller fails to get the StatefulSet
+for the SLP used by the System.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorGetSystemRolebindings&#34;</p></td>
+<td><p>EventErrorGetSystemRolebindings is an EventType used when the controller fails to get the rolebindings
+for a system in Styra.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorGetUsersFromStyra&#34;</p></td>
+<td><p>EventErrorGetUsersFromStyra is an EventType used when the controller fails to get the users
+for a system in Styra.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorOPATokenSecretNoToken&#34;</p></td>
+<td><p>EventErrorOPATokenSecretNoToken is an EventType used when the controller creates the OPA token Secret
+but the downloaded OPA config from Styra does not contain a token.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorOwnerRefOPAConfigMap&#34;</p></td>
+<td><p>EventErrorOwnerRefOPAConfigMap is an EventType used when the controller fails to set the owner reference
+on the OPA config map.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorOwnerRefOPATokenSecret&#34;</p></td>
+<td><p>EventErrorOwnerRefOPATokenSecret is an EventType used when the controller fails to set the owner reference
+on the OPA token secret.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorOwnerRefSLPConfigMap&#34;</p></td>
+<td><p>EventErrorOwnerRefSLPConfigMap is an EventType used when the controller fails to set the owner reference
+on the SLP ConfigMap.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorPatchStatefulSet&#34;</p></td>
+<td><p>EventErrorPatchStatefulSet is an EventType used when the controller fails to patch the StatefulSet
+for the SLP used by the System.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorPhaseToCreated&#34;</p></td>
+<td><p>EventErrorPhaseToCreated is an EventType used when the controller fails to set the
+phase of the System resource to Created.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorReconcileID&#34;</p></td>
+<td><p>EventErrorReconcileID is an EventType used when the controller fails to reconcile the ID for the System.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorRemovingFinalizer&#34;</p></td>
+<td><p>EventErrorRemovingFinalizer is an EventType used when the controller fails to
+remove the finalizer from the System resource.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorRestartSLPs&#34;</p></td>
+<td><p>EventErrorRestartSLPs is an EventType used when the controller fails to restart the SLPs.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorSecretNotOwnedByController&#34;</p></td>
+<td><p>EventErrorSecretNotOwnedByController is an EventType used when the controller tries to update a Secret
+that is not owned by the controller.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorSetFinalizer&#34;</p></td>
+<td><p>EventErrorSetFinalizer is an EventType used when the controller fails to set
+the finalizer on the System resource.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorUpdateOPAConfigMap&#34;</p></td>
+<td><p>EventErrorUpdateOPAConfigMap is an EventType used when the controller fails to update the OPA ConfigMap.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorUpdateOPATokenSecret&#34;</p></td>
+<td><p>EventErrorUpdateOPATokenSecret is an EventType used when the controller fails to update the OPA token Secret.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorUpdateRolebinding&#34;</p></td>
+<td><p>EventErrorUpdateRolebinding is an EventType used when the controller fails to update a rolebinding
+for a user in Styra.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorUpdateSLPConfigMap&#34;</p></td>
+<td><p>EventErrorUpdateSLPConfigmap is an EventType used when the controller fails to update the SLP ConfigMap.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorUpdateStatus&#34;</p></td>
+<td><p>EventErrorUpdateStatus is an EventType used when the controller fails to update
+the status of the System resource.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorUpdateSystem&#34;</p></td>
+<td><p>EventErrorUpdateSystem is an EventType used when the controller fails to update the System in Styra.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorUpsertDatasource&#34;</p></td>
+<td><p>EventErrorUpsertDatasource is an EventType used when the controller fails to upsert a datasource in Styra.</p>
+</td>
+</tr></tbody>
 </table>
 <h3 id="styra.bankdata.dk/v1beta1.Expected">Expected
 </h3>
@@ -1218,5 +1387,5 @@ System.</p>
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>a620e9f</code>.
+on git commit <code>7c22e6b</code>.
 </em></p>
