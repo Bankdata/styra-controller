@@ -119,6 +119,7 @@ var _ = ginkgo.BeforeSuite(func() {
 	webhookMock = &webhookmocks.Client{}
 	systemReconciler := styractrls.SystemReconciler{
 		Client:        k8sClient,
+		APIReader:     k8sManager.GetAPIReader(),
 		Scheme:        k8sManager.GetScheme(),
 		Styra:         styraClientMock,
 		WebhookClient: webhookMock,
@@ -202,6 +203,7 @@ var _ = ginkgo.BeforeSuite(func() {
 	//Controller with PodRestart enabled for SLPs.
 	systemReconcilerPodRestart := styractrls.SystemReconciler{
 		Client:        k8sClient,
+		APIReader:     k8sManagerPodRestart.GetAPIReader(),
 		Scheme:        k8sManagerPodRestart.GetScheme(),
 		Styra:         styraClientMock,
 		WebhookClient: webhookMock,
