@@ -72,6 +72,7 @@ type SystemReconcilerMetrics struct {
 // SystemReconciler reconciles a System object
 type SystemReconciler struct {
 	client.Client
+	APIReader     client.Reader
 	Scheme        *runtime.Scheme
 	Styra         styra.ClientInterface
 	WebhookClient webhook.Client
@@ -98,7 +99,7 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	log.Info("Fetching System")
 	var system v1beta1.System
-	if err := r.Get(ctx, req.NamespacedName, &system); err != nil {
+	if err := r.APIReader.Get(ctx, req.NamespacedName, &system); err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("Could not find System in kubernetes")
 			r.Metrics.ReconcileTime.WithLabelValues("delete").Observe(time.Since(start).Seconds())
@@ -135,6 +136,7 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if err != nil {
+		log.Error(err, "Reconciliation failed")
 		r.recordErrorEvent(&system, err)
 		r.setSystemStatusError(&system, err)
 

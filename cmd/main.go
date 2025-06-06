@@ -214,12 +214,13 @@ func main() {
 	}
 
 	r1 := &controllers.SystemReconciler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		Styra:    styraClient,
-		Recorder: mgr.GetEventRecorderFor("system-controller"),
-		Metrics:  systemMetrics,
-		Config:   ctrlConfig,
+		Client:    mgr.GetClient(),
+		Scheme:    mgr.GetScheme(),
+		Styra:     styraClient,
+		Recorder:  mgr.GetEventRecorderFor("system-controller"),
+		Metrics:   systemMetrics,
+		Config:    ctrlConfig,
+		APIReader: mgr.GetAPIReader(),
 	}
 
 	if ctrlConfig.NotificationWebhooks != nil && ctrlConfig.NotificationWebhooks.SystemDatasourceChanged != "" {
