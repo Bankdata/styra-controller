@@ -120,9 +120,22 @@ docker-build: goreleaser ## Build docker image with the manager.
 	docker build -t ${IMG} -f build/package/Dockerfile \
 	  --build-arg BINARY="dist/styra-controller" .
 
+.PHONY: podman-build
+podman-build: goreleaser ## Build podman image with the manager.
+	GOOS=linux $(GORELEASER) build \
+	  --single-target --snapshot --clean \
+	  -o dist/styra-controller
+	sudo podman build -t ${IMG} -f build/package/Dockerfile \
+	  --build-arg BINARY="dist/styra-controller" .
+
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
+
+# To use podman-push, use 'sudo podman login' to login to your registry first.
+.PHONY: podman-push
+podman-push: ## Push podman image with the manager.
+	sudo podman push ${IMG}
 
 .PHONY: release
 release: goreleaser ## Release project
