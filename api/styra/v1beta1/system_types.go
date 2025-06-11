@@ -370,6 +370,10 @@ const (
 	// for the SLP used by the System.
 	EventErrorGetStatefulSet EventType = "ErrorGetStatefulSet"
 
+	// EventErrorStatefulSetNotFound is an EventType used when a system with 'localPlane' enabled but which
+	// does not have a StatefulSet created for the SLP.
+	EventErrorStatefulSetNotFound EventType = "ErrorStatefulSetNotFound"
+
 	// EventErrorPatchStatefulSet is an EventType used when the controller fails to patch the StatefulSet
 	// for the SLP used by the System.
 	EventErrorPatchStatefulSet EventType = "ErrorPatchStatefulSet"
