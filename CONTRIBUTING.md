@@ -5,15 +5,16 @@ interest in helping make it better. Before you get started, please take a
 moment to read through these guidelines to help make the contribution process
 smooth and effective for everyone involved.
 
-- [Code of Conduct](#code-of-conduct)
-- [Questions about the Project](#questions-about-the-project)
-- [Issues](#issues)
-- [Pull requests](#pull-requests)
-- [Commits](#commits)
-- [Coding Conventions](#coding-conventions)
-- [How to run the project](#how-to-run-the-project)
-  - [Deploy to existing cluster](#deploy-to-existing-cluster)
-  - [Deploy to local kind cluster](#deploy-to-local-kind-cluster)
+- [:star2: How to contribute to the Styra Controller Project :star2:](#star2-how-to-contribute-to-the-styra-controller-project-star2)
+  - [Code of Conduct](#code-of-conduct)
+  - [Questions about the Project](#questions-about-the-project)
+  - [Issues](#issues)
+  - [Pull requests](#pull-requests)
+  - [Commits](#commits)
+  - [Coding Conventions](#coding-conventions)
+  - [How to run the project](#how-to-run-the-project)
+    - [Deploy to existing cluster](#deploy-to-existing-cluster)
+    - [Deploy to local kind cluster](#deploy-to-local-kind-cluster)
 
 ## Code of Conduct
 
@@ -94,7 +95,11 @@ available targets.
 ### Deploy to existing cluster
 
 The Makefile has targets for building and deploying the controller to a
-Kubernetes cluster.
+Kubernetes cluster. For all 'docker' related targets, you need to have Docker
+installed and running on your machine. If you instead have podman installed,
+you can use the equivalent `podman` targets. The podman targets require root 
+privileges, so you will be prompted for your password when running them. And
+when logging in, you must use `sudo podman login` instead of `podman login`.
 
 1. Set desired docker image name using the IMG environment variable: `export IMG=docker-image-name`. This will be used across make targets that refer to
    image names.

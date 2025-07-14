@@ -551,6 +551,12 @@ func (r *SystemReconciler) restartSLPs(
 	nsName := types.NamespacedName{Name: system.Spec.LocalPlane.Name, Namespace: system.Namespace}
 	var sts appsv1.StatefulSet
 	if err := r.Get(ctx, nsName, &sts); err != nil {
+		if k8serrors.IsNotFound(err) {
+			log.Info("System has SLP but no SLP found with that name")
+			return ctrl.Result{}, ctrlerr.Wrap(err, "SLP statefulset not found for system with SLP enabled").
+				WithEvent(v1beta1.EventErrorStatefulSetNotFound).
+				WithSystemCondition(v1beta1.ConditionTypeSLPUpToDate)
+		}
 		return ctrl.Result{}, ctrlerr.Wrap(err, "Could not get StatefulSet").
 			WithEvent(v1beta1.EventErrorGetStatefulSet).
 			WithSystemCondition(v1beta1.ConditionTypeSLPUpToDate)
@@ -1573,7 +1579,10 @@ func (r *SystemReconciler) SetupWithManager(mgr ctrl.Manager, name string) error
 	if err != nil {
 		return errors.Wrap(err, "Could not build predicate")
 	}
-	p = ctrlpred.And(p, ctrlpred.GenerationChangedPredicate{})
+
+	updatedPred := ctrlpred.Or(ctrlpred.GenerationChangedPredicate{}, ctrlpred.LabelChangedPredicate{})
+
+	p = ctrlpred.And(p, updatedPred)
 
 	return ctrl.NewControllerManagedBy(mgr).Named(name).
 		For(&v1beta1.System{}, builder.WithPredicates(p)).
