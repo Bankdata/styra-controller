@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import (
 	gomega "github.com/onsi/gomega"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/bankdata/styra-controller/pkg/styra"
 
 	"github.com/stretchr/testify/mock"
@@ -62,7 +63,7 @@ var _ = ginkgo.Describe("GetSystem", func() {
 		res, err := c.GetSystem(context.Background(), test.systemID)
 		if test.expectStyraErr {
 			gomega.Expect(res).To(gomega.BeNil())
-			target := &styra.HTTPError{}
+			target := &httperror.HTTPError{}
 			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
@@ -160,7 +161,7 @@ var _ = ginkgo.Describe("UpdateSystem", func() {
 		res, err := c.UpdateSystem(context.Background(), test.id, test.request)
 		if test.expectStyraErr {
 			gomega.Expect(res).To(gomega.BeNil())
-			target := &styra.HTTPError{}
+			target := &httperror.HTTPError{}
 			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
@@ -233,7 +234,7 @@ var _ = ginkgo.Describe("PutSystem", func() {
 		res, err := c.PutSystem(context.Background(), test.request, test.id, map[string]string{"If-None-Match": "*"})
 		if test.expectStyraErr {
 			gomega.Expect(res).To(gomega.BeNil())
-			target := &styra.HTTPError{}
+			target := &httperror.HTTPError{}
 			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
@@ -307,7 +308,7 @@ var _ = ginkgo.Describe("CreateSystem", func() {
 		res, err := c.CreateSystem(context.Background(), test.request)
 		if test.expectStyraErr {
 			gomega.Expect(res).To(gomega.BeNil())
-			target := &styra.HTTPError{}
+			target := &httperror.HTTPError{}
 			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
@@ -376,7 +377,7 @@ var _ = ginkgo.Describe("DeleteSystem", func() {
 		res, err := c.DeleteSystem(context.Background(), test.systemID)
 		if test.expectStyraErr {
 			gomega.Expect(res).To(gomega.BeNil())
-			target := &styra.HTTPError{}
+			target := &httperror.HTTPError{}
 			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())

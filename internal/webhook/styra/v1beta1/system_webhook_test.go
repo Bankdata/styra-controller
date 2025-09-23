@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ var _ = ginkgo.Describe("System", ginkgo.Label("integration"), func() {
 
 				gomega.Ω(k8sClient.Update(ctx, ss)).To(gomega.Succeed())
 				gomega.Ω(ss.Spec.SourceControl).NotTo(gomega.BeNil())
-				gomega.Ω(ss.Spec.SourceControl.Origin.Reference).To(gomega.Equal("refs/heads/master"))
+				gomega.Ω(ss.Spec.SourceControl.Origin.Reference).To(gomega.Equal("refs/heads/main"))
 			})
 
 			ginkgo.It("should not set a default part 1", func() {
