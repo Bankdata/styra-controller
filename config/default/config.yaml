@@ -21,6 +21,10 @@ styra:
   address: https://styra-url.example.com
   token: styra-token
 #  tokenSecretPath: /etc/styra-controller-token/styra_token
+
+opaControlPlane:
+  address: https://opa-control-plane-url.example.com
+  token: admin-change-me
 #systemPrefix:
 #systemSuffix:
 systemUserRoles:
@@ -47,3 +51,14 @@ podRestart:
 #      http:
 #        headers:
 #          - "Accept"
+
+defaultObjectStorage:
+  aws:
+    bucket: ocp
+    region: eu-central-1
+    key: bundles/%s/bundle.tar.gz
+    credentials: minio
+    #url: http://minio.example.com # Optional, only needed for non-AWS S3 compatible storage
+
+defaultRequirements:
+  - jwt_v2

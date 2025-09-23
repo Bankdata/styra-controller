@@ -59,6 +59,7 @@ import (
 	"github.com/bankdata/styra-controller/internal/predicate"
 	"github.com/bankdata/styra-controller/internal/sentry"
 	"github.com/bankdata/styra-controller/internal/webhook"
+	"github.com/bankdata/styra-controller/pkg/ocp"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
@@ -75,6 +76,7 @@ type SystemReconciler struct {
 	APIReader     client.Reader
 	Scheme        *runtime.Scheme
 	Styra         styra.ClientInterface
+	OCP           ocp.ClientInterface
 	WebhookClient webhook.Client
 	Recorder      record.EventRecorder
 	Metrics       *SystemReconcilerMetrics
@@ -109,6 +111,13 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	log = log.WithValues("systemID", system.Status.ID)
+	log = log.WithValues("controlPlane", system.Labels["styra-controller/control-plane"])
+
+	if !labels.ControllerClassMatches(&system, r.Config.ControllerClass) {
+		log.Info("This is not a System we are managing. Skipping reconciliation.")
+		r.deleteMetrics(req)
+		return ctrl.Result{}, nil
+	}
 
 	if !labels.ControllerClassMatches(&system, r.Config.ControllerClass) {
 		log.Info("This is not a System we are managing. Skipping reconciliation.")
@@ -255,6 +264,80 @@ func (r *SystemReconciler) reconcile(
 		}
 	}
 
+	if r.Config.Styra.Address == "" || system.Labels[labels.LabelControlPlane] == "opa-control-plane" {
+		return r.ocpReconcile(ctx, log, system)
+	} else {
+		// This is only relevant for transition period when not wanting to do a big bang
+		return r.styraReconcile(ctx, log, system)
+	}
+}
+
+func (r *SystemReconciler) ocpReconcile(ctx context.Context, log logr.Logger, system *v1beta1.System) (ctrl.Result, error) {
+	// loop through system.spec.datasources, and make sure they exist
+	requirements := ocp.ToRequirements(r.Config.DefaultRequirements)
+
+	for _, datasource := range system.Spec.Datasources {
+		_, err := r.createSourceIfNotExists(ctx, log, datasource)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		requirements = append(requirements, ocp.NewRequirement(datasource.Path))
+	}
+
+	bundleName := "Steve"
+
+	objectStorage := ocp.ObjectStorage{
+		AmazonS3: &ocp.AmazonS3{
+			Bucket: r.Config.DefaultObjectStorage.AWS.Bucket,
+			// TODO: is this too much freedom? Maybe hardcode key as 'bundles/{bundleName}/bundle.tar.gz'?
+			Key:    fmt.Sprintf(r.Config.DefaultObjectStorage.AWS.Key, bundleName),
+			Region: r.Config.DefaultObjectStorage.AWS.Region,
+			URL:    r.Config.DefaultObjectStorage.AWS.URL,
+		},
+	}
+
+	bundle := &ocp.BundleConfig{
+		// TODO: do we want to consider the labels and ignoredfiles?
+		Name:          bundleName,
+		ObjectStorage: objectStorage,
+		Requirements:  requirements,
+	}
+
+	_, x := r.OCP.PutBundle(ctx, bundle)
+
+	return ctrl.Result{}, x
+}
+
+func (r *SystemReconciler) createSourceIfNotExists(ctx context.Context, log logr.Logger, datasource v1beta1.Datasource) (ctrl.Result, error) {
+	_, err := r.OCP.GetSource(ctx, datasource.Path)
+	if err == nil {
+		// datasource already exists
+		return ctrl.Result{}, nil
+	}
+
+	log.Info("Datasource does not exist - creating", "datasource", datasource.Path)
+	// TODO: move httpError from Styra to common package
+	var serr *styra.HTTPError
+	if errors.As(err, &serr) && serr.StatusCode == http.StatusNotFound {
+		_, err = r.OCP.PutSource(ctx, datasource.Path, &ocp.PutSourceRequest{
+			Source: ocp.SourceConfig{
+				Name: datasource.Path,
+				// TODO: rename path to name?
+				// TODO: add other fields to v1beta1.Datasource
+				// Directory:    datasource.Directory,
+				// Paths:        datasource.Paths,
+				// Requirements: datasource.Requirements,
+			},
+		})
+		// TODO: call 'datasource created' webhook
+
+		return ctrl.Result{}, err
+	} else {
+		return ctrl.Result{}, err
+	}
+}
+
+func (r *SystemReconciler) styraReconcile(ctx context.Context, log logr.Logger, system *v1beta1.System) (ctrl.Result, error) {
 	var (
 		cfg *styra.SystemConfig
 		err error

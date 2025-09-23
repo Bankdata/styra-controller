@@ -51,6 +51,7 @@ import (
 	"github.com/bankdata/styra-controller/internal/webhook"
 	webhookstyrav1alpha1 "github.com/bankdata/styra-controller/internal/webhook/styra/v1alpha1"
 	webhookstyrav1beta1 "github.com/bankdata/styra-controller/internal/webhook/styra/v1beta1"
+	"github.com/bankdata/styra-controller/pkg/ocp"
 	"github.com/bankdata/styra-controller/pkg/styra"
 	//+kubebuilder:scaffold:imports
 )
@@ -154,6 +155,9 @@ func main() {
 	styraHostURL := strings.TrimSuffix(ctrlConfig.Styra.Address, "/")
 	styraClient := styra.New(styraHostURL, styraToken)
 
+	ocpHostURL := strings.TrimSuffix(ctrlConfig.OpaControlPlaneConfig.Address, "/")
+	opaControlPlaneConfig := ocp.New(ocpHostURL, ctrlConfig.OpaControlPlaneConfig.Token)
+
 	if err := configureExporter(
 		styraClient, ctrlConfig.DecisionsExporter, configv2alpha2.ExporterConfigTypeDecisions); err != nil {
 		log.Error(err, fmt.Sprintf("unable to configure %s", configv2alpha2.ExporterConfigTypeDecisions))
@@ -217,6 +221,7 @@ func main() {
 		Client:    mgr.GetClient(),
 		Scheme:    mgr.GetScheme(),
 		Styra:     styraClient,
+		OCP:       opaControlPlaneConfig,
 		Recorder:  mgr.GetEventRecorderFor("system-controller"),
 		Metrics:   systemMetrics,
 		Config:    ctrlConfig,
