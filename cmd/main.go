@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -51,6 +51,7 @@ import (
 	"github.com/bankdata/styra-controller/internal/webhook"
 	webhookstyrav1alpha1 "github.com/bankdata/styra-controller/internal/webhook/styra/v1alpha1"
 	webhookstyrav1beta1 "github.com/bankdata/styra-controller/internal/webhook/styra/v1beta1"
+	"github.com/bankdata/styra-controller/pkg/ocp"
 	"github.com/bankdata/styra-controller/pkg/styra"
 	//+kubebuilder:scaffold:imports
 )
@@ -154,14 +155,19 @@ func main() {
 	styraHostURL := strings.TrimSuffix(ctrlConfig.Styra.Address, "/")
 	styraClient := styra.New(styraHostURL, styraToken)
 
-	if err := configureExporter(
-		styraClient, ctrlConfig.DecisionsExporter, configv2alpha2.ExporterConfigTypeDecisions); err != nil {
-		log.Error(err, fmt.Sprintf("unable to configure %s", configv2alpha2.ExporterConfigTypeDecisions))
-	}
+	ocpHostURL := strings.TrimSuffix(ctrlConfig.OPAControlPlaneConfig.Address, "/")
+	opaControlPlaneClient := ocp.New(ocpHostURL, ctrlConfig.OPAControlPlaneConfig.Token)
 
-	if err := configureExporter(
-		styraClient, ctrlConfig.ActivityExporter, configv2alpha2.ExporterConfigTypeActivity); err != nil {
-		log.Error(err, fmt.Sprintf("unable to configure %s", configv2alpha2.ExporterConfigTypeActivity))
+	if ctrlConfig.EnableStyraReconciliation {
+		if err := configureExporter(
+			styraClient, ctrlConfig.DecisionsExporter, configv2alpha2.ExporterConfigTypeDecisions); err != nil {
+			log.Error(err, fmt.Sprintf("unable to configure %s", configv2alpha2.ExporterConfigTypeDecisions))
+		}
+
+		if err := configureExporter(
+			styraClient, ctrlConfig.ActivityExporter, configv2alpha2.ExporterConfigTypeActivity); err != nil {
+			log.Error(err, fmt.Sprintf("unable to configure %s", configv2alpha2.ExporterConfigTypeActivity))
+		}
 	}
 
 	// System Controller
@@ -217,6 +223,7 @@ func main() {
 		Client:    mgr.GetClient(),
 		Scheme:    mgr.GetScheme(),
 		Styra:     styraClient,
+		OCP:       opaControlPlaneClient,
 		Recorder:  mgr.GetEventRecorderFor("system-controller"),
 		Metrics:   systemMetrics,
 		Config:    ctrlConfig,
@@ -232,6 +239,10 @@ func main() {
 		exit(err)
 	}
 
+	if err = r1.CreateDefaultRequirements(context.Background(), log); err != nil {
+		log.Error(err, "unable to create default requirements")
+		exit(err)
+	}
 	if !ctrlConfig.DisableCRDWebhooks {
 		if err = webhookstyrav1beta1.SetupSystemWebhookWithManager(mgr); err != nil {
 			log.Error(err, "unable to create webhook", "webhook", "System")
@@ -244,6 +255,7 @@ func main() {
 		Scheme: mgr.GetScheme(),
 		Config: ctrlConfig,
 		Styra:  styraClient,
+		OCP:    opaControlPlaneClient,
 	}
 
 	if ctrlConfig.NotificationWebhooks != nil && ctrlConfig.NotificationWebhooks.LibraryDatasourceChanged != "" {

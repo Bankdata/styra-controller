@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	styrav1alpha1 "github.com/bankdata/styra-controller/api/styra/v1alpha1"
+	"github.com/bankdata/styra-controller/pkg/http_error"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
@@ -91,7 +92,7 @@ var _ = ginkgo.Describe("LibraryReconciler.Reconcile", ginkgo.Label("integration
 		}, nil).Once()
 
 		styraClientMock.On("GetLibrary", mock.Anything, key.Name).
-			Return(nil, &styra.HTTPError{StatusCode: http.StatusNotFound}).Once()
+			Return(nil, &http_error.HTTPError{StatusCode: http.StatusNotFound}).Once()
 
 		defaultSourceControl := &styra.LibrarySourceControlConfig{
 			LibraryOrigin: &styra.LibraryGitRepoConfig{

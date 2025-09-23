@@ -14,17 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package webhook
+package ocp
 
-import (
-	"testing"
-
-	ginkgo "github.com/onsi/ginkgo/v2"
-	gomega "github.com/onsi/gomega"
-)
-
-func TestWebhookClient(t *testing.T) {
-
-	gomega.RegisterFailHandler(ginkgo.Fail)
-	ginkgo.RunSpecs(t, "internal/webhook")
+// OPAConfig stores the information retrieved from calling the GET
+// /v1/systems/{systemId}/assets/opa-config endpoint in the Styra API.
+// OPAConfig stores the information going into the ConfigMap for the OPA
+type OPAConfig struct {
+	Resource  string
+	URL       string
+	AWSRegion string
 }

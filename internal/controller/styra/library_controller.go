@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,12 +21,14 @@ import (
 	"fmt"
 	"net/http"
 	"path"
+	"strings"
 
 	"github.com/bankdata/styra-controller/internal/config"
 	ctrlerr "github.com/bankdata/styra-controller/internal/errors"
 	"github.com/bankdata/styra-controller/internal/predicate"
 	"github.com/bankdata/styra-controller/internal/sentry"
 	"github.com/bankdata/styra-controller/internal/webhook"
+	"github.com/bankdata/styra-controller/pkg/http_error"
 	"github.com/bankdata/styra-controller/pkg/styra"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -40,6 +42,7 @@ import (
 
 	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
 	styrav1alpha1 "github.com/bankdata/styra-controller/api/styra/v1alpha1"
+	"github.com/bankdata/styra-controller/pkg/ocp"
 )
 
 // LibraryReconciler reconciles a Library object
@@ -47,6 +50,7 @@ type LibraryReconciler struct {
 	client.Client
 	Scheme        *runtime.Scheme
 	Styra         styra.ClientInterface
+	OCP           ocp.ClientInterface
 	Config        *configv2alpha2.ProjectConfig
 	WebhookClient webhook.Client
 }
@@ -60,7 +64,7 @@ type LibraryReconciler struct {
 // towards the desired state.
 func (r *LibraryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
-	log.Info("Reconciliation begins")
+	log.Info("Reconciliation of libraies begins")
 
 	var k8sLib styrav1alpha1.Library
 	if err := r.Get(ctx, req.NamespacedName, &k8sLib); err != nil {
@@ -76,6 +80,73 @@ func (r *LibraryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
+	result := ctrl.Result{}
+	if r.Config.EnableStyraReconciliation {
+		log.Info("Styra DAS library reconcile starting")
+		result, err := r.styraReconcile(ctx, log, k8sLib)
+		if err != nil {
+			return result, err
+		}
+	} else {
+		log.Info("Styra DAS Reconciliation have been disabled")
+	}
+
+	if r.Config.EnableOPAControlPlaneReconciliation {
+		log.Info("OPA Control Plane library reconcile starting")
+		result, err := r.ocpReconcile(ctx, log, k8sLib)
+		if err != nil {
+			return result, err
+		}
+	} else {
+		log.Info("OPA Control Plane Reconciliation have been disabled")
+	}
+
+	return result, nil
+}
+
+func (r *LibraryReconciler) ocpReconcile(ctx context.Context, log logr.Logger, k8sLib styrav1alpha1.Library) (ctrl.Result, error) {
+	log.Info("Reconciling Library")
+
+	reconcileLibrarySourceResult, err := r.reconcileLibrarySource(ctx, log, k8sLib)
+	if err != nil {
+		return reconcileLibrarySourceResult, err
+	}
+
+	log.Info("Reconciliation completed")
+	return ctrl.Result{}, nil
+}
+
+func (r *LibraryReconciler) reconcileLibrarySource(ctx context.Context, log logr.Logger, k8sLib styrav1alpha1.Library) (ctrl.Result, error) {
+	gitConfig := &ocp.GitConfig{
+		Repo:          k8sLib.Spec.SourceControl.LibraryOrigin.URL,
+		IncludedFiles: []string{"*.rego"},
+		Path:          ".",
+	}
+	if k8sLib.Spec.SourceControl.LibraryOrigin.Commit != "" {
+		gitConfig.Commit = &k8sLib.Spec.SourceControl.LibraryOrigin.Commit
+	}
+	if k8sLib.Spec.SourceControl.LibraryOrigin.Reference != "" {
+		gitConfig.Reference = &k8sLib.Spec.SourceControl.LibraryOrigin.Reference
+	}
+	for _, cred := range r.Config.OPAControlPlaneConfig.GitCredentials {
+		if strings.Contains(k8sLib.Spec.SourceControl.LibraryOrigin.URL, cred.RepoPrefix) {
+			gitConfig.CredentialID = cred.ID
+			break
+		}
+	}
+
+	_, err := r.OCP.PutSource(ctx, k8sLib.Spec.Name, &ocp.PutSourceRequest{
+		Name: k8sLib.Spec.Name,
+		Git:  gitConfig,
+	})
+	if err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "createLibrarySource: could not create or update source in OCP")
+	}
+	log.Info("OCP source upserted", "source", k8sLib.Spec.Name)
+	return ctrl.Result{}, nil
+}
+
+func (r *LibraryReconciler) styraReconcile(ctx context.Context, log logr.Logger, k8sLib styrav1alpha1.Library) (ctrl.Result, error) {
 	log.Info("Reconciling git credentials from default credentials")
 	if k8sLib.Spec.SourceControl != nil {
 		gitCredential := r.Config.GetGitCredentialForRepo(k8sLib.Spec.SourceControl.LibraryOrigin.URL)
@@ -100,7 +171,7 @@ func (r *LibraryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	update := false
 	libResp, err := r.Styra.GetLibrary(ctx, k8sLib.Spec.Name)
 	if err != nil {
-		var httpErr *styra.HTTPError
+		var httpErr *http_error.HTTPError
 		if errors.As(err, &httpErr) {
 			if httpErr.StatusCode == http.StatusNotFound {
 				update = true
