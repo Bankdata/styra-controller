@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -112,7 +112,10 @@ var _ = ginkgo.Describe("Fail to update system datasource", func() {
 
 		err := c.SystemDatasourceChanged(context.Background(), testlogger, systemID, datasourceID)
 
-		gomega.Expect(err.Error()).To(gomega.BeEquivalentTo("response status code is 403, response body is forbidden"))
+		gomega.Expect(err.Error()).To(
+			gomega.BeEquivalentTo(
+				"Failed to create request to webhook: response status code is 403, response body is forbidden",
+			))
 	})
 })
 
@@ -181,6 +184,9 @@ var _ = ginkgo.Describe("Fail to update library datasource", func() {
 
 		err := c.LibraryDatasourceChanged(context.Background(), testlogger, datasourceID)
 
-		gomega.Expect(err.Error()).To(gomega.BeEquivalentTo("response status code is 403, response body is forbidden"))
+		gomega.Expect(err.Error()).To(
+			gomega.BeEquivalentTo(
+				"Failed to create request to webhook: response status code is 403, response body is forbidden",
+			))
 	})
 })

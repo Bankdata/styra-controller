@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,10 +23,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// Constants for labels configured on System resources.
 const (
 	labelControllerClass = "styra-controller/class"
 	labelManagedBy       = "app.kubernetes.io/managed-by"
 	labelValueManagedBy  = "styra-controller"
+	LabelControlPlane    = "styra-controller/control-plane"
 )
 
 // ControllerClassLabelSelector creates a metav1.LabelSelector which selects

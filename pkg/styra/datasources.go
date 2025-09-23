@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"path"
 
+	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/pkg/errors"
 )
 
@@ -99,7 +100,7 @@ func (c *Client) GetDatasource(ctx context.Context, id string) (*GetDatasourceRe
 	}
 
 	if res.StatusCode != http.StatusOK {
-		err := NewHTTPError(res.StatusCode, string(body))
+		err := httperror.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 
@@ -133,7 +134,7 @@ func (c *Client) UpsertDatasource(
 	}
 
 	if res.StatusCode != http.StatusOK {
-		err := NewHTTPError(res.StatusCode, string(body))
+		err := httperror.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 
@@ -159,7 +160,7 @@ func (c *Client) DeleteDatasource(ctx context.Context, id string) (*DeleteDataso
 	}
 
 	if res.StatusCode != http.StatusNotFound && res.StatusCode != http.StatusOK {
-		err := NewHTTPError(res.StatusCode, string(body))
+		err := httperror.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 

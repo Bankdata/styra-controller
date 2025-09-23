@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,11 +24,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/bankdata/styra-controller/pkg/httperror"
 	ginkgo "github.com/onsi/ginkgo/v2"
 	gomega "github.com/onsi/gomega"
 	"github.com/patrickmn/go-cache"
-
-	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
 var _ = ginkgo.Describe("GetUser", func() {
@@ -58,7 +57,7 @@ var _ = ginkgo.Describe("GetUser", func() {
 		res, err := c.GetUser(context.Background(), test.name)
 		if test.expectStyraErr {
 			gomega.Expect(res).To(gomega.BeNil())
-			target := &styra.HTTPError{}
+			target := &httperror.HTTPError{}
 			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
@@ -112,7 +111,7 @@ var _ = ginkgo.Describe("GetUsers", func() {
 			res, _, err := c.GetUsers(context.Background())
 			if test.expectStyraErr {
 				gomega.Expect(res).To(gomega.BeNil())
-				target := &styra.HTTPError{}
+				target := &httperror.HTTPError{}
 				gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 			} else {
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())

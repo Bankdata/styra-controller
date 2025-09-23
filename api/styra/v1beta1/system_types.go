@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package v1beta1
 
 import (
 	"path"
+	"strings"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -333,6 +334,22 @@ const (
 	// ConditionTypeSystemConfigUpdated is a ConditionType used when
 	// the configuration of the System are updated in Styra.
 	ConditionTypeSystemConfigUpdated ConditionType = "SystemConfigUpdated"
+
+	// ConditionTypeRequirementsUpdated is a ConditionType used when
+	// the requirements of for the System's bundle is updated in OCP.
+	ConditionTypeRequirementsUpdated ConditionType = "RequirementsUpdated"
+
+	// ConditionTypeSystemSourceUpdated is a ConditionType used when
+	// the source for the System is updated in OCP.
+	ConditionTypeSystemSourceUpdated ConditionType = "SystemSourceUpdated"
+
+	// ConditionTypeSystemBundleUpdated is a ConditionType used when
+	// the bundle for the System is updated in OCP.
+	ConditionTypeSystemBundleUpdated ConditionType = "SystemBundleUpdated"
+
+	// ConditionTypeOPASecretUpdated is a ConditionType used when
+	// the OPA secret for the System is updated in the cluster.
+	ConditionTypeOPASecretUpdated ConditionType = "OPASecretUpdated"
 )
 
 // EventType is a type of event which can be emitted by the System controller.
@@ -564,6 +581,11 @@ func (s *System) setCondition(timeNow func() time.Time, conditionType ConditionT
 // DisplayName returns the System's name with a prefix and suffix.
 func (s *System) DisplayName(prefix, suffix string) string {
 	return path.Join(prefix, s.Namespace, s.Name, suffix)
+}
+
+// OCPUniqueName returns the System's name with a prefix and suffix.
+func (s *System) OCPUniqueName(prefix, suffix string) string {
+	return strings.ReplaceAll(path.Join(prefix, s.Namespace, s.Name, suffix), "/", "-")
 }
 
 // GitSecretID returns the Styra internal ID of the Git Secret used by the

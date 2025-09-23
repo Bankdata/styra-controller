@@ -7,10 +7,9 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/bankdata/styra-controller/pkg/httperror"
 	ginkgo "github.com/onsi/ginkgo/v2"
 	gomega "github.com/onsi/gomega"
-
-	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
 var _ = ginkgo.Describe("DeletePolicy", func() {
@@ -41,7 +40,7 @@ var _ = ginkgo.Describe("DeletePolicy", func() {
 		res, err := c.DeletePolicy(context.Background(), test.policyName)
 		if test.expectStyraErr {
 			gomega.Expect(res).To(gomega.BeNil())
-			target := &styra.HTTPError{}
+			target := &httperror.HTTPError{}
 			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())

@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -39,9 +39,15 @@ type ProjectConfig struct {
 	DeletionProtectionDefault bool `json:"deletionProtectionDefault"`
 
 	// ReadOnly sets the value of ReadOnly for systems
+	//+kubebuilder:deprecatedversion:warning="ReadOnly field is deprecated, only used in Styra"
+	// Deprecated: ReadOnly field is deprecated, only used in Styra.
+	// This field will be removed in a future version.
 	ReadOnly bool `json:"readOnly"`
 
 	// EnableDeltaBundlesDefault sets the default of whether systems have delta-bundles or not
+	//+kubebuilder:deprecatedversion:warning="EnableDeltaBundlesDefault field is deprecated, only used in Styra"
+	// Deprecated: EnableDeltaBundlesDefault field is deprecated, only used in Styra.
+	// This field will be removed in a future version.
 	EnableDeltaBundlesDefault *bool `json:"enableDeltaBundlesDefault,omitempty"`
 
 	// DisableCRDWebhooks disables the CRD webhooks on the controller. If running
@@ -55,12 +61,18 @@ type ProjectConfig struct {
 
 	// DatasourceIgnorePatterns is a list of regex patterns, that allow datasources in styra
 	// to be ignored based on their datasource id.
+	//+kubebuilder:deprecatedversion:warning="DatasourceIgnorePatterns field is deprecated, only used in Styra"
+	// Deprecated: DatasourceIgnorePatterns field is deprecated, only used in Styra.
+	// This field will be removed in a future version.
 	DatasourceIgnorePatterns []string `json:"datasourceIgnorePatterns,omitempty"`
 
 	// GitCredentials holds a list of git credential configurations. The
 	// RepoPrefix of the GitCredential will be matched angainst repository URL in
 	// order to determine which credential to use. The GitCredential with the
 	// longest matching RepoPrefix will be selected.
+	//+kubebuilder:deprecatedversion:warning="GitCredentials field is deprecated, only used in Styra"
+	// Deprecated: GitCredentials field is deprecated, only used in Styra.
+	//  This field will be removed in a future version.
 	GitCredentials []*GitCredential `json:"gitCredentials"`
 
 	// LogLevel sets the logging level of the controller. A higher number gives
@@ -74,8 +86,12 @@ type ProjectConfig struct {
 
 	Sentry *SentryConfig `json:"sentry"`
 
+	//+kubebuilder:deprecatedversion:warning="SSO field is deprecated, only used in Styra"
+	// Deprecated: SSO field is deprecated, only used in Styra. This field will be removed in a future version.
 	SSO *SSOConfig `json:"sso"`
 
+	//+kubebuilder:deprecatedversion:warning="Styra field is deprecated, use OPAControlPlaneConfig instead"
+	// Deprecated: Use OPAControlPlaneConfig instead. This field will be removed in a future version.
 	Styra StyraConfig `json:"styra"`
 
 	OPA OPAConfig `json:"opa,omitempty"`
@@ -92,12 +108,81 @@ type ProjectConfig struct {
 
 	// SystemUserRoles is a list of Styra DAS system level roles which the subjects of
 	// a system will be granted.
+	//+kubebuilder:deprecatedversion:warning="SystemUserRoles field is deprecated, only used in Styra"
+	// Deprecated: SystemUserRoles field is deprecated, only used in Styra.
+	// This field will be removed in a future version.
 	SystemUserRoles []string `json:"systemUserRoles"`
 
+	//+kubebuilder:deprecatedversion:warning="DecisionsExporter field is deprecated, only used in Styra"
+	// Deprecated: DecisionsExporter field is deprecated, only used in Styra.
+	// This field will be removed in a future version.
 	DecisionsExporter *ExporterConfig `json:"decisionsExporter,omitempty"`
-	ActivityExporter  *ExporterConfig `json:"activityExporter,omitempty"`
+
+	//+kubebuilder:deprecatedversion:warning="ActivityExporter field is deprecated, only used in Styra"
+	// Deprecated: ActivityExporter field is deprecated, only used in Styra.
+	// This field will be removed in a future version.
+	ActivityExporter *ExporterConfig `json:"activityExporter,omitempty"`
 
 	PodRestart *PodRestartConfig `json:"podRestart,omitempty"`
+
+	// OPAControlPlaneConfig contains configuration for connecting to the
+	// OPA Control Plane APIs. If this is not set, the controller will not
+	// attempt to connect to the OPA Control Plane APIs.
+	OPAControlPlaneConfig *OPAControlPlaneConfig `json:"opaControlPlane,omitempty"`
+
+	// DefaultRequirements is a list of requirements that will be added to all
+	// systems/bundles created by the controller in the OCP, in addition to any requirements/datasources
+	// specified on the System resource.
+	DefaultRequirements []string `json:"defaultRequirements,omitempty"`
+
+	// ObjectStorage is the object storage configuration to use for bundles.
+	// Currently only supports aws
+	ObjectStorage *ObjectStorage `json:"objectStorage,omitempty"`
+
+	// EnableStyraReconciliation is a flag that sets whether the controller should use Styra
+	// A Migration flag to enable/disable Styra DAS reconciliation for all systems and libraries.
+	//+kubebuilder:deprecatedversion:warning="EnableStyraReconciliation field is deprecated.
+	// Only used in migration versions Styra->OCP"
+	// Deprecated: EnableStyraReconciliation field is deprecated, only used in migration versions Styra->OCP.
+	// This field will be removed in a future version.
+	EnableStyraReconciliation bool `json:"enableStyraReconciliation,omitempty"`
+
+	// EnableOPAControlPlaneReconciliation is a flag that sets whether the controller should use OPAControlPlane
+	// A Migration flag to enable/disable OPA Control Plane reconciliation for all systems and libraries.
+	//+kubebuilder:deprecatedversion:warning="EnableOPAControlPlaneReconciliation field is deprecated,
+	// only used in migration versions Styra->OCP"
+	// Deprecated: EnableOPAControlPlaneReconciliation field is deprecated, only used in migration versions Styra->OCP.
+	// This field will be removed in a future version.
+	EnableOPAControlPlaneReconciliation bool `json:"enableOPAControlPlaneReconciliation,omitempty"`
+
+	// EnableOPAControlPlaneReconciliationTestData is a flag that sets whether the controller should create
+	// OPAControlPlane test data.
+	// A Migration flag to allow adding test data to OPA Control Plane and not to modify k8s data
+	//+kubebuilder:deprecatedversion:warning="EnableOPAControlPlaneReconciliationTestData field is deprecated.
+	// Only used in migration versions Styra->OCP"
+	// Deprecated: EnableOPAControlPlaneReconciliationTestData field is deprecated.
+	// Only used in migration versions Styra->OCP. This field will be removed in a future version.
+	EnableOPAControlPlaneReconciliationTestData bool `json:"enableOpaControlPlaneReconciliationTestData,omitempty"`
+}
+
+// ObjectStorage defines the structure for object storage configuration used by bundles
+type ObjectStorage struct {
+	AWS *AWSObjectStorage `json:"aws,omitempty"`
+}
+
+// AWSObjectStorage defines the structure for AWS object storage configuration.
+type AWSObjectStorage struct {
+	Bucket              string          `json:"bucket"`
+	Region              string          `json:"region"`
+	URL                 string          `json:"url,omitempty"`
+	OCPConfigSecretName string          `json:"ocpConfigSecretName"`
+	AdminCredentials    *AWSCredentials `json:"adminCredentials"`
+}
+
+// AWSCredentials defines the structure for AWS credentials
+type AWSCredentials struct {
+	AccessKeyID     string `json:"accessKeyID"`
+	SecretAccessKey string `json:"secretAccessKey"`
 }
 
 // PodRestartConfig contains configuration for restarting OPA and SLP pods
@@ -137,6 +222,28 @@ type StyraConfig struct {
 	// Alternative to the "token" whice define the Styra DAS API token directly in the config file,
 	// this "tokenSecretPath" will use a token from a secret (only if "token" is not set)
 	TokenSecretPath string `json:"tokenSecretPath"`
+}
+
+// OPAControlPlaneConfig defines the config for the OPA Control Plane.
+type OPAControlPlaneConfig struct {
+	// Address is the URL for the OPA Control Plane API server.
+	Address string `json:"address"`
+
+	// Token is a OPA Control Plane API token.
+	Token string `json:"token"`
+
+	// GitCredentials is the name of a secret used by the OPA Control Plane Git integration.
+	GitCredentials []*GitCredentials `json:"gitCredentials,omitempty"`
+}
+
+// GitCredentials contains configuration for git credentials used by the OPA Control Plane.
+type GitCredentials struct {
+	ID string `json:"id"`
+
+	// RepoPrefix specifies a repo URL prefix. eg. if RepoPrefix is set to
+	// `https://github.com/bankdata`, then this credentials would apply for any
+	// repository under the bankdata github org.
+	RepoPrefix string `json:"repoPrefix"`
 }
 
 // OPAConfig contains default configuration for the opa config generated by the styra-controller
@@ -182,8 +289,17 @@ type NotificationWebhooksConfig struct {
 	// Address is the URL to be called when the controller should do a webhook
 	// notification. Currently the only supported notification is that a
 	// datasource configuration has changed.
-	SystemDatasourceChanged  string `json:"systemDatasourceChanged,omitempty"`
-	LibraryDatasourceChanged string `json:"libraryDatasourceChanged,omitempty"`
+
+	//+kubebuilder:deprecatedversion:warning="SystemDatasourceChanged field is deprecated, only used in Styra"
+	// Deprecated: SystemDatasourceChanged field is deprecated, only used in Styra.
+	// This field will be removed in a future version.
+	SystemDatasourceChanged string `json:"systemDatasourceChanged,omitempty"`
+	//+kubebuilder:deprecatedversion:warning="LibraryDatasourceChanged field is deprecated, only used in Styra"
+	// Deprecated: LibraryDatasourceChanged field is deprecated, only used in Styra.
+	// This field will be removed in a future version.
+	LibraryDatasourceChanged    string `json:"libraryDatasourceChanged,omitempty"`
+	SystemDatasourceChangedOCP  string `json:"systemDatasourceChangedOCP,omitempty"`
+	LibraryDatasourceChangedOCP string `json:"libraryDatasourceChangedOCP,omitempty"`
 }
 
 // SSOConfig contains configuration for how to use SSO tokens for determining

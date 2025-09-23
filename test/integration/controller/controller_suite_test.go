@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -44,7 +44,9 @@ import (
 	styrav1beta1 "github.com/bankdata/styra-controller/api/styra/v1beta1"
 	styractrls "github.com/bankdata/styra-controller/internal/controller/styra"
 	webhookmocks "github.com/bankdata/styra-controller/internal/webhook/mocks"
+	ocpclientmock "github.com/bankdata/styra-controller/pkg/ocp/mocks"
 	"github.com/bankdata/styra-controller/pkg/ptr"
+	s3clientmock "github.com/bankdata/styra-controller/pkg/s3/mocks"
 	"github.com/bankdata/styra-controller/pkg/styra"
 	styraclientmock "github.com/bankdata/styra-controller/pkg/styra/mocks"
 	//+kubebuilder:scaffold:imports
@@ -58,6 +60,8 @@ var (
 	managerCtxPodRestart    context.Context
 	managerCancelPodRestart context.CancelFunc
 	styraClientMock         *styraclientmock.ClientInterface
+	ocpClientMock           *ocpclientmock.ClientInterface
+	s3ClientMock            *s3clientmock.Client
 	webhookMock             *webhookmocks.Client
 )
 
@@ -116,12 +120,16 @@ var _ = ginkgo.BeforeSuite(func() {
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	styraClientMock = &styraclientmock.ClientInterface{}
+	ocpClientMock = &ocpclientmock.ClientInterface{}
 	webhookMock = &webhookmocks.Client{}
+	s3ClientMock = &s3clientmock.Client{}
 	systemReconciler := styractrls.SystemReconciler{
 		Client:        k8sClient,
 		APIReader:     k8sManager.GetAPIReader(),
 		Scheme:        k8sManager.GetScheme(),
 		Styra:         styraClientMock,
+		OCP:           ocpClientMock,
+		S3:            s3ClientMock,
 		WebhookClient: webhookMock,
 		Recorder:      k8sManager.GetEventRecorderFor("system-controller"),
 		Config: &configv2alpha2.ProjectConfig{
@@ -130,9 +138,32 @@ var _ = ginkgo.BeforeSuite(func() {
 				IdentityProvider: "AzureAD Bankdata",
 				JWTGroupsClaim:   "groups",
 			},
-			DatasourceIgnorePatterns:  []string{"^.*/ignore$"},
-			ReadOnly:                  true,
-			EnableDeltaBundlesDefault: ptr.Bool(false),
+			DatasourceIgnorePatterns:            []string{"^.*/ignore$"},
+			ReadOnly:                            true,
+			EnableDeltaBundlesDefault:           ptr.Bool(false),
+			EnableStyraReconciliation:           true,
+			EnableOPAControlPlaneReconciliation: true,
+			DefaultRequirements:                 []string{"library1"},
+			ObjectStorage: &configv2alpha2.ObjectStorage{
+				AWS: &configv2alpha2.AWSObjectStorage{
+					Bucket:              "test-bucket",
+					Region:              "eu-west-1",
+					URL:                 "s3-url",
+					OCPConfigSecretName: "s3-credentials",
+					AdminCredentials: &configv2alpha2.AWSCredentials{
+						AccessKeyID:     "access-key-id",
+						SecretAccessKey: "secret-access-key",
+					},
+				},
+			},
+			OPAControlPlaneConfig: &configv2alpha2.OPAControlPlaneConfig{
+				Address: "ocp-url",
+				Token:   "ocp-token",
+				GitCredentials: []*configv2alpha2.GitCredentials{&configv2alpha2.GitCredentials{
+					ID:         "github-credentials",
+					RepoPrefix: "https://github",
+				}},
+			},
 		},
 
 		Metrics: &styractrls.SystemReconcilerMetrics{
@@ -173,9 +204,11 @@ var _ = ginkgo.BeforeSuite(func() {
 			GitCredentials: []*configv2alpha2.GitCredential{
 				{User: "test-user", Password: "test-secret"},
 			},
+			EnableStyraReconciliation: true,
 		},
 		Client:        k8sClient,
 		Styra:         styraClientMock,
+		OCP:           ocpClientMock,
 		WebhookClient: webhookMock,
 	}
 
@@ -190,7 +223,7 @@ var _ = ginkgo.BeforeSuite(func() {
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	}()
 
-	// Test setup for SystemReconciler1 that deploys a system with an ID and a Statefulset for a SLP
+	// Test setup for systemReconcilerPodRestart that deploys a system with an ID and a Statefulset for a SLP
 	k8sManagerPodRestart, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:         scheme.Scheme,
 		LeaderElection: false,
@@ -200,12 +233,13 @@ var _ = ginkgo.BeforeSuite(func() {
 	})
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-	//Controller with PodRestart enabled for SLPs.
+	// Controller with PodRestart enabled for SLPs.
 	systemReconcilerPodRestart := styractrls.SystemReconciler{
 		Client:        k8sClient,
 		APIReader:     k8sManagerPodRestart.GetAPIReader(),
 		Scheme:        k8sManagerPodRestart.GetScheme(),
 		Styra:         styraClientMock,
+		OCP:           ocpClientMock,
 		WebhookClient: webhookMock,
 		Recorder:      k8sManagerPodRestart.GetEventRecorderFor("system-controller"),
 		Config: &configv2alpha2.ProjectConfig{
@@ -224,6 +258,7 @@ var _ = ginkgo.BeforeSuite(func() {
 					DeploymentType: "statefulset",
 				},
 			},
+			EnableStyraReconciliation: true,
 		},
 		Metrics: &styractrls.SystemReconcilerMetrics{
 			ControllerSystemStatusReady: prometheus.NewGaugeVec(
@@ -255,7 +290,7 @@ var _ = ginkgo.BeforeSuite(func() {
 
 	managerCtxPodRestart, managerCancelPodRestart = context.WithCancel(context.Background())
 	go func() {
-		//Test setup function to SystemReconcilerPodrestart that deploys a system with an ID and a Statefulset for a SLP
+		// Test setup function to systemReconcilerPodRestart that deploys a system with an ID and a Statefulset for a SLP
 		// and restarts the SLP pods.
 		defer ginkgo.GinkgoRecover()
 
