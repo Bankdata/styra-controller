@@ -119,12 +119,6 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, nil
 	}
 
-	if !labels.ControllerClassMatches(&system, r.Config.ControllerClass) {
-		log.Info("This is not a System we are managing. Skipping reconciliation.")
-		r.deleteMetrics(req)
-		return ctrl.Result{}, nil
-	}
-
 	var (
 		res ctrl.Result
 		err error
@@ -284,19 +278,21 @@ func (r *SystemReconciler) ocpReconcile(ctx context.Context, log logr.Logger, sy
 		requirements = append(requirements, ocp.NewRequirement(datasource.Path))
 	}
 
-	bundleName := "Steve"
+	bundleName := system.DisplayName(r.Config.SystemPrefix, r.Config.SystemSuffix)
 
+	// TODO: allow other storage types
 	objectStorage := ocp.ObjectStorage{
 		AmazonS3: &ocp.AmazonS3{
 			Bucket: r.Config.DefaultObjectStorage.AWS.Bucket,
 			// TODO: is this too much freedom? Maybe hardcode key as 'bundles/{bundleName}/bundle.tar.gz'?
-			Key:    fmt.Sprintf(r.Config.DefaultObjectStorage.AWS.Key, bundleName),
-			Region: r.Config.DefaultObjectStorage.AWS.Region,
-			URL:    r.Config.DefaultObjectStorage.AWS.URL,
+			Key:         fmt.Sprintf(r.Config.DefaultObjectStorage.AWS.Key, bundleName),
+			Region:      r.Config.DefaultObjectStorage.AWS.Region,
+			URL:         r.Config.DefaultObjectStorage.AWS.URL,
+			Credentials: r.Config.DefaultObjectStorage.AWS.Credentials,
 		},
 	}
 
-	bundle := &ocp.BundleConfig{
+	bundle := &ocp.PutBundleRequest{
 		// TODO: do we want to consider the labels and ignoredfiles?
 		Name:          bundleName,
 		ObjectStorage: objectStorage,
@@ -305,36 +301,44 @@ func (r *SystemReconciler) ocpReconcile(ctx context.Context, log logr.Logger, sy
 
 	_, x := r.OCP.PutBundle(ctx, bundle)
 
+	log.Info("OCP reconciliation completed")
 	return ctrl.Result{}, x
 }
 
 func (r *SystemReconciler) createSourceIfNotExists(ctx context.Context, log logr.Logger, datasource v1beta1.Datasource) (ctrl.Result, error) {
-	_, err := r.OCP.GetSource(ctx, datasource.Path)
-	if err == nil {
+	res, err := r.OCP.GetSource(ctx, datasource.Path)
+
+	if err != nil {
+		log.Info("Error getting datasource", "datasource", datasource.Path, "error", err)
+		return ctrl.Result{}, err
+	}
+
+	if res.Statuscode == http.StatusOK {
+		log.Info("Datasource already exists", "datasource", datasource.Path)
 		// datasource already exists
 		return ctrl.Result{}, nil
 	}
 
-	log.Info("Datasource does not exist - creating", "datasource", datasource.Path)
-	// TODO: move httpError from Styra to common package
-	var serr *styra.HTTPError
-	if errors.As(err, &serr) && serr.StatusCode == http.StatusNotFound {
-		_, err = r.OCP.PutSource(ctx, datasource.Path, &ocp.PutSourceRequest{
-			Source: ocp.SourceConfig{
-				Name: datasource.Path,
-				// TODO: rename path to name?
-				// TODO: add other fields to v1beta1.Datasource
-				// Directory:    datasource.Directory,
-				// Paths:        datasource.Paths,
-				// Requirements: datasource.Requirements,
-			},
-		})
-		// TODO: call 'datasource created' webhook
-
-		return ctrl.Result{}, err
-	} else {
+	if res.Statuscode != http.StatusNotFound {
+		log.Info("HTTP Error getting datasource", "datasource", datasource.Path, "statuscode", res.Statuscode, "body", string(res.Body))
 		return ctrl.Result{}, err
 	}
+
+	// TODO: move httpError from Styra to common package
+	log.Info("Creating datasource", "datasource", datasource.Path)
+	_, err = r.OCP.PutSource(ctx, datasource.Path, &ocp.PutSourceRequest{
+		Name: datasource.Path,
+		// TODO: rename path to name?
+		// TODO: add other fields to v1beta1.Datasource
+		// Directory:    datasource.Directory,
+		// Paths:        datasource.Paths,
+		// Requirements: datasource.Requirements,
+	})
+
+	// TODO: call 'datasource created' webhook
+
+	return ctrl.Result{}, err
+
 }
 
 func (r *SystemReconciler) styraReconcile(ctx context.Context, log logr.Logger, system *v1beta1.System) (ctrl.Result, error) {

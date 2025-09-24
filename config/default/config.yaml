@@ -55,10 +55,10 @@ podRestart:
 defaultObjectStorage:
   aws:
     bucket: ocp
-    region: eu-central-1
+    region: eu-west-1
     key: bundles/%s/bundle.tar.gz
     credentials: minio
-    #url: http://minio.example.com # Optional, only needed for non-AWS S3 compatible storage
+    url: https://minio.example.com # Optional, only needed for non-AWS S3 compatible storage
 
 defaultRequirements:
-  - jwt_v2
+  - library1
