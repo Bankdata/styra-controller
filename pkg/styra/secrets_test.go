@@ -27,6 +27,7 @@ import (
 	ginkgo "github.com/onsi/ginkgo/v2"
 	gomega "github.com/onsi/gomega"
 
+	"github.com/bankdata/styra-controller/pkg/http_error"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
@@ -59,7 +60,7 @@ var _ = ginkgo.Describe("CreateUpdateSecret", func() {
 		res, err := c.CreateUpdateSecret(context.Background(), test.secretID, test.createUpdateSecretsRequest)
 		if test.expectStyraErr {
 			gomega.Expect(res).To(gomega.BeNil())
-			target := &styra.HTTPError{}
+			target := &http_error.HTTPError{}
 			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())

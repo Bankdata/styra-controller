@@ -104,6 +104,9 @@ type ProjectConfig struct {
 	// attempt to connect to the OPA Control Plane APIs.
 	OpaControlPlaneConfig *OpaControlPlaneConfig `json:"opaControlPlane,omitempty"`
 
+	// OpaControlPlaneGitCredentialID is the name of a secret used by the OPA Control Plane Git integration.
+	OpaControlPlaneGitCredentialID string `json:"opaControlPlaneGitCredentialID,omitempty"`
+
 	// DefaultRequirements is a list of requirements that will be added to all
 	// systems created by the controller in the OCP, in addition to any requirements
 	// specified on the System resource.
@@ -121,7 +124,6 @@ type ObjectStorage struct {
 type AWSObjectStorage struct {
 	Bucket      string `json:"bucket"`
 	Region      string `json:"region"`
-	Key         string `json:"key"`
 	Credentials string `json:"credentials"`
 	URL         string `json:"url,omitempty"`
 }

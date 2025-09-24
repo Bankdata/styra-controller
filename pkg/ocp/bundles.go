@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"path"
 
+	"github.com/bankdata/styra-controller/pkg/http_error"
 	"github.com/pkg/errors"
 )
 
@@ -86,7 +87,18 @@ func (r *Client) PutBundle(ctx context.Context, bundle *PutBundleRequest) (*PutB
 
 	var response *PutBundleResponse
 	if err := json.NewDecoder(res.Body).Decode(response); err != nil && err != io.EOF {
-		return nil, errors.Wrap(err, "could not decode response")
+		return nil, errors.Wrap(err, "PutBundle: could not decode response")
+	}
+
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "PutBundle: could not read body")
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return nil, http_error.NewHTTPError(res.StatusCode, string(body))
 	}
 
 	return response, nil

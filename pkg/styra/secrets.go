@@ -22,6 +22,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/bankdata/styra-controller/pkg/http_error"
 	"github.com/pkg/errors"
 )
 
@@ -75,7 +76,7 @@ func (c *Client) CreateUpdateSecret(
 	}
 
 	if res.StatusCode != http.StatusOK {
-		err := NewHTTPError(res.StatusCode, string(body))
+		err := http_error.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 
@@ -110,7 +111,7 @@ func (c *Client) DeleteSecret(
 	}
 
 	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusNotFound {
-		err := NewHTTPError(res.StatusCode, string(body))
+		err := http_error.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 

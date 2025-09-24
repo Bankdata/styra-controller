@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package styra
+package http_error
 
 import (
 	"encoding/json"
@@ -36,7 +36,7 @@ func (styraerror *HTTPError) Error() string {
 }
 
 // NewHTTPError creates a new HTTPError based on the statuscode and body from a
-// failed call to the Styra API.
+// failed http call.
 func NewHTTPError(statuscode int, body string) error {
 	styraerror := &HTTPError{
 		StatusCode: statuscode,

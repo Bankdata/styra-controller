@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/bankdata/styra-controller/pkg/http_error"
 	"github.com/pkg/errors"
 )
 
@@ -66,7 +67,7 @@ func (c *Client) CreateInvitation(ctx context.Context, email bool, name string) 
 	}
 
 	if res.StatusCode != http.StatusOK {
-		err := NewHTTPError(res.StatusCode, string(body))
+		err := http_error.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 

@@ -59,6 +59,7 @@ import (
 	"github.com/bankdata/styra-controller/internal/predicate"
 	"github.com/bankdata/styra-controller/internal/sentry"
 	"github.com/bankdata/styra-controller/internal/webhook"
+	"github.com/bankdata/styra-controller/pkg/http_error"
 	"github.com/bankdata/styra-controller/pkg/ocp"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
@@ -271,21 +272,22 @@ func (r *SystemReconciler) ocpReconcile(ctx context.Context, log logr.Logger, sy
 	requirements := ocp.ToRequirements(r.Config.DefaultRequirements)
 
 	for _, datasource := range system.Spec.Datasources {
-		_, err := r.createSourceIfNotExists(ctx, log, datasource)
+		err := r.createSourceIfNotExists(ctx, log, datasource)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 		requirements = append(requirements, ocp.NewRequirement(datasource.Path))
 	}
 
+	r.upsertSystemSource(ctx, log, system)
+
 	bundleName := system.DisplayName(r.Config.SystemPrefix, r.Config.SystemSuffix)
 
-	// TODO: allow other storage types
+	// future TODO: allow other storage types
 	objectStorage := ocp.ObjectStorage{
 		AmazonS3: &ocp.AmazonS3{
-			Bucket: r.Config.DefaultObjectStorage.AWS.Bucket,
-			// TODO: is this too much freedom? Maybe hardcode key as 'bundles/{bundleName}/bundle.tar.gz'?
-			Key:         fmt.Sprintf(r.Config.DefaultObjectStorage.AWS.Key, bundleName),
+			Bucket:      r.Config.DefaultObjectStorage.AWS.Bucket,
+			Key:         fmt.Sprintf("bundles/%s/bundle.tar.gz", bundleName),
 			Region:      r.Config.DefaultObjectStorage.AWS.Region,
 			URL:         r.Config.DefaultObjectStorage.AWS.URL,
 			Credentials: r.Config.DefaultObjectStorage.AWS.Credentials,
@@ -293,41 +295,66 @@ func (r *SystemReconciler) ocpReconcile(ctx context.Context, log logr.Logger, sy
 	}
 
 	bundle := &ocp.PutBundleRequest{
-		// TODO: do we want to consider the labels and ignoredfiles?
+		// future TODO: do we want to consider the labels and ignoredfiles?
 		Name:          bundleName,
 		ObjectStorage: objectStorage,
 		Requirements:  requirements,
 	}
 
-	_, x := r.OCP.PutBundle(ctx, bundle)
-
-	log.Info("OCP reconciliation completed")
-	return ctrl.Result{}, x
-}
-
-func (r *SystemReconciler) createSourceIfNotExists(ctx context.Context, log logr.Logger, datasource v1beta1.Datasource) (ctrl.Result, error) {
-	res, err := r.OCP.GetSource(ctx, datasource.Path)
+	_, err := r.OCP.PutBundle(ctx, bundle)
 
 	if err != nil {
-		log.Info("Error getting datasource", "datasource", datasource.Path, "error", err)
-		return ctrl.Result{}, err
+		return ctrl.Result{}, errors.Wrap(err, "ocpReconcile: could not create or update bundle in OCP")
+	}
+	log.Info("OCP reconciliation completed")
+	return ctrl.Result{}, nil
+}
+
+func (r *SystemReconciler) upsertSystemSource(ctx context.Context, log logr.Logger, system *v1beta1.System) error {
+	var sourceConfig *ocp.SourceConfig
+
+	sourceName := system.DisplayName(r.Config.SystemPrefix, r.Config.SystemSuffix)
+	sourceConfig.Name = sourceName
+
+	gitConfig := &ocp.GitConfig{
+		Repo:          system.Spec.SourceControl.Origin.URL,
+		Reference:     &system.Spec.SourceControl.Origin.Reference,
+		Path:          &system.Spec.SourceControl.Origin.Path,
+		CredentialID:  r.Config.OpaControlPlaneGitCredentialID,
+		IncludedFiles: []string{"*.rego"},
 	}
 
-	if res.Statuscode == http.StatusOK {
-		log.Info("Datasource already exists", "datasource", datasource.Path)
-		// datasource already exists
-		return ctrl.Result{}, nil
+	_, err := r.OCP.PutSource(ctx, sourceName, &ocp.PutSourceRequest{
+		Name: sourceName,
+		Git:  gitConfig,
+	})
+	if err != nil {
+		return errors.Wrap(err, "createSystemSource: could not create or update source in OCP")
+	}
+	log.Info("OCP source upserted", "source", sourceName)
+	return nil
+}
+
+func (r *SystemReconciler) createSourceIfNotExists(ctx context.Context, log logr.Logger, source v1beta1.Datasource) error {
+	_, err := r.OCP.GetSource(ctx, source.Path)
+
+	if err == nil {
+		log.Info("Source already exists", "source", source.Path)
+		return nil
 	}
 
-	if res.Statuscode != http.StatusNotFound {
-		log.Info("HTTP Error getting datasource", "datasource", datasource.Path, "statuscode", res.Statuscode, "body", string(res.Body))
-		return ctrl.Result{}, err
+	var httpErr *http_error.HTTPError
+	if errors.As(err, &httpErr) {
+		if httpErr.StatusCode != http.StatusNotFound {
+			return errors.Wrap(err, "GetSource in createSourceIfNotExists failed")
+		}
+	} else {
+		return errors.Wrap(err, "GetSource in createSourceIfNotExists failed")
 	}
 
-	// TODO: move httpError from Styra to common package
-	log.Info("Creating datasource", "datasource", datasource.Path)
-	_, err = r.OCP.PutSource(ctx, datasource.Path, &ocp.PutSourceRequest{
-		Name: datasource.Path,
+	log.Info("Creating source", "source", source.Path)
+	_, err = r.OCP.PutSource(ctx, source.Path, &ocp.PutSourceRequest{
+		Name: source.Path,
 		// TODO: rename path to name?
 		// TODO: add other fields to v1beta1.Datasource
 		// Directory:    datasource.Directory,
@@ -335,10 +362,13 @@ func (r *SystemReconciler) createSourceIfNotExists(ctx context.Context, log logr
 		// Requirements: datasource.Requirements,
 	})
 
+	if err != nil {
+		return errors.Wrap(err, "PutSource in createSourceIfNotExists failed")
+	}
+	log.Info("Source created", "source", source.Path)
+
 	// TODO: call 'datasource created' webhook
-
-	return ctrl.Result{}, err
-
+	return nil
 }
 
 func (r *SystemReconciler) styraReconcile(ctx context.Context, log logr.Logger, system *v1beta1.System) (ctrl.Result, error) {
@@ -368,7 +398,7 @@ func (r *SystemReconciler) styraReconcile(ctx context.Context, log logr.Logger, 
 		r.Metrics.ReconcileSegmentTime.WithLabelValues("getSystem").Observe(time.Since(getSystemStart).Seconds())
 
 		if err != nil {
-			var serr *styra.HTTPError
+			var serr *http_error.HTTPError
 			if errors.As(err, &serr) && serr.StatusCode == http.StatusNotFound {
 				createSystemStart := time.Now()
 				res, err := r.createSystemWithID(ctx, log, system, systemID)
@@ -1467,7 +1497,7 @@ func (r *SystemReconciler) updateSystem(
 	res, err := r.Styra.UpdateSystem(ctx, system.Status.ID, &styra.UpdateSystemRequest{SystemConfig: cfg})
 	if err != nil {
 		errMsg := "Could not update System"
-		var styrahttperr *styra.HTTPError
+		var styrahttperr *http_error.HTTPError
 		if errors.As(err, &styrahttperr) {
 			errMsg = fmt.Sprintf("Could not update Styra system. Error %s", styrahttperr.Error())
 		}

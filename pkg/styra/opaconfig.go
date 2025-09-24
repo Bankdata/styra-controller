@@ -22,6 +22,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/bankdata/styra-controller/pkg/http_error"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
@@ -79,7 +80,7 @@ func (c *Client) GetOPAConfig(ctx context.Context, systemID string) (OPAConfig, 
 			return OPAConfig{}, errors.Wrap(err, "could not read body")
 		}
 
-		err = NewHTTPError(res.StatusCode, string(body))
+		err = http_error.NewHTTPError(res.StatusCode, string(body))
 		return OPAConfig{}, err
 	}
 
