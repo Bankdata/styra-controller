@@ -25,4 +25,8 @@ Dockerfile.cross
 *.swo
 *~
 
+config/samples/*
+config/default/config.yaml
+
+
 /dist

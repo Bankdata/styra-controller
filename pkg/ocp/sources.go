@@ -126,13 +126,13 @@ func (c *Client) GetSource(ctx context.Context, path string) (*GetSourceResponse
 		return nil, errors.Wrap(err, "could not read GetSource body")
 	}
 
+	if res.StatusCode != http.StatusOK {
+		return nil, http_error.NewHTTPError(res.StatusCode, string(body))
+	}
+
 	var sourceConfig SourceConfig
 	if err := json.Unmarshal(body, &sourceConfig); err != nil {
 		return nil, errors.Wrap(err, "could not unmarshal GetSource body")
-	}
-
-	if res.StatusCode != http.StatusOK {
-		return nil, http_error.NewHTTPError(res.StatusCode, string(body))
 	}
 
 	return &GetSourceResponse{

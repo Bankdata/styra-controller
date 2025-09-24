@@ -283,6 +283,7 @@ func (r *SystemReconciler) ocpReconcile(ctx context.Context, log logr.Logger, sy
 
 	bundleName := system.DisplayName(r.Config.SystemPrefix, r.Config.SystemSuffix)
 
+	// TODO: create the correct bucket if S3 is used
 	// future TODO: allow other storage types
 	objectStorage := ocp.ObjectStorage{
 		AmazonS3: &ocp.AmazonS3{
@@ -301,7 +302,7 @@ func (r *SystemReconciler) ocpReconcile(ctx context.Context, log logr.Logger, sy
 		Requirements:  requirements,
 	}
 
-	_, err := r.OCP.PutBundle(ctx, bundle)
+	err := r.OCP.PutBundle(ctx, bundle)
 
 	if err != nil {
 		return ctrl.Result{}, errors.Wrap(err, "ocpReconcile: could not create or update bundle in OCP")
@@ -311,10 +312,7 @@ func (r *SystemReconciler) ocpReconcile(ctx context.Context, log logr.Logger, sy
 }
 
 func (r *SystemReconciler) upsertSystemSource(ctx context.Context, log logr.Logger, system *v1beta1.System) error {
-	var sourceConfig *ocp.SourceConfig
-
 	sourceName := system.DisplayName(r.Config.SystemPrefix, r.Config.SystemSuffix)
-	sourceConfig.Name = sourceName
 
 	gitConfig := &ocp.GitConfig{
 		Repo:          system.Spec.SourceControl.Origin.URL,

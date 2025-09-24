@@ -69,7 +69,7 @@ type ClientInterface interface {
 
 	PutSource(ctx context.Context, id string, request *PutSourceRequest) (*PutSourceResponse, error)
 
-	PutBundle(ctx context.Context, bundle *PutBundleRequest) (*PutBundleResponse, error)
+	PutBundle(ctx context.Context, bundle *PutBundleRequest) error
 	// DeleteDatasource(ctx context.Context, id string) (*DeleteDatasourceResponse, error)
 
 	// GetLibrary(ctx context.Context, id string) (*GetLibraryResponse, error)

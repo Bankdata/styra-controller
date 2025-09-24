@@ -2,7 +2,6 @@ package ocp
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
 	"path"
@@ -78,28 +77,21 @@ type PutBundleResponse struct {
 	Message    string `json:"message"`
 }
 
-func (r *Client) PutBundle(ctx context.Context, bundle *PutBundleRequest) (*PutBundleResponse, error) {
+func (r *Client) PutBundle(ctx context.Context, bundle *PutBundleRequest) error {
 	res, err := r.request(ctx, http.MethodPut, path.Join(endpointV1Bundles, bundle.Name), bundle, nil)
 
 	if err != nil {
-		return nil, err
-	}
-
-	var response *PutBundleResponse
-	if err := json.NewDecoder(res.Body).Decode(response); err != nil && err != io.EOF {
-		return nil, errors.Wrap(err, "PutBundle: could not decode response")
+		return err
 	}
 
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
-
 	if err != nil {
-		return nil, errors.Wrap(err, "PutBundle: could not read body")
+		return errors.Wrap(err, "PutBundle: could not read body")
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return nil, http_error.NewHTTPError(res.StatusCode, string(body))
+		return http_error.NewHTTPError(res.StatusCode, string(body))
 	}
-
-	return response, nil
+	return nil
 }
