@@ -52,12 +52,15 @@ podRestart:
 #        headers:
 #          - "Accept"
 
-defaultObjectStorage:
+objectStorage:
   aws:
     bucket: ocp
     region: eu-west-1
-    credentials: minio
     url: https://minio.example.com # Optional, only needed for non-AWS S3 compatible storage
+    ocpConfigSecretName: minio # Where to find credentials for ocp in the ocp config (e.g. secrets.minio)
+    adminCredentials: # for creating individual user and policy pr. system bundle
+      accessKeyID: key
+      secretAccessKey: secret
 
 defaultRequirements:
   - library1

@@ -112,9 +112,9 @@ type ProjectConfig struct {
 	// specified on the System resource.
 	DefaultRequirements []string `json:"defaultRequirements,omitempty"`
 
-	// DefaultObjectStorage is the default object storage configuration to use for bundles.
+	// ObjectStorage is the object storage configuration to use for bundles.
 	// currently only supports aws
-	DefaultObjectStorage *ObjectStorage `json:"defaultObjectStorage,omitempty"`
+	ObjectStorage *ObjectStorage `json:"objectStorage,omitempty"`
 }
 
 type ObjectStorage struct {
@@ -122,10 +122,16 @@ type ObjectStorage struct {
 }
 
 type AWSObjectStorage struct {
-	Bucket      string `json:"bucket"`
-	Region      string `json:"region"`
-	Credentials string `json:"credentials"`
-	URL         string `json:"url,omitempty"`
+	Bucket              string            `json:"bucket"`
+	Region              string            `json:"region"`
+	URL                 string            `json:"url,omitempty"`
+	OCPConfigSecretName string            `json:"ocpConfigSecretName"`
+	AdminCredentials    *AdminCredentials `json:"adminCredentials"`
+}
+
+type AdminCredentials struct {
+	AccessKeyID     string `json:"accessKeyID"`
+	SecretAccessKey string `json:"secretAccessKey"`
 }
 
 // PodRestartConfig contains configuration for restarting OPA and SLP pods

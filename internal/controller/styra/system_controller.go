@@ -61,6 +61,7 @@ import (
 	"github.com/bankdata/styra-controller/internal/webhook"
 	"github.com/bankdata/styra-controller/pkg/http_error"
 	"github.com/bankdata/styra-controller/pkg/ocp"
+	"github.com/bankdata/styra-controller/pkg/s3"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
@@ -279,25 +280,80 @@ func (r *SystemReconciler) ocpReconcile(ctx context.Context, log logr.Logger, sy
 		requirements = append(requirements, ocp.NewRequirement(datasource.Path))
 	}
 
-	r.upsertSystemSource(ctx, log, system)
+	uniqueName := system.DisplayName(r.Config.SystemPrefix, r.Config.SystemSuffix)
 
-	bundleName := system.DisplayName(r.Config.SystemPrefix, r.Config.SystemSuffix)
+	result, err := r.reconcileSystemSource(ctx, log, system, uniqueName)
+	if err != nil {
+		return result, err
+	}
 
-	// TODO: create the correct bucket if S3 is used
+	result, err = r.reconcileSystemBundle(ctx, log, system, uniqueName, requirements)
+	if err != nil {
+		return result, err
+	}
+
+	result, err = r.reconcileSystemBundleToken(ctx, log, system, uniqueName)
+	if err != nil {
+		return result, err
+	}
+
+	//TODO create a test mode flag to skip below (config map etc), so controller only creates bundle and source in OCP, but does not manage the k8s resources
+
+	log.Info("OCP reconciliation completed")
+	return ctrl.Result{}, nil
+}
+
+func (r *SystemReconciler) reconcileSystemBundleToken(ctx context.Context, log logr.Logger, system *v1beta1.System, uniqueName string) (ctrl.Result, error) {
+	client, err := s3.NewS3Client(*r.Config.ObjectStorage.AWS)
+	if err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "reconcileSystemBundleToken: could not create S3 client")
+	}
+
+	userExist, err := client.ExistsUser(ctx, uniqueName)
+	if err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "reconcileSystemBundleToken: could not create S3 client")
+	}
+	if userExist {
+		//TODO can we test if the credentials are correct?
+		log.Info("userExists", "user", uniqueName)
+	}
+	if !userExist {
+		log.Info("userDoesNotExist, creating user", "user", uniqueName)
+		// create read only user for this bundle
+		accessKey := fmt.Sprintf("%s-access-key", uniqueName)
+		secretKey := fmt.Sprintf("%s-secret-key", uniqueName) //TODO we need a better secret
+
+		err = client.CreateSystemBundleUser(ctx, accessKey, secretKey, r.Config.ObjectStorage.AWS.Bucket, uniqueName)
+		if err != nil {
+			return ctrl.Result{}, errors.Wrap(err, "reconcileSystemBundleToken: could not create read only user")
+		}
+		log.Info("token created for system bundle", "user", accessKey)
+
+		//TODO handle secret - save to k8s secret
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *SystemReconciler) reconcileSystemBundle(ctx context.Context, log logr.Logger, system *v1beta1.System, uniqueName string, requirements []ocp.Requirement) (ctrl.Result, error) {
+	if r.Config.ObjectStorage == nil || r.Config.ObjectStorage.AWS == nil {
+		return ctrl.Result{}, errors.New("reconcileSystemBundle: no object storage configured")
+	}
+
 	// future TODO: allow other storage types
 	objectStorage := ocp.ObjectStorage{
 		AmazonS3: &ocp.AmazonS3{
-			Bucket:      r.Config.DefaultObjectStorage.AWS.Bucket,
-			Key:         fmt.Sprintf("bundles/%s/bundle.tar.gz", bundleName),
-			Region:      r.Config.DefaultObjectStorage.AWS.Region,
-			URL:         r.Config.DefaultObjectStorage.AWS.URL,
-			Credentials: r.Config.DefaultObjectStorage.AWS.Credentials,
+			Bucket:      r.Config.ObjectStorage.AWS.Bucket,
+			Key:         fmt.Sprintf("bundles/%s/bundle.tar.gz", uniqueName),
+			Region:      r.Config.ObjectStorage.AWS.Region,
+			URL:         r.Config.ObjectStorage.AWS.URL,
+			Credentials: r.Config.ObjectStorage.AWS.OCPConfigSecretName,
 		},
 	}
 
 	bundle := &ocp.PutBundleRequest{
 		// future TODO: do we want to consider the labels and ignoredfiles?
-		Name:          bundleName,
+		Name:          uniqueName,
 		ObjectStorage: objectStorage,
 		Requirements:  requirements,
 	}
@@ -307,13 +363,10 @@ func (r *SystemReconciler) ocpReconcile(ctx context.Context, log logr.Logger, sy
 	if err != nil {
 		return ctrl.Result{}, errors.Wrap(err, "ocpReconcile: could not create or update bundle in OCP")
 	}
-	log.Info("OCP reconciliation completed")
 	return ctrl.Result{}, nil
 }
 
-func (r *SystemReconciler) upsertSystemSource(ctx context.Context, log logr.Logger, system *v1beta1.System) error {
-	sourceName := system.DisplayName(r.Config.SystemPrefix, r.Config.SystemSuffix)
-
+func (r *SystemReconciler) reconcileSystemSource(ctx context.Context, log logr.Logger, system *v1beta1.System, uniqueName string) (ctrl.Result, error) {
 	gitConfig := &ocp.GitConfig{
 		Repo:          system.Spec.SourceControl.Origin.URL,
 		Reference:     &system.Spec.SourceControl.Origin.Reference,
@@ -322,15 +375,15 @@ func (r *SystemReconciler) upsertSystemSource(ctx context.Context, log logr.Logg
 		IncludedFiles: []string{"*.rego"},
 	}
 
-	_, err := r.OCP.PutSource(ctx, sourceName, &ocp.PutSourceRequest{
-		Name: sourceName,
+	_, err := r.OCP.PutSource(ctx, uniqueName, &ocp.PutSourceRequest{
+		Name: uniqueName,
 		Git:  gitConfig,
 	})
 	if err != nil {
-		return errors.Wrap(err, "createSystemSource: could not create or update source in OCP")
+		return ctrl.Result{}, errors.Wrap(err, "createSystemSource: could not create or update source in OCP")
 	}
-	log.Info("OCP source upserted", "source", sourceName)
-	return nil
+	log.Info("OCP source upserted", "source", uniqueName)
+	return ctrl.Result{}, nil
 }
 
 func (r *SystemReconciler) createSourceIfNotExists(ctx context.Context, log logr.Logger, source v1beta1.Datasource) error {

@@ -25,8 +25,8 @@ Dockerfile.cross
 *.swo
 *~
 
-config/samples/*
-config/default/config.yaml
-
+# Local configuration files
+config/default/config_local.yaml
+config/samples/styra_v1beta1_system_local.yaml
 
 /dist
