@@ -27,6 +27,7 @@ import (
 	"github.com/bankdata/styra-controller/internal/predicate"
 	"github.com/bankdata/styra-controller/internal/sentry"
 	"github.com/bankdata/styra-controller/internal/webhook"
+	"github.com/bankdata/styra-controller/pkg/http_error"
 	"github.com/bankdata/styra-controller/pkg/styra"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -100,7 +101,7 @@ func (r *LibraryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	update := false
 	libResp, err := r.Styra.GetLibrary(ctx, k8sLib.Spec.Name)
 	if err != nil {
-		var httpErr *styra.HTTPError
+		var httpErr *http_error.HTTPError
 		if errors.As(err, &httpErr) {
 			if httpErr.StatusCode == http.StatusNotFound {
 				update = true

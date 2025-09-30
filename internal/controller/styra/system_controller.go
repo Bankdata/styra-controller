@@ -59,6 +59,9 @@ import (
 	"github.com/bankdata/styra-controller/internal/predicate"
 	"github.com/bankdata/styra-controller/internal/sentry"
 	"github.com/bankdata/styra-controller/internal/webhook"
+	"github.com/bankdata/styra-controller/pkg/http_error"
+	"github.com/bankdata/styra-controller/pkg/ocp"
+	"github.com/bankdata/styra-controller/pkg/s3"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
@@ -75,6 +78,7 @@ type SystemReconciler struct {
 	APIReader     client.Reader
 	Scheme        *runtime.Scheme
 	Styra         styra.ClientInterface
+	OCP           ocp.ClientInterface
 	WebhookClient webhook.Client
 	Recorder      record.EventRecorder
 	Metrics       *SystemReconcilerMetrics
@@ -109,6 +113,7 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	log = log.WithValues("systemID", system.Status.ID)
+	log = log.WithValues("controlPlane", system.Labels["styra-controller/control-plane"])
 
 	if !labels.ControllerClassMatches(&system, r.Config.ControllerClass) {
 		log.Info("This is not a System we are managing. Skipping reconciliation.")
@@ -255,6 +260,169 @@ func (r *SystemReconciler) reconcile(
 		}
 	}
 
+	if r.Config.Styra.Address == "" || system.Labels[labels.LabelControlPlane] == "opa-control-plane" {
+		return r.ocpReconcile(ctx, log, system)
+	} else {
+		// This is only relevant for transition period when not wanting to do a big bang
+		return r.styraReconcile(ctx, log, system)
+	}
+}
+
+func (r *SystemReconciler) ocpReconcile(ctx context.Context, log logr.Logger, system *v1beta1.System) (ctrl.Result, error) {
+	// loop through system.spec.datasources, and make sure they exist
+	requirements := ocp.ToRequirements(r.Config.DefaultRequirements)
+
+	for _, datasource := range system.Spec.Datasources {
+		err := r.createSourceIfNotExists(ctx, log, datasource)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		requirements = append(requirements, ocp.NewRequirement(datasource.Path))
+	}
+
+	uniqueName := system.DisplayName(r.Config.SystemPrefix, r.Config.SystemSuffix)
+
+	result, err := r.reconcileSystemSource(ctx, log, system, uniqueName)
+	if err != nil {
+		return result, err
+	}
+
+	result, err = r.reconcileSystemBundle(ctx, log, system, uniqueName, requirements)
+	if err != nil {
+		return result, err
+	}
+
+	result, err = r.reconcileSystemBundleToken(ctx, log, system, uniqueName)
+	if err != nil {
+		return result, err
+	}
+
+	//TODO create a test mode flag to skip below (config map etc), so controller only creates bundle and source in OCP, but does not manage the k8s resources
+
+	log.Info("OCP reconciliation completed")
+	return ctrl.Result{}, nil
+}
+
+func (r *SystemReconciler) reconcileSystemBundleToken(ctx context.Context, log logr.Logger, system *v1beta1.System, uniqueName string) (ctrl.Result, error) {
+	client, err := s3.NewS3Client(*r.Config.ObjectStorage.AWS)
+	if err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "reconcileSystemBundleToken: could not create S3 client")
+	}
+
+	userExist, err := client.ExistsUser(ctx, uniqueName)
+	if err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "reconcileSystemBundleToken: could not create S3 client")
+	}
+	if userExist {
+		//TODO can we test if the credentials are correct?
+		log.Info("userExists", "user", uniqueName)
+	}
+	if !userExist {
+		log.Info("userDoesNotExist, creating user", "user", uniqueName)
+		// create read only user for this bundle
+		accessKey := fmt.Sprintf("%s-access-key", uniqueName)
+		secretKey := fmt.Sprintf("%s-secret-key", uniqueName) //TODO we need a better secret
+
+		err = client.CreateSystemBundleUser(ctx, accessKey, secretKey, r.Config.ObjectStorage.AWS.Bucket, uniqueName)
+		if err != nil {
+			return ctrl.Result{}, errors.Wrap(err, "reconcileSystemBundleToken: could not create read only user")
+		}
+		log.Info("token created for system bundle", "user", accessKey)
+
+		//TODO handle secret - save to k8s secret
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *SystemReconciler) reconcileSystemBundle(ctx context.Context, log logr.Logger, system *v1beta1.System, uniqueName string, requirements []ocp.Requirement) (ctrl.Result, error) {
+	if r.Config.ObjectStorage == nil || r.Config.ObjectStorage.AWS == nil {
+		return ctrl.Result{}, errors.New("reconcileSystemBundle: no object storage configured")
+	}
+
+	// future TODO: allow other storage types
+	objectStorage := ocp.ObjectStorage{
+		AmazonS3: &ocp.AmazonS3{
+			Bucket:      r.Config.ObjectStorage.AWS.Bucket,
+			Key:         fmt.Sprintf("bundles/%s/bundle.tar.gz", uniqueName),
+			Region:      r.Config.ObjectStorage.AWS.Region,
+			URL:         r.Config.ObjectStorage.AWS.URL,
+			Credentials: r.Config.ObjectStorage.AWS.OCPConfigSecretName,
+		},
+	}
+
+	bundle := &ocp.PutBundleRequest{
+		// future TODO: do we want to consider the labels and ignoredfiles?
+		Name:          uniqueName,
+		ObjectStorage: objectStorage,
+		Requirements:  requirements,
+	}
+
+	err := r.OCP.PutBundle(ctx, bundle)
+
+	if err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "ocpReconcile: could not create or update bundle in OCP")
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *SystemReconciler) reconcileSystemSource(ctx context.Context, log logr.Logger, system *v1beta1.System, uniqueName string) (ctrl.Result, error) {
+	gitConfig := &ocp.GitConfig{
+		Repo:          system.Spec.SourceControl.Origin.URL,
+		Reference:     &system.Spec.SourceControl.Origin.Reference,
+		Path:          &system.Spec.SourceControl.Origin.Path,
+		CredentialID:  r.Config.OpaControlPlaneGitCredentialID,
+		IncludedFiles: []string{"*.rego"},
+	}
+
+	_, err := r.OCP.PutSource(ctx, uniqueName, &ocp.PutSourceRequest{
+		Name: uniqueName,
+		Git:  gitConfig,
+	})
+	if err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "createSystemSource: could not create or update source in OCP")
+	}
+	log.Info("OCP source upserted", "source", uniqueName)
+	return ctrl.Result{}, nil
+}
+
+func (r *SystemReconciler) createSourceIfNotExists(ctx context.Context, log logr.Logger, source v1beta1.Datasource) error {
+	_, err := r.OCP.GetSource(ctx, source.Path)
+
+	if err == nil {
+		log.Info("Source already exists", "source", source.Path)
+		return nil
+	}
+
+	var httpErr *http_error.HTTPError
+	if errors.As(err, &httpErr) {
+		if httpErr.StatusCode != http.StatusNotFound {
+			return errors.Wrap(err, "GetSource in createSourceIfNotExists failed")
+		}
+	} else {
+		return errors.Wrap(err, "GetSource in createSourceIfNotExists failed")
+	}
+
+	log.Info("Creating source", "source", source.Path)
+	_, err = r.OCP.PutSource(ctx, source.Path, &ocp.PutSourceRequest{
+		Name: source.Path,
+		// TODO: rename path to name?
+		// TODO: add other fields to v1beta1.Datasource
+		// Directory:    datasource.Directory,
+		// Paths:        datasource.Paths,
+		// Requirements: datasource.Requirements,
+	})
+
+	if err != nil {
+		return errors.Wrap(err, "PutSource in createSourceIfNotExists failed")
+	}
+	log.Info("Source created", "source", source.Path)
+
+	// TODO: call 'datasource created' webhook
+	return nil
+}
+
+func (r *SystemReconciler) styraReconcile(ctx context.Context, log logr.Logger, system *v1beta1.System) (ctrl.Result, error) {
 	var (
 		cfg *styra.SystemConfig
 		err error
@@ -281,7 +449,7 @@ func (r *SystemReconciler) reconcile(
 		r.Metrics.ReconcileSegmentTime.WithLabelValues("getSystem").Observe(time.Since(getSystemStart).Seconds())
 
 		if err != nil {
-			var serr *styra.HTTPError
+			var serr *http_error.HTTPError
 			if errors.As(err, &serr) && serr.StatusCode == http.StatusNotFound {
 				createSystemStart := time.Now()
 				res, err := r.createSystemWithID(ctx, log, system, systemID)
@@ -1380,7 +1548,7 @@ func (r *SystemReconciler) updateSystem(
 	res, err := r.Styra.UpdateSystem(ctx, system.Status.ID, &styra.UpdateSystemRequest{SystemConfig: cfg})
 	if err != nil {
 		errMsg := "Could not update System"
-		var styrahttperr *styra.HTTPError
+		var styrahttperr *http_error.HTTPError
 		if errors.As(err, &styrahttperr) {
 			errMsg = fmt.Sprintf("Could not update Styra system. Error %s", styrahttperr.Error())
 		}

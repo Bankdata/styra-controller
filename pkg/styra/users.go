@@ -23,6 +23,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/bankdata/styra-controller/pkg/http_error"
 	"github.com/pkg/errors"
 )
 
@@ -101,7 +102,7 @@ func (c *Client) GetUserEndpoint(ctx context.Context, endpoint string) (*GetUser
 	}
 
 	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusNotFound {
-		err := NewHTTPError(res.StatusCode, string(body))
+		err := http_error.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 

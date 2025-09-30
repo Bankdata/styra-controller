@@ -7,6 +7,7 @@ metadata:
     app.kubernetes.io/part-of: styra-controller
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: styra-controller
+    styra-controller/control-plane: opa-control-plane
   name: system-sample
 spec:
   decisionMappings:
