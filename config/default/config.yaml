@@ -23,8 +23,12 @@ styra:
 #  tokenSecretPath: /etc/styra-controller-token/styra_token
 
 opaControlPlane:
-  address: https://opa-control-plane-url.example.com
-  token: admin-change-me
+  address: https://ocp-host/ocp
+  token: ocp-token
+  gitCredentials:
+    - id: git-credential-id
+      repoPrefix: https://github.com
+
 #systemPrefix:
 #systemSuffix:
 systemUserRoles:
@@ -55,12 +59,12 @@ podRestart:
 objectStorage:
   aws:
     bucket: ocp
-    region: eu-west-1
-    url: https://minio.example.com # Optional, only needed for non-AWS S3 compatible storage
-    ocpConfigSecretName: minio # Where to find credentials for ocp in the ocp config (e.g. secrets.minio)
-    adminCredentials: # for creating individual user and policy pr. system bundle
-      accessKeyID: key
-      secretAccessKey: secret
+    region: us-east-1
+    url: https://minio-host
+    ocpConfigSecretName: minio # Name of secret in ocp config
+    adminCredentials:
+      accessKeyID: minio-access-key # used by controller to create users and policys
+      secretAccessKey: minio-secret-key
 
 defaultRequirements:
   - library1

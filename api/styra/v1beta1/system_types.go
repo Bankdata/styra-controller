@@ -18,6 +18,7 @@ package v1beta1
 
 import (
 	"path"
+	"strings"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -564,6 +565,11 @@ func (s *System) setCondition(timeNow func() time.Time, conditionType ConditionT
 // DisplayName returns the System's name with a prefix and suffix.
 func (s *System) DisplayName(prefix, suffix string) string {
 	return path.Join(prefix, s.Namespace, s.Name, suffix)
+}
+
+// OcpUniqueName returns the System's name with a prefix and suffix.
+func (s *System) OcpUniqueName(prefix, suffix string) string {
+	return strings.ReplaceAll(path.Join(prefix, s.Namespace, s.Name, suffix), "/", "-")
 }
 
 // GitSecretID returns the Styra internal ID of the Git Secret used by the

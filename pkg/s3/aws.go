@@ -98,22 +98,37 @@ func (c *awsS3Client) CreateSystemBundleUser(ctx context.Context, accessKey, sec
 	}
 
 	// Create a read-only policy for the specific bucket
-	policyName := fmt.Sprintf("readonly-%s", bucketName)
+	policyName := fmt.Sprintf("readonly-%s-%s", bucketName, uniqueName)
 	policyDocument := fmt.Sprintf(`{
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-                "Effect": "Allow",
-                "Action": [
-                    "s3:GetObject",
-                    "s3:ListBucket"
-                ],
-                "Resource": [
-                    "arn:aws:s3:::%s/bundles/%s/*"
-                ]
-            }
-        ]
-    }`, bucketName, uniqueName)
+	    "Version": "2012-10-17",
+	    "Statement": [
+	        {
+	            "Effect": "Allow",
+	            "Action": [
+	                "s3:GetObject"
+	            ],
+	            "Resource": [
+	                "arn:aws:s3:::%s/bundles/%s/*"
+	            ]
+	        },
+	        {
+	            "Effect": "Allow",
+	            "Action": [
+	                "s3:ListBucket"
+	            ],
+	            "Resource": [
+	                "arn:aws:s3:::%s"
+	            ],
+	            "Condition": {
+	                "StringLike": {
+	                    "s3:prefix": [
+	                        "bundles/%s/*"
+	                    ]
+	                }
+	            }
+	        }
+	    ]
+	}`, bucketName, uniqueName, bucketName, uniqueName)
 
 	// Add the policy
 	err = adminClient.AddCannedPolicy(ctx, policyName, []byte(policyDocument))

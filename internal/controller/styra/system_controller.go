@@ -264,12 +264,22 @@ func (r *SystemReconciler) reconcile(
 		return r.ocpReconcile(ctx, log, system)
 	} else {
 		// This is only relevant for transition period when not wanting to do a big bang
-		return r.styraReconcile(ctx, log, system)
+
+		//TODO add again when styra-controller supports both DAS and OCP
+		//return r.styraReconcile(ctx, log, system)
+		return ctrl.Result{}, errors.New("Styra DAS is not supported in this version of styra-controller")
 	}
 }
 
 func (r *SystemReconciler) ocpReconcile(ctx context.Context, log logr.Logger, system *v1beta1.System) (ctrl.Result, error) {
-	// loop through system.spec.datasources, and make sure they exist
+
+	//TODO move to controller startup
+	for _, defaultRequirement := range r.Config.DefaultRequirements {
+		err := r.createSourceIfNotExists(ctx, log, v1beta1.Datasource{Path: defaultRequirement})
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
 	requirements := ocp.ToRequirements(r.Config.DefaultRequirements)
 
 	for _, datasource := range system.Spec.Datasources {
@@ -280,14 +290,15 @@ func (r *SystemReconciler) ocpReconcile(ctx context.Context, log logr.Logger, sy
 		requirements = append(requirements, ocp.NewRequirement(datasource.Path))
 	}
 
-	uniqueName := system.DisplayName(r.Config.SystemPrefix, r.Config.SystemSuffix)
+	uniqueName := system.OcpUniqueName(r.Config.SystemPrefix, r.Config.SystemSuffix)
 
 	result, err := r.reconcileSystemSource(ctx, log, system, uniqueName)
 	if err != nil {
 		return result, err
 	}
+	requirements = append(requirements, ocp.NewRequirement(uniqueName))
 
-	result, err = r.reconcileSystemBundle(ctx, log, system, uniqueName, requirements)
+	result, err = r.reconcileSystemBundle(ctx, log, uniqueName, requirements)
 	if err != nil {
 		return result, err
 	}
@@ -305,29 +316,33 @@ func (r *SystemReconciler) ocpReconcile(ctx context.Context, log logr.Logger, sy
 
 func (r *SystemReconciler) reconcileSystemBundleToken(ctx context.Context, log logr.Logger, system *v1beta1.System, uniqueName string) (ctrl.Result, error) {
 	client, err := s3.NewS3Client(*r.Config.ObjectStorage.AWS)
+
 	if err != nil {
 		return ctrl.Result{}, errors.Wrap(err, "reconcileSystemBundleToken: could not create S3 client")
 	}
 
-	userExist, err := client.ExistsUser(ctx, uniqueName)
+	accessKey := fmt.Sprintf("%s-access-key", uniqueName)
+	userExist, err := client.ExistsUser(ctx, accessKey)
 	if err != nil {
 		return ctrl.Result{}, errors.Wrap(err, "reconcileSystemBundleToken: could not create S3 client")
 	}
 	if userExist {
-		//TODO can we test if the credentials are correct?
-		log.Info("userExists", "user", uniqueName)
+		//TODO test if secret contains in system namespace? If missing we must roll the secret.
+
+		log.Info("userExists", "accessKey", accessKey)
 	}
 	if !userExist {
-		log.Info("userDoesNotExist, creating user", "user", uniqueName)
+		log.Info("userDoesNotExist, creating user", "accessKey", accessKey)
 		// create read only user for this bundle
-		accessKey := fmt.Sprintf("%s-access-key", uniqueName)
+
 		secretKey := fmt.Sprintf("%s-secret-key", uniqueName) //TODO we need a better secret
 
 		err = client.CreateSystemBundleUser(ctx, accessKey, secretKey, r.Config.ObjectStorage.AWS.Bucket, uniqueName)
 		if err != nil {
+			log.Error(err, "failed to create system bundle user", "accessKey", accessKey)
 			return ctrl.Result{}, errors.Wrap(err, "reconcileSystemBundleToken: could not create read only user")
 		}
-		log.Info("token created for system bundle", "user", accessKey)
+		log.Info("token created for system bundle", "user/accessKey", accessKey)
 
 		//TODO handle secret - save to k8s secret
 	}
@@ -335,7 +350,7 @@ func (r *SystemReconciler) reconcileSystemBundleToken(ctx context.Context, log l
 	return ctrl.Result{}, nil
 }
 
-func (r *SystemReconciler) reconcileSystemBundle(ctx context.Context, log logr.Logger, system *v1beta1.System, uniqueName string, requirements []ocp.Requirement) (ctrl.Result, error) {
+func (r *SystemReconciler) reconcileSystemBundle(ctx context.Context, log logr.Logger, uniqueName string, requirements []ocp.Requirement) (ctrl.Result, error) {
 	if r.Config.ObjectStorage == nil || r.Config.ObjectStorage.AWS == nil {
 		return ctrl.Result{}, errors.New("reconcileSystemBundle: no object storage configured")
 	}
@@ -369,10 +384,24 @@ func (r *SystemReconciler) reconcileSystemBundle(ctx context.Context, log logr.L
 func (r *SystemReconciler) reconcileSystemSource(ctx context.Context, log logr.Logger, system *v1beta1.System, uniqueName string) (ctrl.Result, error) {
 	gitConfig := &ocp.GitConfig{
 		Repo:          system.Spec.SourceControl.Origin.URL,
-		Reference:     &system.Spec.SourceControl.Origin.Reference,
-		Path:          &system.Spec.SourceControl.Origin.Path,
-		CredentialID:  r.Config.OpaControlPlaneGitCredentialID,
 		IncludedFiles: []string{"*.rego"},
+	}
+	if system.Spec.SourceControl.Origin.Commit != "" {
+		gitConfig.Commit = &system.Spec.SourceControl.Origin.Commit
+	}
+	if system.Spec.SourceControl.Origin.Reference != "" {
+		gitConfig.Reference = &system.Spec.SourceControl.Origin.Reference
+	}
+	if system.Spec.SourceControl.Origin.Path != "" {
+		gitConfig.Path = &system.Spec.SourceControl.Origin.Path
+	}
+
+	//range on r.Config.OpaControlPlaneConfig.GitCredentials
+	for _, cred := range r.Config.OpaControlPlaneConfig.GitCredentials {
+		if strings.Contains(system.Spec.SourceControl.Origin.URL, cred.RepoPrefix) {
+			gitConfig.CredentialID = cred.ID
+			break
+		}
 	}
 
 	_, err := r.OCP.PutSource(ctx, uniqueName, &ocp.PutSourceRequest{
