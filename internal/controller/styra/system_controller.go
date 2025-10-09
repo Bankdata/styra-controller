@@ -538,17 +538,6 @@ func (r *SystemReconciler) reconcilek8sOPASecret(
 	SecretKeyNameSecretKey string,
 	SecretKeyNameRegion string,
 ) (ctrl.Result, bool, error) {
-	// JACOB
-	if s3Credentials.AccessKeyID == "" ||
-		s3Credentials.SecretAccessKey == "" ||
-		s3Credentials.Region == "" ||
-		secretName == "" {
-		return ctrl.Result{}, false, ctrlerr.New(
-			"Cannot create secret without an AccessKeyID, SecretAccessKey, Region, and SecretName").
-			//TODO check all events
-			WithEvent(v1beta1.EventErrorOPATokenSecretNoToken).
-			WithSystemCondition(v1beta1.ConditionTypeOPATokenUpdated)
-	}
 
 	var s corev1.Secret
 	nsName := types.NamespacedName{Name: secretName, Namespace: system.Namespace}
