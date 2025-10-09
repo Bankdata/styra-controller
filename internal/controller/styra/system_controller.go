@@ -357,6 +357,18 @@ func (r *SystemReconciler) ocpReconcile(ctx context.Context, log logr.Logger, sy
 	}
 	system.SetCondition(v1beta1.ConditionTypeOPAConfigMapUpdated, metav1.ConditionTrue)
 
+	system.Status.Ready = true
+	system.Status.Phase = v1beta1.SystemPhaseCreated
+	system.Status.FailureMessage = ""
+
+	if system.GetCondition(v1beta1.ConditionTypeOPAUpToDate) != nil &&
+		*system.GetCondition(v1beta1.ConditionTypeOPAUpToDate) == metav1.ConditionFalse {
+		if r.Config.OPARestartEnabled() {
+			log.Error(errors.New("Restarting OPA is not implemented yet"), "Error restarting OPA")
+		}
+		system.SetCondition(v1beta1.ConditionTypeOPAUpToDate, metav1.ConditionTrue)
+	}
+
 	updateStatusStart := time.Now()
 	err = r.Status().Update(ctx, system)
 	r.Metrics.ReconcileSegmentTime.WithLabelValues("updateStatusOcp").Observe(time.Since(updateStatusStart).Seconds())
