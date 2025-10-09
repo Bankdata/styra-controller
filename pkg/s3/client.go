@@ -22,5 +22,5 @@ func NewS3Client(awsObjectStorage configv2alpha2.AWSObjectStorage) (S3Client, er
 		config.UseSSL = false
 	}
 
-	return NewAWSS3Client(config)
+	return NewMinioClient(config)
 }

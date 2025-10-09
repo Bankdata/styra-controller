@@ -5,7 +5,7 @@ import (
 )
 
 type S3Client interface {
-	ExistsUser(ctx context.Context, accessKey string) (bool, error)
+	UserExists(ctx context.Context, accessKey string) (bool, error)
 	CreateSystemBundleUser(ctx context.Context, accessKey, bucketName string, uniqueName string) (string, error)
 	SetNewUserSecretKey(ctx context.Context, accessKey string) (string, error)
 }

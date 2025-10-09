@@ -61,7 +61,7 @@ type GetSourceResponse struct {
 	Message    string
 }
 
-// SourceConfig represents the configuration of a bundle in the OCP APIs.
+// SourceConfig represents the configuration of a source in the OCP APIs.
 type SourceConfig struct {
 	Name          string            `json:"name,omitempty" yaml:"name,omitempty"`
 	Builtin       *string           `json:"builtin,omitempty" yaml:"builtin,omitempty"`

@@ -301,15 +301,19 @@ func (r *SystemReconciler) ocpReconcile(ctx context.Context, log logr.Logger, sy
 	}
 	system.SetCondition(v1beta1.ConditionTypeRequirementsUpdated, metav1.ConditionTrue)
 
+	reconcileSystemSourceStart := time.Now()
 	uniqueName := system.OCPUniqueName(r.Config.SystemPrefix, r.Config.SystemSuffix)
 	result, err := r.reconcileSystemSource(ctx, log, system, uniqueName)
+	r.Metrics.ReconcileSegmentTime.WithLabelValues("reconcileSystemSourceOcp").Observe(time.Since(reconcileSystemSourceStart).Seconds())
 	if err != nil {
 		return result, err
 	}
 	requirements = append(requirements, ocp.NewRequirement(uniqueName))
 	system.SetCondition(v1beta1.ConditionTypeSystemSourceUpdated, metav1.ConditionTrue)
 
+	reconcileSystemBundleStart := time.Now()
 	result, err = r.reconcileSystemBundle(ctx, uniqueName, requirements)
+	r.Metrics.ReconcileSegmentTime.WithLabelValues("reconcileSystemBundleOcp").Observe(time.Since(reconcileSystemBundleStart).Seconds())
 	if err != nil {
 		return result, err
 	}
@@ -321,18 +325,15 @@ func (r *SystemReconciler) ocpReconcile(ctx context.Context, log logr.Logger, sy
 		return ctrl.Result{}, nil
 	}
 
-	reconcileOPASecretStart := time.Now()
-	result, updatedToken, err := r.reconcileOPASecret(ctx, log, system, uniqueName)
-	r.Metrics.ReconcileSegmentTime.WithLabelValues("reconcileOPASecretOcp").
-		Observe(time.Since(reconcileOPASecretStart).Seconds())
+	result, secretUpdated, err := r.reconcileOPASecret(ctx, log, system, uniqueName)
 	if err != nil {
 		return result, err
 	}
-	if updatedToken {
+	if secretUpdated {
 		system.SetCondition(v1beta1.ConditionTypeOPAUpToDate, metav1.ConditionFalse)
 		err = r.Status().Update(ctx, system)
 		if err != nil {
-			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not update system to reflect that Styra token in pods is outdated").
+			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not update system to reflect that secret is outdated").
 				WithEvent(v1beta1.EventErrorUpdateStatus).
 				WithSystemCondition(v1beta1.ConditionTypeOPAUpToDate)
 		}
@@ -344,13 +345,11 @@ func (r *SystemReconciler) ocpReconcile(ctx context.Context, log logr.Logger, sy
 	if err != nil {
 		return result, err
 	}
-
 	if updatedOPAConfigMap {
 		system.SetCondition(v1beta1.ConditionTypeOPAUpToDate, metav1.ConditionFalse)
-
 		err = r.Status().Update(ctx, system)
 		if err != nil {
-			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not update system to reflect that s3 token in pods is outdated").
+			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not update system to reflect that configmap is outdated").
 				WithEvent(v1beta1.EventErrorUpdateStatus).
 				WithSystemCondition(v1beta1.ConditionTypeOPAUpToDate)
 		}
@@ -470,16 +469,22 @@ func (r *SystemReconciler) reconcileOPASecret(
 ) (ctrl.Result, bool, error) {
 	log.Info("Reconciling OPA secret")
 	secretName := fmt.Sprintf("%s-opa-secret", system.Name)
+
+	reconcileS3CredentialsStart := time.Now()
 	s3CredentialsRead, result, err := r.reconcileS3Credentials(ctx, log, system, uniqueName, *r.Config.ObjectStorage.AWS, secretName, s3.AWSSecretNameKeyID, s3.AWSSecretNameSecretKey)
+	r.Metrics.ReconcileSegmentTime.WithLabelValues("reconcileS3CredentialsOcp").Observe(time.Since(reconcileS3CredentialsStart).Seconds())
 	if err != nil {
 		return result, false, err
 	}
-	result, _, err = r.reconcilek8sOPATokenForS3(ctx, log, system, s3CredentialsRead, secretName, s3.AWSSecretNameKeyID, s3.AWSSecretNameSecretKey, s3.AWSSecretNameRegion)
+
+	reconcilek8sOPASecret := time.Now()
+	result, secretUpdated, err := r.reconcilek8sOPASecret(ctx, log, system, s3CredentialsRead, secretName, s3.AWSSecretNameKeyID, s3.AWSSecretNameSecretKey, s3.AWSSecretNameRegion)
+	r.Metrics.ReconcileSegmentTime.WithLabelValues("reconcilek8sOPASecretOcp").Observe(time.Since(reconcilek8sOPASecret).Seconds())
 	if err != nil {
 		return result, false, err
 	}
 	log.Info("Reconciled OPA secret")
-	return ctrl.Result{}, true, nil
+	return ctrl.Result{}, secretUpdated, nil
 }
 
 func (r *SystemReconciler) getk8sOPASecret(ctx context.Context, system *v1beta1.System, secretName string) (corev1.Secret, error) {
@@ -493,7 +498,7 @@ func (r *SystemReconciler) getk8sOPASecret(ctx context.Context, system *v1beta1.
 	return secret, err
 }
 
-func (r *SystemReconciler) reconcilek8sOPATokenForS3(
+func (r *SystemReconciler) reconcilek8sOPASecret(
 	ctx context.Context,
 	log logr.Logger,
 	system *v1beta1.System,
@@ -594,7 +599,7 @@ func (r *SystemReconciler) reconcileS3Credentials(
 		return s3Credentials, ctrl.Result{}, errors.Wrap(err, "reconcileS3Credentials: could not create S3 client")
 	}
 
-	userExist, err := client.ExistsUser(ctx, s3Credentials.AccessKeyID)
+	userExist, err := client.UserExists(ctx, s3Credentials.AccessKeyID)
 	if err != nil {
 		return s3Credentials, ctrl.Result{}, errors.Wrap(err, "reconcileS3Credentials: could not call S3 ")
 	}
