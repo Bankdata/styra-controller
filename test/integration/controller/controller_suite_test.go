@@ -133,6 +133,7 @@ var _ = ginkgo.BeforeSuite(func() {
 			DatasourceIgnorePatterns:  []string{"^.*/ignore$"},
 			ReadOnly:                  true,
 			EnableDeltaBundlesDefault: ptr.Bool(false),
+			EnableStyraReconciliation: true,
 		},
 
 		Metrics: &styractrls.SystemReconcilerMetrics{
@@ -173,6 +174,7 @@ var _ = ginkgo.BeforeSuite(func() {
 			GitCredentials: []*configv2alpha2.GitCredential{
 				{User: "test-user", Password: "test-secret"},
 			},
+			EnableStyraReconciliation: true,
 		},
 		Client:        k8sClient,
 		Styra:         styraClientMock,
@@ -224,6 +226,7 @@ var _ = ginkgo.BeforeSuite(func() {
 					DeploymentType: "statefulset",
 				},
 			},
+			EnableStyraReconciliation: true,
 		},
 		Metrics: &styractrls.SystemReconcilerMetrics{
 			ControllerSystemStatusReady: prometheus.NewGaugeVec(

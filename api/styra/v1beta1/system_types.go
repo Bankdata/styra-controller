@@ -335,20 +335,20 @@ const (
 	// the configuration of the System are updated in Styra.
 	ConditionTypeSystemConfigUpdated ConditionType = "SystemConfigUpdated"
 
-	// ConditionTypeDatasourcesUpdated is a ConditionType used when
-	// the datasources of the System are updated in Styra.
+	// ConditionTypeRequirementsUpdated is a ConditionType used when
+	// the requirements of for the System's bundle is updated in OCP.
 	ConditionTypeRequirementsUpdated ConditionType = "RequirementsUpdated"
 
-	// ConditionTypeDatasourcesUpdated is a ConditionType used when
+	// ConditionTypeSystemSourceUpdated is a ConditionType used when
 	// the datasources of the System are updated in Styra.
 	ConditionTypeSystemSourceUpdated ConditionType = "SystemSourceUpdated"
 
-	// ConditionTypeDatasourcesUpdated is a ConditionType used when
-	// the datasources of the System are updated in Styra.
+	// ConditionTypeSystemBundleUpdated is a ConditionType used when
+	// the bundle for the System is updated in OCP.
 	ConditionTypeSystemBundleUpdated ConditionType = "SystemBundleUpdated"
 
-	// ConditionTypeDatasourcesUpdated is a ConditionType used when
-	// the datasources of the System are updated in Styra.
+	// ConditionTypeOPASecretUpdated is a ConditionType used when
+	// the OPA secret for the System is updated in the cluster.
 	ConditionTypeOPASecretUpdated ConditionType = "OPASecretUpdated"
 )
 

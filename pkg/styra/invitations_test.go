@@ -28,7 +28,7 @@ import (
 	ginkgo "github.com/onsi/ginkgo/v2"
 	gomega "github.com/onsi/gomega"
 
-	"github.com/bankdata/styra-controller/pkg/http_error"
+	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
@@ -64,7 +64,7 @@ var _ = ginkgo.Describe("CreateInvitation", func() {
 		res, err := c.CreateInvitation(context.Background(), test.email, test.name)
 		if test.expectStyraErr {
 			gomega.Expect(res).To(gomega.BeNil())
-			target := &http_error.HTTPError{}
+			target := &httperror.HTTPError{}
 			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())

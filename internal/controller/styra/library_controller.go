@@ -28,7 +28,7 @@ import (
 	"github.com/bankdata/styra-controller/internal/predicate"
 	"github.com/bankdata/styra-controller/internal/sentry"
 	"github.com/bankdata/styra-controller/internal/webhook"
-	"github.com/bankdata/styra-controller/pkg/http_error"
+	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/bankdata/styra-controller/pkg/styra"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -104,7 +104,10 @@ func (r *LibraryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return result, nil
 }
 
-func (r *LibraryReconciler) ocpReconcile(ctx context.Context, log logr.Logger, k8sLib styrav1alpha1.Library) (ctrl.Result, error) {
+func (r *LibraryReconciler) ocpReconcile(
+	ctx context.Context,
+	log logr.Logger,
+	k8sLib styrav1alpha1.Library) (ctrl.Result, error) {
 	log.Info("Reconciling Library")
 
 	reconcileLibrarySourceResult, err := r.reconcileLibrarySource(ctx, log, k8sLib)
@@ -116,7 +119,10 @@ func (r *LibraryReconciler) ocpReconcile(ctx context.Context, log logr.Logger, k
 	return ctrl.Result{}, nil
 }
 
-func (r *LibraryReconciler) reconcileLibrarySource(ctx context.Context, log logr.Logger, k8sLib styrav1alpha1.Library) (ctrl.Result, error) {
+func (r *LibraryReconciler) reconcileLibrarySource(
+	ctx context.Context,
+	log logr.Logger,
+	k8sLib styrav1alpha1.Library) (ctrl.Result, error) {
 	gitConfig := &ocp.GitConfig{
 		Repo:          k8sLib.Spec.SourceControl.LibraryOrigin.URL,
 		IncludedFiles: []string{"*.rego"},
@@ -146,7 +152,10 @@ func (r *LibraryReconciler) reconcileLibrarySource(ctx context.Context, log logr
 	return ctrl.Result{}, nil
 }
 
-func (r *LibraryReconciler) styraReconcile(ctx context.Context, log logr.Logger, k8sLib styrav1alpha1.Library) (ctrl.Result, error) {
+func (r *LibraryReconciler) styraReconcile(
+	ctx context.Context,
+	log logr.Logger,
+	k8sLib styrav1alpha1.Library) (ctrl.Result, error) {
 	log.Info("Reconciling git credentials from default credentials")
 	if k8sLib.Spec.SourceControl != nil {
 		gitCredential := r.Config.GetGitCredentialForRepo(k8sLib.Spec.SourceControl.LibraryOrigin.URL)
@@ -171,7 +180,7 @@ func (r *LibraryReconciler) styraReconcile(ctx context.Context, log logr.Logger,
 	update := false
 	libResp, err := r.Styra.GetLibrary(ctx, k8sLib.Spec.Name)
 	if err != nil {
-		var httpErr *http_error.HTTPError
+		var httpErr *httperror.HTTPError
 		if errors.As(err, &httpErr) {
 			if httpErr.StatusCode == http.StatusNotFound {
 				update = true

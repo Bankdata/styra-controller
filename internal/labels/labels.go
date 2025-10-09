@@ -23,6 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// Constants for labels configured on System resources.
 const (
 	labelControllerClass = "styra-controller/class"
 	labelManagedBy       = "app.kubernetes.io/managed-by"

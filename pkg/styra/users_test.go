@@ -24,7 +24,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bankdata/styra-controller/pkg/http_error"
+	"github.com/bankdata/styra-controller/pkg/httperror"
 	ginkgo "github.com/onsi/ginkgo/v2"
 	gomega "github.com/onsi/gomega"
 	"github.com/patrickmn/go-cache"
@@ -57,7 +57,7 @@ var _ = ginkgo.Describe("GetUser", func() {
 		res, err := c.GetUser(context.Background(), test.name)
 		if test.expectStyraErr {
 			gomega.Expect(res).To(gomega.BeNil())
-			target := &http_error.HTTPError{}
+			target := &httperror.HTTPError{}
 			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
@@ -111,7 +111,7 @@ var _ = ginkgo.Describe("GetUsers", func() {
 			res, _, err := c.GetUsers(context.Background())
 			if test.expectStyraErr {
 				gomega.Expect(res).To(gomega.BeNil())
-				target := &http_error.HTTPError{}
+				target := &httperror.HTTPError{}
 				gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 			} else {
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())

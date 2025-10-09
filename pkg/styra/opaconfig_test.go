@@ -26,7 +26,7 @@ import (
 	ginkgo "github.com/onsi/ginkgo/v2"
 	gomega "github.com/onsi/gomega"
 
-	"github.com/bankdata/styra-controller/pkg/http_error"
+	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
@@ -53,7 +53,7 @@ var _ = ginkgo.Describe("GetOPAConfig", func() {
 		opaconf, err := c.GetOPAConfig(context.Background(), "test_id")
 		if test.expectStyraErr {
 			gomega.Expect(opaconf).To(gomega.Equal(styra.OPAConfig{}))
-			target := &http_error.HTTPError{}
+			target := &httperror.HTTPError{}
 			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())

@@ -23,7 +23,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/bankdata/styra-controller/pkg/http_error"
+	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/pkg/errors"
 )
 
@@ -102,7 +102,7 @@ func (c *Client) GetLibrary(ctx context.Context, id string) (*GetLibraryResponse
 	}
 
 	if res.StatusCode != http.StatusOK {
-		err := http_error.NewHTTPError(res.StatusCode, string(body))
+		err := httperror.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 
@@ -133,7 +133,7 @@ func (c *Client) UpsertLibrary(ctx context.Context, id string, request *UpsertLi
 	}
 
 	if res.StatusCode != http.StatusOK {
-		err := http_error.NewHTTPError(res.StatusCode, string(body))
+		err := httperror.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 

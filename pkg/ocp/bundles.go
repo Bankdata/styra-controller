@@ -22,7 +22,7 @@ import (
 	"net/http"
 	"path"
 
-	"github.com/bankdata/styra-controller/pkg/http_error"
+	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/pkg/errors"
 )
 
@@ -39,6 +39,7 @@ type BundleConfig struct {
 	ExcludedFiles []string          `json:"excluded_files,omitempty" yaml:"excluded_files,omitempty"`
 }
 
+// ObjectStorage represents the object storage configuration for a bundle.
 type ObjectStorage struct {
 	AmazonS3 *AmazonS3 `json:"aws,omitempty" yaml:"aws,omitempty"`
 	// GCPCloudStorage   *GCPCloudStorage   `json:"gcp,omitempty" yaml:"gcp,omitempty"`
@@ -46,6 +47,7 @@ type ObjectStorage struct {
 	// FileSystemStorage *FileSystemStorage `json:"filesystem,omitempty" yaml:"filesystem,omitempty"`
 }
 
+// AmazonS3 defines the configuration for a bundle stored in an Amazon S3 bucket.
 type AmazonS3 struct {
 	Bucket      string `json:"bucket" yaml:"bucket"`
 	Key         string `json:"key" yaml:"key"`
@@ -54,26 +56,26 @@ type AmazonS3 struct {
 	URL         string `json:"url,omitempty" yaml:"url,omitempty"`
 }
 
-// // GCPCloudStorage defines the configuration for a Google Cloud Storage bucket.
-// type GCPCloudStorage struct {
-// 	Project     string `json:"project" yaml:"project"`
-// 	Bucket      string `json:"bucket" yaml:"bucket"`
-// 	Object      string `json:"object" yaml:"object"`
-// 	Credentials string `json:"credentials,omitempty" yaml:"credentials,omitempty"`
-// }
+// GCPCloudStorage defines the configuration for a Google Cloud Storage bucket.
+type GCPCloudStorage struct {
+	Project     string `json:"project" yaml:"project"`
+	Bucket      string `json:"bucket" yaml:"bucket"`
+	Object      string `json:"object" yaml:"object"`
+	Credentials string `json:"credentials,omitempty" yaml:"credentials,omitempty"`
+}
 
-// // AzureBlobStorage defines the configuration for an Azure Blob Storage container.
-// type AzureBlobStorage struct {
-// 	AccountURL  string `json:"account_url" yaml:"account_url"`
-// 	Container   string `json:"container" yaml:"container"`
-// 	Path        string `json:"path" yaml:"path"`
-// 	Credentials string `json:"credentials,omitempty" yaml:"credentials,omitempty"`
-// }
+// AzureBlobStorage defines the configuration for an Azure Blob Storage container.
+type AzureBlobStorage struct {
+	AccountURL  string `json:"account_url" yaml:"account_url"`
+	Container   string `json:"container" yaml:"container"`
+	Path        string `json:"path" yaml:"path"`
+	Credentials string `json:"credentials,omitempty" yaml:"credentials,omitempty"`
+}
 
-// // FileSystemStorage defines the configuration for a local filesystem storage.
-// type FileSystemStorage struct {
-// 	Path string `json:"path" yaml:"path"` // Path to the bundle on the local filesystem.
-// }
+// FileSystemStorage defines the configuration for a local filesystem storage.
+type FileSystemStorage struct {
+	Path string `json:"path" yaml:"path"` // Path to the bundle on the local filesystem.
+}
 
 // PutBundleRequest is the request body for the
 // PUT /v1/bundles/{name} endpoint in the OCP API.
@@ -93,20 +95,28 @@ type PutBundleResponse struct {
 	Message    string `json:"message"`
 }
 
-func (r *Client) PutBundle(ctx context.Context, bundle *PutBundleRequest) error {
-	res, err := r.request(ctx, http.MethodPut, path.Join(endpointV1Bundles, bundle.Name), bundle, nil)
+// PutBundle calls the PUT /v1/bundles/{name} endpoint in the OCP API.
+func (c *Client) PutBundle(ctx context.Context, bundle *PutBundleRequest) (err error) {
+	res, err := c.request(ctx, http.MethodPut, path.Join(endpointV1Bundles, bundle.Name), bundle, nil)
 	if err != nil {
 		return err
 	}
 
-	defer res.Body.Close()
+	// Close body and overwrite returned error if it is not set already.
+	defer func() {
+		closeErr := res.Body.Close()
+		if err == nil && closeErr != nil {
+			err = errors.Wrap(closeErr, "error closing response body")
+		}
+	}()
+
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return errors.Wrap(err, "PutBundle: could not read body")
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return http_error.NewHTTPError(res.StatusCode, string(body))
+		return httperror.NewHTTPError(res.StatusCode, string(body))
 	}
 	return nil
 }

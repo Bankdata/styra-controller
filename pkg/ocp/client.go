@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package ocp provides functionality for interacting with the OCP API.
 package ocp
 
 import (
@@ -62,8 +63,6 @@ type ClientInterface interface {
 	// DeleteRoleBindingV2(ctx context.Context, id string) (*DeleteRoleBindingV2Response, error)
 
 	// GetDatasource(ctx context.Context, id string) (*GetDatasourceResponse, error)
-
-	UpsertSource(ctx context.Context, id string, request *PutSourceRequest) (*PutSourceResponse, error)
 
 	GetSource(ctx context.Context, id string) (*GetSourceResponse, error)
 
@@ -147,14 +146,6 @@ func (c *Client) newRequest(
 	}
 
 	return r, nil
-}
-
-func (c *Client) UpsertSource(
-	ctx context.Context,
-	id string,
-	request *PutSourceRequest,
-) (*PutSourceResponse, error) {
-	return nil, errors.New("not implemented")
 }
 
 func (c *Client) request(

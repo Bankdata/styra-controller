@@ -23,7 +23,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/bankdata/styra-controller/pkg/http_error"
+	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/getsentry/sentry-go"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -40,7 +40,7 @@ func (r *sentryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if sentry.CurrentHub().Client() != nil {
 		if err != nil {
 			hub := sentry.CurrentHub().Clone()
-			var styraerror *http_error.HTTPError
+			var styraerror *httperror.HTTPError
 			if errors.As(err, &styraerror) {
 				hub.ConfigureScope(func(scope *sentry.Scope) {
 					scope.SetContext("Styra Client", map[string]interface{}{

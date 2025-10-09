@@ -21,7 +21,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/bankdata/styra-controller/pkg/http_error"
+	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/pkg/errors"
 )
 
@@ -89,7 +89,7 @@ func (c *Client) UpdateWorkspaceRaw(
 	}
 
 	if res.StatusCode != http.StatusOK {
-		err := http_error.NewHTTPError(res.StatusCode, string(body))
+		err := httperror.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 

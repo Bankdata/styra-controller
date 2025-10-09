@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package http_error
+// Package httperror defines functionality for handling HTTP errors
+package httperror
 
 import (
 	"encoding/json"

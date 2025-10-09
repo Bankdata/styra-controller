@@ -16,7 +16,7 @@ type minioClient struct {
 	adminClient *madmin.AdminClient
 }
 
-func NewMinioClient(cfg Config) (S3Client, error) {
+func newMinioClient(cfg Config) (Client, error) {
 	// Create MinIO admin client
 	adminClient, err := madmin.NewWithOptions(cfg.Endpoint, &madmin.Options{
 		Creds:  miniocred.NewStaticV4(cfg.AccessKeyID, cfg.SecretAccessKey, ""),
@@ -47,7 +47,11 @@ func (c *minioClient) UserExists(ctx context.Context, accessKey string) (bool, e
 }
 
 // CreateSystemBundleUser creates a user in MinIO with read-only access to a specific bucketPath
-func (c *minioClient) CreateSystemBundleUser(ctx context.Context, accessKey string, bucketName string, uniqueName string) (string, error) {
+func (c *minioClient) CreateSystemBundleUser(
+	ctx context.Context,
+	accessKey string,
+	bucketName string,
+	uniqueName string) (string, error) {
 	// Create the user
 	secretKey, err := generateBase64Secret(16)
 	if err != nil {

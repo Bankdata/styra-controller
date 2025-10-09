@@ -26,7 +26,7 @@ import (
 	"sort"
 
 	"github.com/bankdata/styra-controller/api/styra/v1beta1"
-	"github.com/bankdata/styra-controller/pkg/http_error"
+	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/pkg/errors"
 )
 
@@ -194,7 +194,7 @@ func (c *Client) GetSystem(ctx context.Context, id string) (*GetSystemResponse, 
 	}
 
 	if res.StatusCode != http.StatusOK {
-		err := http_error.NewHTTPError(res.StatusCode, string(body))
+		err := httperror.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 
@@ -228,7 +228,7 @@ func (c *Client) GetSystemByName(ctx context.Context, name string) (*GetSystemRe
 	}
 
 	if res.StatusCode != http.StatusOK {
-		err := http_error.NewHTTPError(res.StatusCode, string(body))
+		err := httperror.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 
@@ -268,7 +268,7 @@ func (c *Client) PutSystem(ctx context.Context,
 	}
 
 	if res.StatusCode != http.StatusOK {
-		err := http_error.NewHTTPError(res.StatusCode, string(body))
+		err := httperror.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 
@@ -301,7 +301,7 @@ func (c *Client) CreateSystem(ctx context.Context, request *CreateSystemRequest)
 	}
 
 	if res.StatusCode != http.StatusOK {
-		err := http_error.NewHTTPError(res.StatusCode, string(body))
+		err := httperror.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 
@@ -338,7 +338,7 @@ func (c *Client) UpdateSystem(
 	}
 
 	if res.StatusCode != http.StatusOK {
-		err := http_error.NewHTTPError(res.StatusCode, string(body))
+		err := httperror.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 
@@ -381,7 +381,7 @@ func (c *Client) VerifyGitConfiguration(
 	}
 
 	if res.StatusCode != http.StatusOK {
-		err := http_error.NewHTTPError(res.StatusCode, string(body))
+		err := httperror.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 
@@ -407,7 +407,7 @@ func (c *Client) DeleteSystem(ctx context.Context, id string) (*DeleteSystemResp
 	}
 
 	if res.StatusCode != http.StatusNotFound && res.StatusCode != http.StatusOK {
-		err := http_error.NewHTTPError(res.StatusCode, string(body))
+		err := httperror.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 

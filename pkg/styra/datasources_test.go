@@ -27,7 +27,7 @@ import (
 	ginkgo "github.com/onsi/ginkgo/v2"
 	gomega "github.com/onsi/gomega"
 
-	"github.com/bankdata/styra-controller/pkg/http_error"
+	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
@@ -55,7 +55,7 @@ var _ = ginkgo.Describe("GetDatasource", func() {
 		res, err := c.GetDatasource(context.Background(), test.datasourceID)
 		if test.expectStyraErr {
 			gomega.Expect(res).To(gomega.BeNil())
-			target := &http_error.HTTPError{}
+			target := &httperror.HTTPError{}
 			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
@@ -134,7 +134,7 @@ var _ = ginkgo.Describe("UpsertDatasource", func() {
 		res, err := c.UpsertDatasource(context.Background(), test.datasourceID, test.upsertDatasourceRequest)
 		if test.expectStyraErr {
 			gomega.Expect(res).To(gomega.BeNil())
-			target := &http_error.HTTPError{}
+			target := &httperror.HTTPError{}
 			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
@@ -189,7 +189,7 @@ var _ = ginkgo.Describe("DeleteDatasource", func() {
 		res, err := c.DeleteDatasource(context.Background(), test.datasourceID)
 		if test.expectStyraErr {
 			gomega.Expect(res).To(gomega.BeNil())
-			target := &http_error.HTTPError{}
+			target := &httperror.HTTPError{}
 			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())

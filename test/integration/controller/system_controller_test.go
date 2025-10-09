@@ -37,7 +37,7 @@ import (
 
 	styrav1beta1 "github.com/bankdata/styra-controller/api/styra/v1beta1"
 	"github.com/bankdata/styra-controller/internal/finalizer"
-	"github.com/bankdata/styra-controller/pkg/http_error"
+	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/bankdata/styra-controller/pkg/ptr"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
@@ -2254,7 +2254,7 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile1", ginkgo.Label("integration
 		styraClientMock.On("GetSystem", mock.Anything, "system_id").Return(&styra.GetSystemResponse{
 			StatusCode:   http.StatusNotFound,
 			SystemConfig: nil,
-		}, &http_error.HTTPError{
+		}, &httperror.HTTPError{
 			StatusCode: http.StatusNotFound,
 			Body:       "nil",
 		}).Once()

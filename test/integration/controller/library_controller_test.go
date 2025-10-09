@@ -28,7 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	styrav1alpha1 "github.com/bankdata/styra-controller/api/styra/v1alpha1"
-	"github.com/bankdata/styra-controller/pkg/http_error"
+	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
@@ -92,7 +92,7 @@ var _ = ginkgo.Describe("LibraryReconciler.Reconcile", ginkgo.Label("integration
 		}, nil).Once()
 
 		styraClientMock.On("GetLibrary", mock.Anything, key.Name).
-			Return(nil, &http_error.HTTPError{StatusCode: http.StatusNotFound}).Once()
+			Return(nil, &httperror.HTTPError{StatusCode: http.StatusNotFound}).Once()
 
 		defaultSourceControl := &styra.LibrarySourceControlConfig{
 			LibraryOrigin: &styra.LibraryGitRepoConfig{

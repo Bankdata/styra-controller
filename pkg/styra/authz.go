@@ -24,7 +24,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/bankdata/styra-controller/pkg/http_error"
+	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/pkg/errors"
 )
 
@@ -186,7 +186,7 @@ func (c *Client) ListRoleBindingsV2(
 	}
 
 	if res.StatusCode != http.StatusOK {
-		err := http_error.NewHTTPError(res.StatusCode, string(body))
+		err := httperror.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 
@@ -220,7 +220,7 @@ func (c *Client) CreateRoleBinding(
 	}
 
 	if res.StatusCode != http.StatusOK {
-		err := http_error.NewHTTPError(res.StatusCode, string(body))
+		err := httperror.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 
@@ -255,7 +255,7 @@ func (c *Client) UpdateRoleBindingSubjects(
 	}
 
 	if res.StatusCode != http.StatusOK {
-		err := http_error.NewHTTPError(res.StatusCode, string(body))
+		err := httperror.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 
@@ -279,7 +279,7 @@ func (c *Client) DeleteRoleBindingV2(ctx context.Context, id string) (*DeleteRol
 	}
 
 	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusNotFound {
-		err := http_error.NewHTTPError(res.StatusCode, string(body))
+		err := httperror.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 

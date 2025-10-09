@@ -59,7 +59,7 @@ import (
 	"github.com/bankdata/styra-controller/internal/predicate"
 	"github.com/bankdata/styra-controller/internal/sentry"
 	"github.com/bankdata/styra-controller/internal/webhook"
-	"github.com/bankdata/styra-controller/pkg/http_error"
+	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/bankdata/styra-controller/pkg/ocp"
 	"github.com/bankdata/styra-controller/pkg/s3"
 	"github.com/bankdata/styra-controller/pkg/styra"
@@ -264,32 +264,33 @@ func (r *SystemReconciler) reconcile(
 		if r.Config.EnableOPAControlPlaneReconciliation {
 			log.Info("OPA Control Plane system reconcile starting")
 			return r.ocpReconcile(ctx, log, system)
-		} else {
-			log.Info("OPA Control Plane Reconciliation have been disabled")
-			return ctrl.Result{}, nil
 		}
-	} else {
-		if r.Config.EnableOPAControlPlaneReconciliationTestData {
-			log.Info("OPA Control Plane Test Data flag is enabled - first lets do OCP reconciliation of test data")
-
-			_, err := r.ocpReconcile(ctx, log, system)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-			log.Info("OPA Control Plane Test Data reconciliation completed - now do Styra DAS reconciliation")
-		}
-
-		if r.Config.EnableStyraReconciliation {
-			log.Info("Styra DAS System reconcile starting")
-			return r.styraReconcile(ctx, log, system)
-		} else {
-			log.Info("Styra DAS Reconciliation have been disabled")
-			return ctrl.Result{}, nil
-		}
+		log.Info("OPA Control Plane Reconciliation have been disabled")
+		return ctrl.Result{}, nil
 	}
+
+	if r.Config.EnableOPAControlPlaneReconciliationTestData {
+		log.Info("OPA Control Plane Test Data flag is enabled - first lets do OCP reconciliation of test data")
+
+		_, err := r.ocpReconcile(ctx, log, system)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		log.Info("OPA Control Plane Test Data reconciliation completed - now do Styra DAS reconciliation")
+	}
+
+	if r.Config.EnableStyraReconciliation {
+		log.Info("Styra DAS System reconcile starting")
+		return r.styraReconcile(ctx, log, system)
+	}
+	log.Info("Styra DAS Reconciliation have been disabled")
+	return ctrl.Result{}, nil
 }
 
-func (r *SystemReconciler) ocpReconcile(ctx context.Context, log logr.Logger, system *v1beta1.System) (ctrl.Result, error) {
+func (r *SystemReconciler) ocpReconcile(
+	ctx context.Context,
+	log logr.Logger,
+	system *v1beta1.System) (ctrl.Result, error) {
 	requirements := ocp.ToRequirements(r.Config.DefaultRequirements)
 
 	for _, datasource := range system.Spec.Datasources {
@@ -304,7 +305,9 @@ func (r *SystemReconciler) ocpReconcile(ctx context.Context, log logr.Logger, sy
 	reconcileSystemSourceStart := time.Now()
 	uniqueName := system.OCPUniqueName(r.Config.SystemPrefix, r.Config.SystemSuffix)
 	result, err := r.reconcileSystemSource(ctx, log, system, uniqueName)
-	r.Metrics.ReconcileSegmentTime.WithLabelValues("reconcileSystemSourceOcp").Observe(time.Since(reconcileSystemSourceStart).Seconds())
+	r.Metrics.ReconcileSegmentTime.
+		WithLabelValues("reconcileSystemSourceOcp").
+		Observe(time.Since(reconcileSystemSourceStart).Seconds())
 	if err != nil {
 		return result, err
 	}
@@ -313,7 +316,9 @@ func (r *SystemReconciler) ocpReconcile(ctx context.Context, log logr.Logger, sy
 
 	reconcileSystemBundleStart := time.Now()
 	result, err = r.reconcileSystemBundle(ctx, uniqueName, requirements)
-	r.Metrics.ReconcileSegmentTime.WithLabelValues("reconcileSystemBundleOcp").Observe(time.Since(reconcileSystemBundleStart).Seconds())
+	r.Metrics.ReconcileSegmentTime.
+		WithLabelValues("reconcileSystemBundleOcp").
+		Observe(time.Since(reconcileSystemBundleStart).Seconds())
 	if err != nil {
 		return result, err
 	}
@@ -359,7 +364,9 @@ func (r *SystemReconciler) ocpReconcile(ctx context.Context, log logr.Logger, sy
 
 	updateStatusStart := time.Now()
 	err = r.Status().Update(ctx, system)
-	r.Metrics.ReconcileSegmentTime.WithLabelValues("updateStatusOcp").Observe(time.Since(updateStatusStart).Seconds())
+	r.Metrics.ReconcileSegmentTime.
+		WithLabelValues("updateStatusOcp").
+		Observe(time.Since(updateStatusStart).Seconds())
 	if err != nil {
 		return ctrl.Result{}, ctrlerr.Wrap(err, "Could not change status.phase to Created").
 			WithEvent(v1beta1.EventErrorPhaseToCreated)
@@ -471,15 +478,23 @@ func (r *SystemReconciler) reconcileOPASecret(
 	secretName := fmt.Sprintf("%s-opa-secret", system.Name)
 
 	reconcileS3CredentialsStart := time.Now()
-	s3CredentialsRead, result, err := r.reconcileS3Credentials(ctx, log, system, uniqueName, *r.Config.ObjectStorage.AWS, secretName, s3.AWSSecretNameKeyID, s3.AWSSecretNameSecretKey)
-	r.Metrics.ReconcileSegmentTime.WithLabelValues("reconcileS3CredentialsOcp").Observe(time.Since(reconcileS3CredentialsStart).Seconds())
+	s3CredentialsRead, result, err := r.reconcileS3Credentials(
+		ctx, log, system, uniqueName, *r.Config.ObjectStorage.AWS,
+		secretName, s3.AWSSecretNameKeyID, s3.AWSSecretNameSecretKey)
+	r.Metrics.ReconcileSegmentTime.
+		WithLabelValues("reconcileS3CredentialsOcp").
+		Observe(time.Since(reconcileS3CredentialsStart).Seconds())
 	if err != nil {
 		return result, false, err
 	}
 
 	reconcilek8sOPASecret := time.Now()
-	result, secretUpdated, err := r.reconcilek8sOPASecret(ctx, log, system, s3CredentialsRead, secretName, s3.AWSSecretNameKeyID, s3.AWSSecretNameSecretKey, s3.AWSSecretNameRegion)
-	r.Metrics.ReconcileSegmentTime.WithLabelValues("reconcilek8sOPASecretOcp").Observe(time.Since(reconcilek8sOPASecret).Seconds())
+	result, secretUpdated, err := r.reconcilek8sOPASecret(
+		ctx, log, system, s3CredentialsRead, secretName,
+		s3.AWSSecretNameKeyID, s3.AWSSecretNameSecretKey, s3.AWSSecretNameRegion)
+	r.Metrics.ReconcileSegmentTime.
+		WithLabelValues("reconcilek8sOPASecretOcp").
+		Observe(time.Since(reconcilek8sOPASecret).Seconds())
 	if err != nil {
 		return result, false, err
 	}
@@ -487,7 +502,10 @@ func (r *SystemReconciler) reconcileOPASecret(
 	return ctrl.Result{}, secretUpdated, nil
 }
 
-func (r *SystemReconciler) getk8sOPASecret(ctx context.Context, system *v1beta1.System, secretName string) (corev1.Secret, error) {
+func (r *SystemReconciler) getk8sOPASecret(
+	ctx context.Context,
+	system *v1beta1.System,
+	secretName string) (corev1.Secret, error) {
 	var secret corev1.Secret
 
 	nsName := types.NamespacedName{Name: secretName, Namespace: system.Namespace}
@@ -508,8 +526,13 @@ func (r *SystemReconciler) reconcilek8sOPASecret(
 	SecretKeyNameSecretKey string,
 	SecretKeyNameRegion string,
 ) (ctrl.Result, bool, error) {
-	if s3Credentials.AccessKeyID == "" || s3Credentials.SecretAccessKey == "" || s3Credentials.Region == "" || secretName == "" {
-		return ctrl.Result{}, false, ctrlerr.New("Cannot create secret without an AccessKeyID, SecretAccessKey, Region, and SecretName:").
+	// JACOB
+	if s3Credentials.AccessKeyID == "" ||
+		s3Credentials.SecretAccessKey == "" ||
+		s3Credentials.Region == "" ||
+		secretName == "" {
+		return ctrl.Result{}, false, ctrlerr.New(
+			"Cannot create secret without an AccessKeyID, SecretAccessKey, Region, and SecretName").
 			//TODO check all events
 			WithEvent(v1beta1.EventErrorOPATokenSecretNoToken).
 			WithSystemCondition(v1beta1.ConditionTypeOPATokenUpdated)
@@ -594,7 +617,7 @@ func (r *SystemReconciler) reconcileS3Credentials(
 	s3Credentials.Region = r.Config.ObjectStorage.AWS.Region
 	s3Credentials.AccessKeyID = fmt.Sprintf("Access-Key-%s-%s", awsConfig.Bucket, uniqueName)
 
-	client, err := s3.NewS3Client(awsConfig)
+	client, err := s3.NewClient(awsConfig)
 	if err != nil {
 		return s3Credentials, ctrl.Result{}, errors.Wrap(err, "reconcileS3Credentials: could not create S3 client")
 	}
@@ -610,27 +633,37 @@ func (r *SystemReconciler) reconcileS3Credentials(
 			return s3Credentials, ctrl.Result{}, errors.Wrap(err, "reconcileS3Credentials: error while getting secret from k8s")
 		}
 
-		if secret.Data == nil || len(secret.Data[SecretKeyNameAccessID]) == 0 || len(secret.Data[SecretKeyNameSecretKey]) == 0 {
-			log.Info("AccessKey exists, but no secret in k8s-secret.. We need to update secretKey for accessKey", "accessKey", s3Credentials.AccessKeyID)
-			//TODO consider if we want to using service account for token - it will not invalidate the old token when adding a new service account..
+		if secret.Data == nil ||
+			len(secret.Data[SecretKeyNameAccessID]) == 0 ||
+			len(secret.Data[SecretKeyNameSecretKey]) == 0 {
+			log.Info(
+				"AccessKey exists, but no secret in k8s-secret.. We need to update secretKey for accessKey",
+				"accessKey", s3Credentials.AccessKeyID,
+			)
+			//TODO consider if we want to using service account for token -
+			// it will not invalidate the old token when adding a new service account...
 			s3Credentials.SecretAccessKey, err = client.SetNewUserSecretKey(ctx, s3Credentials.AccessKeyID)
 			if err != nil {
 				log.Error(err, "failed to apply new secretKey for accessKey", "accessKey", s3Credentials.AccessKeyID)
-				return s3Credentials, ctrl.Result{}, errors.Wrap(err, "reconcileS3Credentials: failed to apply new secretKey for accessKey")
+				return s3Credentials, ctrl.Result{}, errors.Wrap(
+					err, "reconcileS3Credentials: failed to apply new secretKey for accessKey",
+				)
 			}
 			log.Info("SecretKey updated for existing accessKey", "accessKey", s3Credentials.AccessKeyID)
 			return s3Credentials, ctrl.Result{}, nil
-		} else {
-			log.Info("Secret found in k8s.. We must assume it is valid", "accessKey", s3Credentials.AccessKeyID)
-			s3Credentials.SecretAccessKey = string(secret.Data[SecretKeyNameSecretKey])
-			return s3Credentials, ctrl.Result{}, nil
 		}
+		log.Info("Secret found in k8s.. We must assume it is valid", "accessKey", s3Credentials.AccessKeyID)
+		s3Credentials.SecretAccessKey = string(secret.Data[SecretKeyNameSecretKey])
+		return s3Credentials, ctrl.Result{}, nil
 	}
 
 	if !userExist {
 		log.Info("AccessKey does not exist, creating new accessKey", "accessKey", s3Credentials.AccessKeyID)
 		// create read only user for this bundle
-		s3Credentials.SecretAccessKey, err = client.CreateSystemBundleUser(ctx, s3Credentials.AccessKeyID, r.Config.ObjectStorage.AWS.Bucket, uniqueName)
+		s3Credentials.SecretAccessKey, err = client.CreateSystemBundleUser(
+			ctx, s3Credentials.AccessKeyID,
+			r.Config.ObjectStorage.AWS.Bucket, uniqueName,
+		)
 		if err != nil {
 			log.Error(err, "failed to create accessKey", "accessKey", s3Credentials.AccessKeyID)
 			return s3Credentials, ctrl.Result{}, errors.Wrap(err, "reconcileS3Credentials: could not create accessKey")
@@ -641,7 +674,10 @@ func (r *SystemReconciler) reconcileS3Credentials(
 	return s3Credentials, ctrl.Result{}, nil
 }
 
-func (r *SystemReconciler) reconcileSystemBundle(ctx context.Context, uniqueName string, requirements []ocp.Requirement) (ctrl.Result, error) {
+func (r *SystemReconciler) reconcileSystemBundle(
+	ctx context.Context,
+	uniqueName string,
+	requirements []ocp.Requirement) (ctrl.Result, error) {
 	if r.Config.ObjectStorage == nil || r.Config.ObjectStorage.AWS == nil {
 		return ctrl.Result{}, errors.New("reconcileSystemBundle: no object storage configured")
 	}
@@ -671,7 +707,11 @@ func (r *SystemReconciler) reconcileSystemBundle(ctx context.Context, uniqueName
 	return ctrl.Result{}, nil
 }
 
-func (r *SystemReconciler) reconcileSystemSource(ctx context.Context, log logr.Logger, system *v1beta1.System, uniqueName string) (ctrl.Result, error) {
+func (r *SystemReconciler) reconcileSystemSource(
+	ctx context.Context,
+	log logr.Logger,
+	system *v1beta1.System,
+	uniqueName string) (ctrl.Result, error) {
 	gitConfig := &ocp.GitConfig{
 		Repo:          system.Spec.SourceControl.Origin.URL,
 		IncludedFiles: []string{"*.rego"},
@@ -704,14 +744,17 @@ func (r *SystemReconciler) reconcileSystemSource(ctx context.Context, log logr.L
 	return ctrl.Result{}, nil
 }
 
-func (r *SystemReconciler) createSourceIfNotExists(ctx context.Context, log logr.Logger, source v1beta1.Datasource) error {
+func (r *SystemReconciler) createSourceIfNotExists(
+	ctx context.Context,
+	log logr.Logger,
+	source v1beta1.Datasource) error {
 	_, err := r.OCP.GetSource(ctx, source.Path)
 	if err == nil {
 		log.Info("Source already exists", "source", source.Path)
 		return nil
 	}
 
-	var httpErr *http_error.HTTPError
+	var httpErr *httperror.HTTPError
 	if errors.As(err, &httpErr) {
 		if httpErr.StatusCode != http.StatusNotFound {
 			return errors.Wrap(err, "GetSource in createSourceIfNotExists failed")
@@ -739,7 +782,10 @@ func (r *SystemReconciler) createSourceIfNotExists(ctx context.Context, log logr
 	return nil
 }
 
-func (r *SystemReconciler) styraReconcile(ctx context.Context, log logr.Logger, system *v1beta1.System) (ctrl.Result, error) {
+func (r *SystemReconciler) styraReconcile(
+	ctx context.Context,
+	log logr.Logger,
+	system *v1beta1.System) (ctrl.Result, error) {
 	var (
 		cfg *styra.SystemConfig
 		err error
@@ -766,7 +812,7 @@ func (r *SystemReconciler) styraReconcile(ctx context.Context, log logr.Logger, 
 		r.Metrics.ReconcileSegmentTime.WithLabelValues("getSystem").Observe(time.Since(getSystemStart).Seconds())
 
 		if err != nil {
-			var serr *http_error.HTTPError
+			var serr *httperror.HTTPError
 			if errors.As(err, &serr) && serr.StatusCode == http.StatusNotFound {
 				createSystemStart := time.Now()
 				res, err := r.createSystemWithID(ctx, log, system, systemID)
@@ -905,7 +951,8 @@ func (r *SystemReconciler) styraReconcile(ctx context.Context, log logr.Logger, 
 		system.SetCondition(conditionType, metav1.ConditionFalse)
 		err = r.Status().Update(ctx, system)
 		if err != nil {
-			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not update system to reflect that Styra token in pods is outdated").
+			return ctrl.Result{}, ctrlerr.Wrap(err,
+				"Could not update system to reflect that Styra token in pods is outdated").
 				WithEvent(v1beta1.EventErrorUpdateStatus).
 				WithSystemCondition(conditionType)
 		}
@@ -925,7 +972,8 @@ func (r *SystemReconciler) styraReconcile(ctx context.Context, log logr.Logger, 
 
 		err = r.Status().Update(ctx, system)
 		if err != nil {
-			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not update system to reflect that Styra token in pods is outdated").
+			return ctrl.Result{}, ctrlerr.Wrap(err,
+				"Could not update system to reflect that Styra token in pods is outdated").
 				WithEvent(v1beta1.EventErrorUpdateStatus).
 				WithSystemCondition(v1beta1.ConditionTypeOPAUpToDate)
 		}
@@ -945,7 +993,8 @@ func (r *SystemReconciler) styraReconcile(ctx context.Context, log logr.Logger, 
 
 		err = r.Status().Update(ctx, system)
 		if err != nil {
-			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not update system to reflect that Styra token in pods is outdated").
+			return ctrl.Result{}, ctrlerr.Wrap(err,
+				"Could not update system to reflect that Styra token in pods is outdated").
 				WithEvent(v1beta1.EventErrorUpdateStatus).
 				WithSystemCondition(v1beta1.ConditionTypeSLPUpToDate)
 		}
@@ -1865,7 +1914,7 @@ func (r *SystemReconciler) updateSystem(
 	res, err := r.Styra.UpdateSystem(ctx, system.Status.ID, &styra.UpdateSystemRequest{SystemConfig: cfg})
 	if err != nil {
 		errMsg := "Could not update System"
-		var styrahttperr *http_error.HTTPError
+		var styrahttperr *httperror.HTTPError
 		if errors.As(err, &styrahttperr) {
 			errMsg = fmt.Sprintf("Could not update Styra system. Error %s", styrahttperr.Error())
 		}
@@ -2039,6 +2088,7 @@ func (r *SystemReconciler) systemNeedsUpdate(
 	return false, nil
 }
 
+// CreateDefaultRequirements creates all the configured default sources in OCP
 func (r *SystemReconciler) CreateDefaultRequirements(ctx context.Context, log logr.Logger) error {
 	if r.Config.EnableOPAControlPlaneReconciliation || r.Config.EnableOPAControlPlaneReconciliationTestData {
 		log.Info("Creating ocp default requirements")

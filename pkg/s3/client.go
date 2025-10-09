@@ -1,3 +1,4 @@
+// Package s3 contains a client for interacting with S3 compatible object storage.
 package s3
 
 import (
@@ -6,7 +7,8 @@ import (
 	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
 )
 
-func NewS3Client(awsObjectStorage configv2alpha2.AWSObjectStorage) (S3Client, error) {
+// NewClient creates a new S3Client for MinIO
+func NewClient(awsObjectStorage configv2alpha2.AWSObjectStorage) (Client, error) {
 	config := Config{
 		AccessKeyID:     awsObjectStorage.AdminCredentials.AccessKeyID,
 		SecretAccessKey: awsObjectStorage.AdminCredentials.SecretAccessKey,
@@ -22,5 +24,5 @@ func NewS3Client(awsObjectStorage configv2alpha2.AWSObjectStorage) (S3Client, er
 		config.UseSSL = false
 	}
 
-	return NewMinioClient(config)
+	return newMinioClient(config)
 }

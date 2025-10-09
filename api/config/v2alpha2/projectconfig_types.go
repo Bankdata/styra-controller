@@ -110,7 +110,7 @@ type ProjectConfig struct {
 	DefaultRequirements []string `json:"defaultRequirements,omitempty"`
 
 	// ObjectStorage is the object storage configuration to use for bundles.
-	// currently only supports aws
+	// Currently only supports aws
 	ObjectStorage *ObjectStorage `json:"objectStorage,omitempty"`
 
 	// EnableStyraReconciliation is a flag that sets whether the controller should use Styra
@@ -121,15 +121,18 @@ type ProjectConfig struct {
 	// A Migration flag to enable/disable OPA Control Plane reconciliation for all systems and libraries.
 	EnableOPAControlPlaneReconciliation bool `json:"enableOpaControlPlane,omitempty"`
 
-	// EnableOPAControlPlaneReconciliationTestData is a flag that sets whether the controller should create OPAControlPlane test data
+	// EnableOPAControlPlaneReconciliationTestData is a flag that sets whether the controller should create
+	// OPAControlPlane test data.
 	// A Migration flag to allow adding test data to OPA Control Plane and not to modify k8s data
 	EnableOPAControlPlaneReconciliationTestData bool `json:"enableOpaControlPlaneReconciliationTestData,omitempty"`
 }
 
+// ObjectStorage defines the structure for object storage configuration used by bundles
 type ObjectStorage struct {
 	AWS *AWSObjectStorage `json:"aws,omitempty"`
 }
 
+// AWSObjectStorage defines the structure for AWS object storage configuration.
 type AWSObjectStorage struct {
 	Bucket              string          `json:"bucket"`
 	Region              string          `json:"region"`
@@ -138,6 +141,7 @@ type AWSObjectStorage struct {
 	AdminCredentials    *AWSCredentials `json:"adminCredentials"`
 }
 
+// AWSCredentials defines the structure for AWS credentials
 type AWSCredentials struct {
 	AccessKeyID     string `json:"accessKeyID"`
 	SecretAccessKey string `json:"secretAccessKey"`
@@ -183,6 +187,7 @@ type StyraConfig struct {
 	TokenSecretPath string `json:"tokenSecretPath"`
 }
 
+// OPAControlPlaneConfig defines the config for the OPA Control Plane.
 type OPAControlPlaneConfig struct {
 	// Address is the URL for the OPA Control Plane API server.
 	Address string `json:"address"`
