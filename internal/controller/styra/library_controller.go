@@ -64,7 +64,7 @@ type LibraryReconciler struct {
 // towards the desired state.
 func (r *LibraryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
-	log.Info("Reconciliation of libraies begins")
+	log.Info("Reconciliation of libraries begins")
 
 	var k8sLib styrav1alpha1.Library
 	if err := r.Get(ctx, req.NamespacedName, &k8sLib); err != nil {
