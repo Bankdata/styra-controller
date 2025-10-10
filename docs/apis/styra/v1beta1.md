@@ -208,6 +208,10 @@ credentials are updated in Styra.</p>
 <td><p>ConditionTypeOPAConfigMapUpdated is a ConditionType used when
 the ConfigMap for the OPA are updated in the cluster.</p>
 </td>
+</tr><tr><td><p>&#34;OPASecretUpdated&#34;</p></td>
+<td><p>ConditionTypeOPASecretUpdated is a ConditionType used when
+the OPA secret for the System is updated in the cluster.</p>
+</td>
 </tr><tr><td><p>&#34;OPATokenUpdated&#34;</p></td>
 <td><p>ConditionTypeOPATokenUpdated is a ConditionType used when
 the secret with the Styra token has been updated in the cluster.</p>
@@ -215,6 +219,10 @@ the secret with the Styra token has been updated in the cluster.</p>
 </tr><tr><td><p>&#34;OPAUpToDate&#34;</p></td>
 <td><p>ConditionTypeOPAUpToDate is a ConditionType used to say whether
 the OPA is up to date or needs to be restarted.</p>
+</td>
+</tr><tr><td><p>&#34;RequirementsUpdated&#34;</p></td>
+<td><p>ConditionTypeRequirementsUpdated is a ConditionType used when
+the requirements of for the System&rsquo;s bundle is updated in OCP.</p>
 </td>
 </tr><tr><td><p>&#34;SLPConfigMapUpdated&#34;</p></td>
 <td><p>ConditionTypeSLPConfigMapUpdated is a ConditionType used when
@@ -228,9 +236,17 @@ the SLP is up to date or needs to be restarted.</p>
 <td><p>ConditionTypeSubjectsUpdated is a ConditionType used when the subjects of
 the System are updated in Styra.</p>
 </td>
+</tr><tr><td><p>&#34;SystemBundleUpdated&#34;</p></td>
+<td><p>ConditionTypeSystemBundleUpdated is a ConditionType used when
+the bundle for the System is updated in OCP.</p>
+</td>
 </tr><tr><td><p>&#34;SystemConfigUpdated&#34;</p></td>
 <td><p>ConditionTypeSystemConfigUpdated is a ConditionType used when
 the configuration of the System are updated in Styra.</p>
+</td>
+</tr><tr><td><p>&#34;SystemSourceUpdated&#34;</p></td>
+<td><p>ConditionTypeSystemSourceUpdated is a ConditionType used when
+the datasources of the System are updated in Styra.</p>
 </td>
 </tr></tbody>
 </table>
@@ -521,6 +537,10 @@ that is not owned by the controller.</p>
 </tr><tr><td><p>&#34;ErrorSetFinalizer&#34;</p></td>
 <td><p>EventErrorSetFinalizer is an EventType used when the controller fails to set
 the finalizer on the System resource.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorStatefulSetNotFound&#34;</p></td>
+<td><p>EventErrorStatefulSetNotFound is an EventType used when a system with &lsquo;localPlane&rsquo; enabled but which
+does not have a StatefulSet created for the SLP.</p>
 </td>
 </tr><tr><td><p>&#34;ErrorUpdateOPAConfigMap&#34;</p></td>
 <td><p>EventErrorUpdateOPAConfigMap is an EventType used when the controller fails to update the OPA ConfigMap.</p>
@@ -1387,5 +1407,5 @@ System.</p>
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>7c22e6b</code>.
+on git commit <code>b550add7</code>.
 </em></p>
