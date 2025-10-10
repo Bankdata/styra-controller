@@ -55,12 +55,16 @@ type ProjectConfig struct {
 
 	// DatasourceIgnorePatterns is a list of regex patterns, that allow datasources in styra
 	// to be ignored based on their datasource id.
+	//+kubebuilder:deprecatedversion:warning="DatasourceIgnorePatterns field is deprecated, only used in Styra"
+	// Deprecated: DatasourceIgnorePatterns field is deprecated, only used in Styra. This field will be removed in a future version.
 	DatasourceIgnorePatterns []string `json:"datasourceIgnorePatterns,omitempty"`
 
 	// GitCredentials holds a list of git credential configurations. The
 	// RepoPrefix of the GitCredential will be matched angainst repository URL in
 	// order to determine which credential to use. The GitCredential with the
 	// longest matching RepoPrefix will be selected.
+	//+kubebuilder:deprecatedversion:warning="GitCredentials field is deprecated, only used in Styra"
+	// Deprecated: GitCredentials field is deprecated, only used in Styra. This field will be removed in a future version.
 	GitCredentials []*GitCredential `json:"gitCredentials"`
 
 	// LogLevel sets the logging level of the controller. A higher number gives
@@ -74,8 +78,12 @@ type ProjectConfig struct {
 
 	Sentry *SentryConfig `json:"sentry"`
 
+	//+kubebuilder:deprecatedversion:warning="SSO field is deprecated, only used in Styra"
+	// Deprecated: SSO field is deprecated, only used in Styra. This field will be removed in a future version.
 	SSO *SSOConfig `json:"sso"`
 
+	//+kubebuilder:deprecatedversion:warning="Styra field is deprecated, use OPAControlPlaneConfig instead"
+	// Deprecated: Use OPAControlPlaneConfig instead. This field will be removed in a future version.
 	Styra StyraConfig `json:"styra"`
 
 	OPA OPAConfig `json:"opa,omitempty"`
@@ -92,10 +100,17 @@ type ProjectConfig struct {
 
 	// SystemUserRoles is a list of Styra DAS system level roles which the subjects of
 	// a system will be granted.
+	//+kubebuilder:deprecatedversion:warning="SystemUserRoles field is deprecated, only used in Styra"
+	// Deprecated: SystemUserRoles field is deprecated, only used in Styra. This field will be removed in a future version.
 	SystemUserRoles []string `json:"systemUserRoles"`
 
+	//+kubebuilder:deprecatedversion:warning="DecisionsExporter field is deprecated, only used in Styra"
+	// Deprecated: DecisionsExporter field is deprecated, only used in Styra. This field will be removed in a future version.
 	DecisionsExporter *ExporterConfig `json:"decisionsExporter,omitempty"`
-	ActivityExporter  *ExporterConfig `json:"activityExporter,omitempty"`
+
+	//+kubebuilder:deprecatedversion:warning="ActivityExporter field is deprecated, only used in Styra"
+	// Deprecated: ActivityExporter field is deprecated, only used in Styra. This field will be removed in a future version.
+	ActivityExporter *ExporterConfig `json:"activityExporter,omitempty"`
 
 	PodRestart *PodRestartConfig `json:"podRestart,omitempty"`
 
@@ -115,15 +130,21 @@ type ProjectConfig struct {
 
 	// EnableStyraReconciliation is a flag that sets whether the controller should use Styra
 	// A Migration flag to enable/disable Styra DAS reconciliation for all systems and libraries.
+	//+kubebuilder:deprecatedversion:warning="EnableStyraReconciliation field is deprecated, only used in migration versions Styra->OCP"
+	// Deprecated: EnableStyraReconciliation field is deprecated, only used in migration versions Styra->OCP. This field will be removed in a future version.
 	EnableStyraReconciliation bool `json:"enableStyraReconciliation,omitempty"`
 
 	// EnableOPAControlPlaneReconciliation is a flag that sets whether the controller should use OPAControlPlane
 	// A Migration flag to enable/disable OPA Control Plane reconciliation for all systems and libraries.
+	//+kubebuilder:deprecatedversion:warning="EnableOPAControlPlaneReconciliation field is deprecated, only used in migration versions Styra->OCP"
+	// Deprecated: EnableOPAControlPlaneReconciliation field is deprecated, only used in migration versions Styra->OCP. This field will be removed in a future version.
 	EnableOPAControlPlaneReconciliation bool `json:"enableOpaControlPlane,omitempty"`
 
 	// EnableOPAControlPlaneReconciliationTestData is a flag that sets whether the controller should create
 	// OPAControlPlane test data.
 	// A Migration flag to allow adding test data to OPA Control Plane and not to modify k8s data
+	//+kubebuilder:deprecatedversion:warning="EnableOPAControlPlaneReconciliationTestData field is deprecated, only used in migration versions Styra->OCP"
+	// Deprecated: EnableOPAControlPlaneReconciliationTestData field is deprecated, only used in migration versions Styra->OCP. This field will be removed in a future version.
 	EnableOPAControlPlaneReconciliationTestData bool `json:"enableOpaControlPlaneReconciliationTestData,omitempty"`
 }
 
