@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/bankdata/styra-controller/internal/config"
 	ctrlerr "github.com/bankdata/styra-controller/internal/errors"
@@ -81,12 +82,16 @@ func (r *LibraryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	result := ctrl.Result{}
+	requeueAfter := time.Duration(0)
 	if r.Config.EnableStyraReconciliation {
 		log.Info("Styra DAS library reconcile starting")
 		result, err := r.styraReconcile(ctx, log, k8sLib)
 		if err != nil {
 			return result, err
 		}
+		// Save the requeueAfter request from styraReconcile.
+		// if both styra and ocp are enabled, the requeue request from styraReconcile is overwritten by the ocp reconcile.
+		requeueAfter = result.RequeueAfter
 	} else {
 		log.Info("Styra DAS Reconciliation have been disabled")
 	}
@@ -97,10 +102,12 @@ func (r *LibraryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if err != nil {
 			return result, err
 		}
+		requeueAfter = result.RequeueAfter
 	} else {
 		log.Info("OPA Control Plane Reconciliation have been disabled")
 	}
 
+	result.RequeueAfter = requeueAfter
 	return result, nil
 }
 
@@ -201,7 +208,7 @@ func (r *LibraryReconciler) styraReconcile(
 	if libResp == nil {
 		// This is often the case when a library has just been created.
 		log.Info(fmt.Sprint("Library ", k8sLib.Spec.Name, " could not be fetched. Requeueing..."))
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 	}
 
 	if result, err := r.reconcileDatasources(ctx, log, &k8sLib, libResp.LibraryEntityExpanded); err != nil {

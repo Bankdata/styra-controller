@@ -781,14 +781,16 @@ discovery:
 			},
 		}, false, nil).Once()
 
-		styraClientMock.On("CreateInvitation", mock.Anything, false, "test1@test.com").Return(&styra.CreateInvitationResponse{
-			StatusCode: http.StatusOK,
-		}, nil).Once()
+		styraClientMock.On("CreateInvitation", mock.Anything, false, "test1@test.com").
+			Return(&styra.CreateInvitationResponse{
+				StatusCode: http.StatusOK,
+			}, nil).Once()
 		styraClientMock.On("InvalidateCache", mock.Anything).Return(nil).Once()
 
-		styraClientMock.On("CreateInvitation", mock.Anything, false, "test2@test.com").Return(&styra.CreateInvitationResponse{
-			StatusCode: http.StatusOK,
-		}, nil).Once()
+		styraClientMock.On("CreateInvitation", mock.Anything, false, "test2@test.com").
+			Return(&styra.CreateInvitationResponse{
+				StatusCode: http.StatusOK,
+			}, nil).Once()
 		styraClientMock.On("InvalidateCache", mock.Anything).Return(nil).Once()
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
