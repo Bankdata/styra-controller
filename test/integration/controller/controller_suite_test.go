@@ -185,7 +185,7 @@ var _ = ginkgo.BeforeSuite(func() {
 	// err = libraryReconciler.SetupWithManager(k8sManager)
 	// gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-	// managerCtx, managerCancel = context.WithCancel(context.Background())
+	managerCtx, managerCancel = context.WithCancel(context.Background())
 
 	go func() {
 		defer ginkgo.GinkgoRecover()
