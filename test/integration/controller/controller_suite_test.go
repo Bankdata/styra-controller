@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import (
 	styrav1beta1 "github.com/bankdata/styra-controller/api/styra/v1beta1"
 	styractrls "github.com/bankdata/styra-controller/internal/controller/styra"
 	webhookmocks "github.com/bankdata/styra-controller/internal/webhook/mocks"
+	ocpclientmock "github.com/bankdata/styra-controller/pkg/ocp/mocks"
 	"github.com/bankdata/styra-controller/pkg/ptr"
 	"github.com/bankdata/styra-controller/pkg/styra"
 	styraclientmock "github.com/bankdata/styra-controller/pkg/styra/mocks"
@@ -57,7 +58,10 @@ var (
 	managerCancel           context.CancelFunc
 	managerCtxPodRestart    context.Context
 	managerCancelPodRestart context.CancelFunc
+	managerCtxOCP           context.Context
+	managerCancelOCP        context.CancelFunc
 	styraClientMock         *styraclientmock.ClientInterface
+	ocpClientMock           *ocpclientmock.ClientInterface
 	webhookMock             *webhookmocks.Client
 )
 
@@ -116,12 +120,14 @@ var _ = ginkgo.BeforeSuite(func() {
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	styraClientMock = &styraclientmock.ClientInterface{}
+	ocpClientMock = &ocpclientmock.ClientInterface{}
 	webhookMock = &webhookmocks.Client{}
 	systemReconciler := styractrls.SystemReconciler{
 		Client:        k8sClient,
 		APIReader:     k8sManager.GetAPIReader(),
 		Scheme:        k8sManager.GetScheme(),
 		Styra:         styraClientMock,
+		OCP:           ocpClientMock,
 		WebhookClient: webhookMock,
 		Recorder:      k8sManager.GetEventRecorderFor("system-controller"),
 		Config: &configv2alpha2.ProjectConfig{
@@ -133,6 +139,7 @@ var _ = ginkgo.BeforeSuite(func() {
 			DatasourceIgnorePatterns:  []string{"^.*/ignore$"},
 			ReadOnly:                  true,
 			EnableDeltaBundlesDefault: ptr.Bool(false),
+			EnableStyraReconciliation: true,
 		},
 
 		Metrics: &styractrls.SystemReconcilerMetrics{
@@ -173,9 +180,11 @@ var _ = ginkgo.BeforeSuite(func() {
 			GitCredentials: []*configv2alpha2.GitCredential{
 				{User: "test-user", Password: "test-secret"},
 			},
+			EnableStyraReconciliation: true,
 		},
 		Client:        k8sClient,
 		Styra:         styraClientMock,
+		OCP:           ocpClientMock,
 		WebhookClient: webhookMock,
 	}
 
@@ -190,7 +199,7 @@ var _ = ginkgo.BeforeSuite(func() {
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	}()
 
-	// Test setup for SystemReconciler1 that deploys a system with an ID and a Statefulset for a SLP
+	// Test setup for systemReconcilerPodRestart that deploys a system with an ID and a Statefulset for a SLP
 	k8sManagerPodRestart, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:         scheme.Scheme,
 		LeaderElection: false,
@@ -200,12 +209,13 @@ var _ = ginkgo.BeforeSuite(func() {
 	})
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-	//Controller with PodRestart enabled for SLPs.
+	// Controller with PodRestart enabled for SLPs.
 	systemReconcilerPodRestart := styractrls.SystemReconciler{
 		Client:        k8sClient,
 		APIReader:     k8sManagerPodRestart.GetAPIReader(),
 		Scheme:        k8sManagerPodRestart.GetScheme(),
 		Styra:         styraClientMock,
+		OCP:           ocpClientMock,
 		WebhookClient: webhookMock,
 		Recorder:      k8sManagerPodRestart.GetEventRecorderFor("system-controller"),
 		Config: &configv2alpha2.ProjectConfig{
@@ -224,6 +234,7 @@ var _ = ginkgo.BeforeSuite(func() {
 					DeploymentType: "statefulset",
 				},
 			},
+			EnableStyraReconciliation: true,
 		},
 		Metrics: &styractrls.SystemReconcilerMetrics{
 			ControllerSystemStatusReady: prometheus.NewGaugeVec(
@@ -255,7 +266,7 @@ var _ = ginkgo.BeforeSuite(func() {
 
 	managerCtxPodRestart, managerCancelPodRestart = context.WithCancel(context.Background())
 	go func() {
-		//Test setup function to SystemReconcilerPodrestart that deploys a system with an ID and a Statefulset for a SLP
+		// Test setup function to systemReconcilerPodRestart that deploys a system with an ID and a Statefulset for a SLP
 		// and restarts the SLP pods.
 		defer ginkgo.GinkgoRecover()
 
@@ -313,6 +324,75 @@ var _ = ginkgo.BeforeSuite(func() {
 		err = k8sManagerPodRestart.Start(managerCtxPodRestart)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	}()
+
+	k8sManagerOCP, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme:         scheme.Scheme,
+		LeaderElection: false,
+		Metrics: metricsserver.Options{
+			BindAddress: "0",
+		},
+	})
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+	systemReconcilerOCP := styractrls.SystemReconciler{
+		Client:        k8sClient,
+		APIReader:     k8sManagerOCP.GetAPIReader(),
+		Scheme:        k8sManagerOCP.GetScheme(),
+		Styra:         styraClientMock,
+		OCP:           ocpClientMock,
+		WebhookClient: webhookMock,
+		Recorder:      k8sManagerOCP.GetEventRecorderFor("system-controller-ocp"),
+		Config: &configv2alpha2.ProjectConfig{
+			DatasourceIgnorePatterns:            []string{"^.*/ignore$"},
+			ReadOnly:                            true,
+			EnableOPAControlPlaneReconciliation: true,
+			DefaultRequirements:                 []string{"library1"},
+			ObjectStorage: &configv2alpha2.ObjectStorage{
+				AWS: &configv2alpha2.AWSObjectStorage{
+					Bucket:              "test-bucket",
+					Region:              "eu-west-1",
+					URL:                 "storage-url",
+					OCPConfigSecretName: "ocp-config",
+				},
+			},
+			SystemSuffix: "cluster1",
+		},
+
+		Metrics: &styractrls.SystemReconcilerMetrics{
+			ControllerSystemStatusReady: prometheus.NewGaugeVec(
+				prometheus.GaugeOpts{
+					Name: "controller_system_status_ready",
+					Help: "Show if a system is in status ready",
+				},
+				[]string{"system_name", "namespace", "system_id"},
+			),
+			ReconcileSegmentTime: prometheus.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name:    "controller_system_reconcile_segment_seconds",
+					Help:    "Time taken to perform one segment of reconciling a system",
+					Buckets: prometheus.DefBuckets,
+				}, []string{"segment"},
+			),
+			ReconcileTime: prometheus.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name:    "controller_system_reconcile_seconds",
+					Help:    "Time taken to reconcile a system",
+					Buckets: prometheus.DefBuckets,
+				}, []string{"result"},
+			),
+		},
+	}
+
+	err = systemReconcilerOCP.SetupWithManager(k8sManagerOCP, "styra-controller-ocp")
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+	managerCtxOCP, managerCancelOCP = context.WithCancel(context.Background())
+
+	go func() {
+		defer ginkgo.GinkgoRecover()
+		err = k8sManagerOCP.Start(managerCtxOCP)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	}()
 })
 
 var _ = ginkgo.AfterSuite(func() {
@@ -325,6 +405,9 @@ var _ = ginkgo.AfterSuite(func() {
 	}
 	if managerCancelPodRestart != nil {
 		managerCancelPodRestart()
+	}
+	if managerCancelOCP != nil {
+		managerCancelOCP()
 	}
 	if testEnv != nil {
 		err := testEnv.Stop()

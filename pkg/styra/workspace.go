@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/pkg/errors"
 )
 
@@ -88,7 +89,7 @@ func (c *Client) UpdateWorkspaceRaw(
 	}
 
 	if res.StatusCode != http.StatusOK {
-		err := NewHTTPError(res.StatusCode, string(body))
+		err := httperror.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 

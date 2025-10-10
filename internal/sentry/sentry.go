@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,11 +23,10 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/getsentry/sentry-go"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
 type sentryReconciler struct {
@@ -41,7 +40,7 @@ func (r *sentryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if sentry.CurrentHub().Client() != nil {
 		if err != nil {
 			hub := sentry.CurrentHub().Clone()
-			var styraerror *styra.HTTPError
+			var styraerror *httperror.HTTPError
 			if errors.As(err, &styraerror) {
 				hub.ConfigureScope(func(scope *sentry.Scope) {
 					scope.SetContext("Styra Client", map[string]interface{}{

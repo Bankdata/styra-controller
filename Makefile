@@ -1,4 +1,4 @@
-# Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+# Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -86,7 +86,7 @@ test-unit: ginkgo manifests generate lint generate-mocks ## Run unit tests.
 
 .PHONY: test-integration ## Run integration tests.
 test-integration: ginkgo manifests generate lint envtest generate-mocks ## Run integration tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r --label-filter "integration" --output-interceptor-mode=none
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r --label-filter "integration" --output-interceptor-mode=none -v
 
 .PHONY: kind-create
 kind-create: kind ## Create kind cluster

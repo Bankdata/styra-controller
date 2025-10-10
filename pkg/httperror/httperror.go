@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package styra
+// Package httperror defines functionality for handling HTTP errors
+package httperror
 
 import (
 	"encoding/json"
@@ -31,24 +32,24 @@ type HTTPError struct {
 }
 
 // Error implements the error interface.
-func (styraerror *HTTPError) Error() string {
-	return fmt.Sprintf("styra: unexpected statuscode: %d, body: %s", styraerror.StatusCode, styraerror.Body)
+func (httpError *HTTPError) Error() string {
+	return fmt.Sprintf("unexpected statuscode: %d, body: %s", httpError.StatusCode, httpError.Body)
 }
 
 // NewHTTPError creates a new HTTPError based on the statuscode and body from a
-// failed call to the Styra API.
+// failed http call.
 func NewHTTPError(statuscode int, body string) error {
-	styraerror := &HTTPError{
+	httpError := &HTTPError{
 		StatusCode: statuscode,
 	}
 
 	if isValidJSON(body) {
-		styraerror.Body = body
+		httpError.Body = body
 	} else {
-		styraerror.Body = "invalid JSON response"
+		httpError.Body = "invalid JSON response"
 	}
 
-	return errors.WithStack(styraerror)
+	return errors.WithStack(httpError)
 }
 
 func isValidJSON(data string) bool {

@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/pkg/errors"
 )
 
@@ -29,7 +30,7 @@ func (c *Client) DeletePolicy(ctx context.Context, policyName string) (*DeletePo
 	}
 
 	if res.StatusCode != http.StatusNotFound && res.StatusCode != http.StatusOK {
-		err := NewHTTPError(res.StatusCode, string(body))
+		err := httperror.NewHTTPError(res.StatusCode, string(body))
 		return nil, err
 	}
 
