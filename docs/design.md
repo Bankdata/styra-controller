@@ -1,9 +1,9 @@
 # CustomResourceDefinition Design
 
 This document describes the design of the custom resource definitions that the
-styra-controller manages.
+ocp-controller manages.
 
-The custom resources managed by the styra-controller are:
+The custom resources managed by the ocp-controller are:
 
 * `System`
 * `Library`
@@ -82,6 +82,6 @@ spec:
 ```
 
 The content of the library is what is found in the folder `<path>/libraries/<library-name>`. 
-There is therefore a high coupling between the library name and the path to the library in the git repository. The library name is also used as the name of the library in OPA Control Plane.
+There is therefore a tight coupling between the library name and the path to the library in the git repository. The library name is also used as the name of the library in OPA Control Plane.
 With the above example, the content of the library would be the files found at 
 `https://github.com/Bankdata/styra-controller/tree/master/rego/path/libraries/mylibrary` together with the datasource.
