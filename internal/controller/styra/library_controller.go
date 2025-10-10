@@ -89,8 +89,8 @@ func (r *LibraryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if err != nil {
 			return result, err
 		}
-		// Save the requeueAfter request from styraReconcile.
-		// if both styra and ocp are enabled, the requeue request from styraReconcile is overwritten by the ocp reconcile.
+		// Save the requeueAfter from styraReconcile. If both Styra and OCP reconcile are enabled,
+		// the requeue request from styraReconcile is overwritten by the ocpReconcile.
 		requeueAfter = result.RequeueAfter
 	} else {
 		log.Info("Styra DAS Reconciliation have been disabled")
@@ -107,6 +107,7 @@ func (r *LibraryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		log.Info("OPA Control Plane Reconciliation have been disabled")
 	}
 
+	// RequeueAfter triggers a requeue if greater than 0.
 	result.RequeueAfter = requeueAfter
 	return result, nil
 }

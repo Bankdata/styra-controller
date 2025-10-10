@@ -207,7 +207,7 @@ var _ = ginkgo.BeforeSuite(func() {
 	})
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-	//Controller with PodRestart enabled for SLPs.
+	// Controller with PodRestart enabled for SLPs.
 	systemReconcilerPodRestart := styractrls.SystemReconciler{
 		Client:        k8sClient,
 		APIReader:     k8sManagerPodRestart.GetAPIReader(),
@@ -264,7 +264,7 @@ var _ = ginkgo.BeforeSuite(func() {
 
 	managerCtxPodRestart, managerCancelPodRestart = context.WithCancel(context.Background())
 	go func() {
-		//Test setup function to systemReconcilerPodRestart that deploys a system with an ID and a Statefulset for a SLP
+		// Test setup function to systemReconcilerPodRestart that deploys a system with an ID and a Statefulset for a SLP
 		// and restarts the SLP pods.
 		defer ginkgo.GinkgoRecover()
 
