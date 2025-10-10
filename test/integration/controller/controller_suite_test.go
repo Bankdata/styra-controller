@@ -58,6 +58,8 @@ var (
 	managerCancel           context.CancelFunc
 	managerCtxPodRestart    context.Context
 	managerCancelPodRestart context.CancelFunc
+	managerCtxOCP           context.Context
+	managerCancelOCP        context.CancelFunc
 	styraClientMock         *styraclientmock.ClientInterface
 	ocpClientMock           *ocpclientmock.ClientInterface
 	webhookMock             *webhookmocks.Client
@@ -322,6 +324,75 @@ var _ = ginkgo.BeforeSuite(func() {
 		err = k8sManagerPodRestart.Start(managerCtxPodRestart)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	}()
+
+	k8sManagerOCP, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme:         scheme.Scheme,
+		LeaderElection: false,
+		Metrics: metricsserver.Options{
+			BindAddress: "0",
+		},
+	})
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+	systemReconcilerOCP := styractrls.SystemReconciler{
+		Client:        k8sClient,
+		APIReader:     k8sManagerOCP.GetAPIReader(),
+		Scheme:        k8sManagerOCP.GetScheme(),
+		Styra:         styraClientMock,
+		OCP:           ocpClientMock,
+		WebhookClient: webhookMock,
+		Recorder:      k8sManagerOCP.GetEventRecorderFor("system-controller-ocp"),
+		Config: &configv2alpha2.ProjectConfig{
+			DatasourceIgnorePatterns:            []string{"^.*/ignore$"},
+			ReadOnly:                            true,
+			EnableOPAControlPlaneReconciliation: true,
+			DefaultRequirements:                 []string{"library1"},
+			ObjectStorage: &configv2alpha2.ObjectStorage{
+				AWS: &configv2alpha2.AWSObjectStorage{
+					Bucket:              "test-bucket",
+					Region:              "eu-west-1",
+					URL:                 "storage-url",
+					OCPConfigSecretName: "ocp-config",
+				},
+			},
+			SystemSuffix: "cluster1",
+		},
+
+		Metrics: &styractrls.SystemReconcilerMetrics{
+			ControllerSystemStatusReady: prometheus.NewGaugeVec(
+				prometheus.GaugeOpts{
+					Name: "controller_system_status_ready",
+					Help: "Show if a system is in status ready",
+				},
+				[]string{"system_name", "namespace", "system_id"},
+			),
+			ReconcileSegmentTime: prometheus.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name:    "controller_system_reconcile_segment_seconds",
+					Help:    "Time taken to perform one segment of reconciling a system",
+					Buckets: prometheus.DefBuckets,
+				}, []string{"segment"},
+			),
+			ReconcileTime: prometheus.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name:    "controller_system_reconcile_seconds",
+					Help:    "Time taken to reconcile a system",
+					Buckets: prometheus.DefBuckets,
+				}, []string{"result"},
+			),
+		},
+	}
+
+	err = systemReconcilerOCP.SetupWithManager(k8sManagerOCP, "styra-controller-ocp")
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+	managerCtxOCP, managerCancelOCP = context.WithCancel(context.Background())
+
+	go func() {
+		defer ginkgo.GinkgoRecover()
+		err = k8sManagerOCP.Start(managerCtxOCP)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	}()
 })
 
 var _ = ginkgo.AfterSuite(func() {
@@ -334,6 +405,9 @@ var _ = ginkgo.AfterSuite(func() {
 	}
 	if managerCancelPodRestart != nil {
 		managerCancelPodRestart()
+	}
+	if managerCancelOCP != nil {
+		managerCancelOCP()
 	}
 	if testEnv != nil {
 		err := testEnv.Stop()
