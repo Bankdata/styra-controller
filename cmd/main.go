@@ -142,6 +142,10 @@ func main() {
 		defer sentry.Flush(2 * time.Second)
 	}
 
+	log.Info("config", "Enable OCP Reconciliation", ctrlConfig.EnableOPAControlPlaneReconciliation)
+	log.Info("config", "Enable Styra Reconciliation", ctrlConfig.EnableStyraReconciliation)
+	log.Info("config", "Enable OCP Test Data", ctrlConfig.EnableOPAControlPlaneReconciliationTestData)
+
 	mgr, err := ctrl.NewManager(restCfg, options)
 	if err != nil {
 		log.Error(err, "unable to start manager")

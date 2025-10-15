@@ -219,23 +219,29 @@ func (r *SystemReconciler) reconcileDeletion(
 ) (ctrl.Result, error) {
 	log.Info("System deletion is in progress")
 	if finalizer.IsSet(system) {
-		// finalizer is present so we need to ensure system is deleted in
-		// styra, unless deletion protection is enabled
-		if system.Status.ID != "" {
-			deletionProtected := false
-			if system.Spec.DeletionProtection != nil {
-				deletionProtected = *system.Spec.DeletionProtection
-			} else {
-				deletionProtected = r.Config.DeletionProtectionDefault
-			}
-			if !deletionProtected {
-				log.Info("Deleting system in styra")
-				_, err := r.Styra.DeleteSystem(ctx, system.Status.ID)
-				if err != nil {
-					return ctrl.Result{}, ctrlerr.Wrap(err, "Could not delete system in styra").
-						WithEvent(v1beta1.EventErrorDeleteSystemInStyra)
+		if r.Config.EnableStyraReconciliation {
+			// finalizer is present so we need to ensure system is deleted in
+			// styra, unless deletion protection is enabled or styra reconciliation is disabled
+			if system.Status.ID != "" {
+				deletionProtected := false
+				if system.Spec.DeletionProtection != nil {
+					deletionProtected = *system.Spec.DeletionProtection
+				} else {
+					deletionProtected = r.Config.DeletionProtectionDefault
+				}
+				if !deletionProtected {
+					log.Info("Deleting system in styra")
+					_, err := r.Styra.DeleteSystem(ctx, system.Status.ID)
+					if err != nil {
+						return ctrl.Result{}, ctrlerr.Wrap(err, "Could not delete system in styra").
+							WithEvent(v1beta1.EventErrorDeleteSystemInStyra)
+					}
 				}
 			}
+		}
+
+		if r.Config.EnableOPAControlPlaneReconciliation {
+			log.Info("TODO: OCP deletion logic is not implemented")
 		}
 
 		log.Info("Removing finalizer")
@@ -273,9 +279,9 @@ func (r *SystemReconciler) reconcile(
 	if r.Config.EnableOPAControlPlaneReconciliationTestData {
 		log.Info("OPA Control Plane Test Data flag is enabled - first lets do OCP reconciliation of test data")
 
-		_, err := r.ocpReconcile(ctx, log, system)
+		result, err := r.ocpReconcile(ctx, log, system)
 		if err != nil {
-			return ctrl.Result{}, err
+			return result, err
 		}
 		log.Info("OPA Control Plane Test Data reconciliation completed - now do Styra DAS reconciliation")
 	}
@@ -713,6 +719,12 @@ func (r *SystemReconciler) reconcileSystemSource(
 	log logr.Logger,
 	system *v1beta1.System,
 	uniqueName string) (ctrl.Result, error) {
+
+	if system.Spec.SourceControl == nil {
+		// TODO: For OCP logic we are not using ctrlerr with events ands stuff
+		return ctrl.Result{}, errors.New("reconcileSystemSource: no source control configured on system")
+	}
+
 	gitConfig := &ocp.GitConfig{
 		Repo:          system.Spec.SourceControl.Origin.URL,
 		IncludedFiles: []string{"*.rego"},

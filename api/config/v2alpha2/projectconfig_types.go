@@ -162,7 +162,7 @@ type ProjectConfig struct {
 	// Only used in migration versions Styra->OCP"
 	// Deprecated: EnableOPAControlPlaneReconciliationTestData field is deprecated.
 	// Only used in migration versions Styra->OCP. This field will be removed in a future version.
-	EnableOPAControlPlaneReconciliationTestData bool `json:"enableOpaControlPlaneReconciliationTestData,omitempty"`
+	EnableOPAControlPlaneReconciliationTestData bool `json:"enableOPAControlPlaneReconciliationTestData,omitempty"`
 }
 
 // ObjectStorage defines the structure for object storage configuration used by bundles
