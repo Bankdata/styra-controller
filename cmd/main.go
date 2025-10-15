@@ -155,6 +155,18 @@ func main() {
 	var opaControlPlaneClient ocp.ClientInterface
 	var s3Client s3.Client
 	if ctrlConfig.EnableOPAControlPlaneReconciliation || ctrlConfig.EnableOPAControlPlaneReconciliationTestData {
+		if ctrlConfig.OPAControlPlaneConfig == nil || ctrlConfig.OPAControlPlaneConfig.Address == "" || ctrlConfig.OPAControlPlaneConfig.Token == "" {
+			err := errors.New("OPAControlPlane enabled: Missing OPA Control Plane configuration. Address and Token are required")
+			log.Error(err, "unable to start manager")
+			exit(err)
+		}
+
+		if ctrlConfig.ObjectStorage == nil || ctrlConfig.ObjectStorage.AWS == nil || ctrlConfig.ObjectStorage.AWS.AdminCredentials == nil {
+			err := errors.New("OPAControlPlane enabled: Missing Object Storage configuration, AWS and AdminCredentials are required")
+			log.Error(err, "unable to start manager")
+			exit(err)
+		}
+
 		ocpHostURL := strings.TrimSuffix(ctrlConfig.OPAControlPlaneConfig.Address, "/")
 		opaControlPlaneClient = ocp.New(ocpHostURL, ctrlConfig.OPAControlPlaneConfig.Token)
 
