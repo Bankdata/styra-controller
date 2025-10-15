@@ -240,7 +240,7 @@ func (r *SystemReconciler) reconcileDeletion(
 			}
 		}
 
-		if r.Config.EnableOPAControlPlaneReconciliation {
+		if r.Config.EnableOPAControlPlaneReconciliation || r.Config.EnableOPAControlPlaneReconciliationTestData {
 			log.Info("TODO: OCP deletion logic is not implemented")
 		}
 
@@ -305,7 +305,9 @@ func (r *SystemReconciler) ocpReconcile(
 
 		created, err := r.createSourceIfNotExists(ctx, log, datasource)
 		if err != nil {
-			return ctrl.Result{}, err
+			return ctrl.Result{}, ctrlerr.Wrap(err, fmt.Sprintf("ocpReconcile: Could not ensure datasource/source exists: %s", datasource.Path)).
+				WithEvent(v1beta1.EventErrorUpdateSource).
+				WithSystemCondition(v1beta1.ConditionTypeRequirementsUpdated)
 		}
 
 		if created && r.WebhookClient != nil {
@@ -313,7 +315,7 @@ func (r *SystemReconciler) ocpReconcile(
 			if err := r.WebhookClient.SystemDatasourceChangedOCP(ctx, log, datasource.Path); err != nil {
 				err = ctrlerr.Wrap(err, "Could not call datasource changed webhook").
 					WithEvent(v1beta1.EventErrorCallWebhook).
-					WithSystemCondition(v1beta1.ConditionTypeDatasourcesUpdated)
+					WithSystemCondition(v1beta1.ConditionTypeRequirementsUpdated)
 				r.recordErrorEvent(system, err)
 				log.Error(err, err.Error())
 			}
@@ -330,7 +332,9 @@ func (r *SystemReconciler) ocpReconcile(
 		WithLabelValues("reconcileSystemSourceOcp").
 		Observe(time.Since(reconcileSystemSourceStart).Seconds())
 	if err != nil {
-		return result, err
+		return ctrl.Result{}, ctrlerr.Wrap(err, fmt.Sprintf("ocpReconcile: Could not reconcile system source: %s", uniqueName)).
+			WithEvent(v1beta1.EventErrorUpdateSource).
+			WithSystemCondition(v1beta1.ConditionTypeSystemSourceUpdated)
 	}
 	requirements = append(requirements, ocp.NewRequirement(uniqueName))
 	system.SetCondition(v1beta1.ConditionTypeSystemSourceUpdated, metav1.ConditionTrue)
@@ -341,7 +345,9 @@ func (r *SystemReconciler) ocpReconcile(
 		WithLabelValues("reconcileSystemBundleOcp").
 		Observe(time.Since(reconcileSystemBundleStart).Seconds())
 	if err != nil {
-		return result, err
+		return result, ctrlerr.Wrap(err, fmt.Sprintf("ocpReconcile: Could not reconcile system bundle: %s", uniqueName)).
+			WithEvent(v1beta1.EventErrorUpdateBundle).
+			WithSystemCondition(v1beta1.ConditionTypeSystemBundleUpdated)
 	}
 	system.SetCondition(v1beta1.ConditionTypeSystemBundleUpdated, metav1.ConditionTrue)
 
@@ -351,9 +357,12 @@ func (r *SystemReconciler) ocpReconcile(
 		return ctrl.Result{}, nil
 	}
 
-	result, secretUpdated, err := r.reconcileOPASecret(ctx, log, system, uniqueName)
+	secretName := fmt.Sprintf("%s-opa-secret", system.Name)
+	result, secretUpdated, err := r.reconcileOPASecret(ctx, log, system, uniqueName, secretName)
 	if err != nil {
-		return result, err
+		return result, ctrlerr.Wrap(err, fmt.Sprintf("ocpReconcile: Could not reconcile OPA Secret: %s", secretName)).
+			WithEvent(v1beta1.EventErrorUpdateOPASecret).
+			WithSystemCondition(v1beta1.ConditionTypeOPASecretUpdated)
 	}
 	if secretUpdated {
 		system.SetCondition(v1beta1.ConditionTypeOPAUpToDate, metav1.ConditionFalse)
@@ -367,9 +376,12 @@ func (r *SystemReconciler) ocpReconcile(
 	}
 	system.SetCondition(v1beta1.ConditionTypeOPASecretUpdated, metav1.ConditionTrue)
 
-	result, updatedOPAConfigMap, err := r.reconcileOPAConfigMapForOCP(ctx, log, system, uniqueName)
+	configmapName := fmt.Sprintf("%s-opa-config", system.Name)
+	result, updatedOPAConfigMap, err := r.reconcileOPAConfigMapForOCP(ctx, log, system, uniqueName, configmapName)
 	if err != nil {
-		return result, err
+		return result, ctrlerr.Wrap(err, fmt.Sprintf("ocpReconcile: Could not reconcile OPA ConfigMap: %s", configmapName)).
+			WithEvent(v1beta1.EventErrorUpdateOPAConfigMap).
+			WithSystemCondition(v1beta1.ConditionTypeOPAConfigMapUpdated)
 	}
 	if updatedOPAConfigMap {
 		system.SetCondition(v1beta1.ConditionTypeOPAUpToDate, metav1.ConditionFalse)
@@ -416,8 +428,8 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 	log logr.Logger,
 	system *v1beta1.System,
 	uniqueName string,
+	configmapName string,
 ) (ctrl.Result, bool, error) {
-	configmapName := fmt.Sprintf("%s-opa-config", system.Name)
 	log = log.WithValues("configmapName", configmapName)
 	log.Info("Reconciling OPA ConfigMap")
 
@@ -506,9 +518,9 @@ func (r *SystemReconciler) reconcileOPASecret(
 	log logr.Logger,
 	system *v1beta1.System,
 	uniqueName string,
+	secretName string,
 ) (ctrl.Result, bool, error) {
 	log.Info("Reconciling OPA secret")
-	secretName := fmt.Sprintf("%s-opa-secret", system.Name)
 
 	reconcileS3CredentialsStart := time.Now()
 	s3CredentialsRead, result, err := r.reconcileS3Credentials(
@@ -721,7 +733,6 @@ func (r *SystemReconciler) reconcileSystemSource(
 	uniqueName string) (ctrl.Result, error) {
 
 	if system.Spec.SourceControl == nil {
-		// TODO: For OCP logic we are not using ctrlerr with events ands stuff
 		return ctrl.Result{}, errors.New("reconcileSystemSource: no source control configured on system")
 	}
 

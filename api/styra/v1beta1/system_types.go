@@ -491,6 +491,9 @@ const (
 	// EventErrorUpdateOPAConfigMap is an EventType used when the controller fails to update the OPA ConfigMap.
 	EventErrorUpdateOPAConfigMap EventType = "ErrorUpdateOPAConfigMap"
 
+	// EventErrorUpdateOPASecret is an EventType used when the controller fails to update the OPA ConfigMap.
+	EventErrorUpdateOPASecret EventType = "ErrorUpdateOPASecret"
+
 	// EventErrorOwnerRefSLPConfigMap is an EventType used when the controller fails to set the owner reference
 	// on the SLP ConfigMap.
 	EventErrorOwnerRefSLPConfigMap EventType = "ErrorOwnerRefSLPConfigMap"
@@ -506,6 +509,12 @@ const (
 
 	// EventErrorUpdateSystem is an EventType used when the controller fails to update the System in Styra.
 	EventErrorUpdateSystem EventType = "ErrorUpdateSystem"
+
+	// EventErrorUpdateSource is an EventType used when the controller fails to update the Source in OCP.
+	EventErrorUpdateSource EventType = "ErrorUpdateSource"
+
+	// EventErrorUpdateBundle is an EventType used when the controller fails to update the Source in OCP.
+	EventErrorUpdateBundle EventType = "ErrorUpdateBundle"
 )
 
 //+kubebuilder:object:root=true
