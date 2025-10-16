@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -59,6 +59,9 @@ import (
 	"github.com/bankdata/styra-controller/internal/predicate"
 	"github.com/bankdata/styra-controller/internal/sentry"
 	"github.com/bankdata/styra-controller/internal/webhook"
+	"github.com/bankdata/styra-controller/pkg/httperror"
+	"github.com/bankdata/styra-controller/pkg/ocp"
+	"github.com/bankdata/styra-controller/pkg/s3"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
@@ -75,6 +78,8 @@ type SystemReconciler struct {
 	APIReader     client.Reader
 	Scheme        *runtime.Scheme
 	Styra         styra.ClientInterface
+	OCP           ocp.ClientInterface
+	S3            s3.Client
 	WebhookClient webhook.Client
 	Recorder      record.EventRecorder
 	Metrics       *SystemReconcilerMetrics
@@ -109,6 +114,7 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	log = log.WithValues("systemID", system.Status.ID)
+	log = log.WithValues("controlPlane", system.Labels["styra-controller/control-plane"])
 
 	if !labels.ControllerClassMatches(&system, r.Config.ControllerClass) {
 		log.Info("This is not a System we are managing. Skipping reconciliation.")
@@ -213,23 +219,29 @@ func (r *SystemReconciler) reconcileDeletion(
 ) (ctrl.Result, error) {
 	log.Info("System deletion is in progress")
 	if finalizer.IsSet(system) {
-		// finalizer is present so we need to ensure system is deleted in
-		// styra, unless deletion protection is enabled
-		if system.Status.ID != "" {
-			deletionProtected := false
-			if system.Spec.DeletionProtection != nil {
-				deletionProtected = *system.Spec.DeletionProtection
-			} else {
-				deletionProtected = r.Config.DeletionProtectionDefault
-			}
-			if !deletionProtected {
-				log.Info("Deleting system in styra")
-				_, err := r.Styra.DeleteSystem(ctx, system.Status.ID)
-				if err != nil {
-					return ctrl.Result{}, ctrlerr.Wrap(err, "Could not delete system in styra").
-						WithEvent(v1beta1.EventErrorDeleteSystemInStyra)
+		if r.Config.EnableStyraReconciliation {
+			// finalizer is present so we need to ensure system is deleted in
+			// styra, unless deletion protection is enabled or styra reconciliation is disabled
+			if system.Status.ID != "" {
+				deletionProtected := false
+				if system.Spec.DeletionProtection != nil {
+					deletionProtected = *system.Spec.DeletionProtection
+				} else {
+					deletionProtected = r.Config.DeletionProtectionDefault
+				}
+				if !deletionProtected {
+					log.Info("Deleting system in styra")
+					_, err := r.Styra.DeleteSystem(ctx, system.Status.ID)
+					if err != nil {
+						return ctrl.Result{}, ctrlerr.Wrap(err, "Could not delete system in styra").
+							WithEvent(v1beta1.EventErrorDeleteSystemInStyra)
+					}
 				}
 			}
+		}
+
+		if r.Config.EnableOPAControlPlaneReconciliation || r.Config.EnableOPAControlPlaneReconciliationTestData {
+			log.Info("TODO: OCP deletion logic is not implemented")
 		}
 
 		log.Info("Removing finalizer")
@@ -247,7 +259,7 @@ func (r *SystemReconciler) reconcile(
 	log logr.Logger,
 	system *v1beta1.System,
 ) (ctrl.Result, error) {
-	log.Info("Reconciling spec")
+	log.Info("Reconciling system spec")
 
 	if !finalizer.IsSet(system) {
 		if err := r.reconcileFinalizer(ctx, log, system); err != nil {
@@ -255,6 +267,549 @@ func (r *SystemReconciler) reconcile(
 		}
 	}
 
+	if system.Labels[labels.LabelControlPlane] == "opa-control-plane" {
+		if r.Config.EnableOPAControlPlaneReconciliation {
+			log.Info("OPA Control Plane system reconcile starting")
+			return r.ocpReconcile(ctx, log, system)
+		}
+		log.Info("OPA Control Plane Reconciliation have been disabled")
+		return ctrl.Result{}, nil
+	}
+
+	if r.Config.EnableOPAControlPlaneReconciliationTestData {
+		log.Info("OPA Control Plane Test Data flag is enabled - first lets do OCP reconciliation of test data")
+
+		result, err := r.ocpReconcile(ctx, log, system)
+		if err != nil {
+			return result, err
+		}
+		log.Info("OPA Control Plane Test Data reconciliation completed - now do Styra DAS reconciliation")
+	}
+
+	if r.Config.EnableStyraReconciliation {
+		log.Info("Styra DAS System reconcile starting")
+		return r.styraReconcile(ctx, log, system)
+	}
+	log.Info("Styra DAS Reconciliation have been disabled")
+	return ctrl.Result{}, nil
+}
+
+func (r *SystemReconciler) ocpReconcile(
+	ctx context.Context,
+	log logr.Logger,
+	system *v1beta1.System) (ctrl.Result, error) {
+	requirements := ocp.ToRequirements(r.Config.OPAControlPlaneConfig.DefaultRequirements)
+
+	for _, datasource := range system.Spec.Datasources {
+		datasource.Path = strings.ReplaceAll(datasource.Path, "/", "-")
+
+		created, err := r.createSourceIfNotExists(ctx, log, datasource)
+		if err != nil {
+			return ctrl.Result{}, ctrlerr.Wrap(err,
+				fmt.Sprintf("ocpReconcile: Could not ensure datasource/source exists: %s", datasource.Path),
+			).WithEvent(v1beta1.EventErrorUpdateSource).
+				WithSystemCondition(v1beta1.ConditionTypeRequirementsUpdated)
+		}
+
+		if created && r.WebhookClient != nil {
+			log.Info("Calling datasource changed webhook")
+			if err := r.WebhookClient.SystemDatasourceChangedOCP(ctx, log, datasource.Path); err != nil {
+				err = ctrlerr.Wrap(err, "Could not call datasource changed webhook").
+					WithEvent(v1beta1.EventErrorCallWebhook).
+					WithSystemCondition(v1beta1.ConditionTypeRequirementsUpdated)
+				r.recordErrorEvent(system, err)
+				log.Error(err, err.Error())
+			}
+		}
+
+		requirements = append(requirements, ocp.NewRequirement(datasource.Path))
+	}
+	system.SetCondition(v1beta1.ConditionTypeRequirementsUpdated, metav1.ConditionTrue)
+
+	reconcileSystemSourceStart := time.Now()
+	uniqueName := system.OCPUniqueName(r.Config.SystemPrefix, r.Config.SystemSuffix)
+	result, err := r.reconcileSystemSource(ctx, log, system, uniqueName)
+	r.Metrics.ReconcileSegmentTime.
+		WithLabelValues("reconcileSystemSourceOcp").
+		Observe(time.Since(reconcileSystemSourceStart).Seconds())
+	if err != nil {
+		return result, ctrlerr.Wrap(
+			err, fmt.Sprintf("ocpReconcile: Could not reconcile system source: %s", uniqueName)).
+			WithEvent(v1beta1.EventErrorUpdateSource).
+			WithSystemCondition(v1beta1.ConditionTypeSystemSourceUpdated)
+	}
+	requirements = append(requirements, ocp.NewRequirement(uniqueName))
+	system.SetCondition(v1beta1.ConditionTypeSystemSourceUpdated, metav1.ConditionTrue)
+
+	reconcileSystemBundleStart := time.Now()
+	result, err = r.reconcileSystemBundle(ctx, uniqueName, requirements)
+	r.Metrics.ReconcileSegmentTime.
+		WithLabelValues("reconcileSystemBundleOcp").
+		Observe(time.Since(reconcileSystemBundleStart).Seconds())
+	if err != nil {
+		return result, ctrlerr.Wrap(err, fmt.Sprintf("ocpReconcile: Could not reconcile system bundle: %s", uniqueName)).
+			WithEvent(v1beta1.EventErrorUpdateBundle).
+			WithSystemCondition(v1beta1.ConditionTypeSystemBundleUpdated)
+	}
+	system.SetCondition(v1beta1.ConditionTypeSystemBundleUpdated, metav1.ConditionTrue)
+
+	// If the test data flag is enabled we skip the rest of the OCP reconciliation
+	if r.Config.EnableOPAControlPlaneReconciliationTestData {
+		log.Info("OCP reconciliation completed - skipping rest of OCP reconciliation due to test data flag")
+		return ctrl.Result{}, nil
+	}
+
+	secretName := fmt.Sprintf("%s-opa-secret", system.Name)
+	result, secretUpdated, err := r.reconcileOPASecret(ctx, log, system, uniqueName, secretName)
+	if err != nil {
+		return result, ctrlerr.Wrap(err, fmt.Sprintf("ocpReconcile: Could not reconcile OPA Secret: %s", secretName)).
+			WithEvent(v1beta1.EventErrorUpdateOPASecret).
+			WithSystemCondition(v1beta1.ConditionTypeOPASecretUpdated)
+	}
+	if secretUpdated {
+		system.SetCondition(v1beta1.ConditionTypeOPAUpToDate, metav1.ConditionFalse)
+		err = r.Status().Update(ctx, system)
+		if err != nil {
+			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not update system to reflect that secret is outdated").
+				WithEvent(v1beta1.EventErrorUpdateStatus).
+				WithSystemCondition(v1beta1.ConditionTypeOPAUpToDate)
+		}
+		return result, nil
+	}
+	system.SetCondition(v1beta1.ConditionTypeOPASecretUpdated, metav1.ConditionTrue)
+
+	configmapName := fmt.Sprintf("%s-opa-config", system.Name)
+	result, updatedOPAConfigMap, err := r.reconcileOPAConfigMapForOCP(ctx, log, system, uniqueName, configmapName)
+	if err != nil {
+		return result, ctrlerr.Wrap(err, fmt.Sprintf("ocpReconcile: Could not reconcile OPA ConfigMap: %s", configmapName)).
+			WithEvent(v1beta1.EventErrorUpdateOPAConfigMap).
+			WithSystemCondition(v1beta1.ConditionTypeOPAConfigMapUpdated)
+	}
+	if updatedOPAConfigMap {
+		system.SetCondition(v1beta1.ConditionTypeOPAUpToDate, metav1.ConditionFalse)
+		err = r.Status().Update(ctx, system)
+		if err != nil {
+			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not update system to reflect that configmap is outdated").
+				WithEvent(v1beta1.EventErrorUpdateStatus).
+				WithSystemCondition(v1beta1.ConditionTypeOPAUpToDate)
+		}
+		return result, nil
+	}
+	system.SetCondition(v1beta1.ConditionTypeOPAConfigMapUpdated, metav1.ConditionTrue)
+
+	system.Status.Ready = true
+	system.Status.Phase = v1beta1.SystemPhaseCreated
+	system.Status.FailureMessage = ""
+
+	if system.GetCondition(v1beta1.ConditionTypeOPAUpToDate) != nil &&
+		*system.GetCondition(v1beta1.ConditionTypeOPAUpToDate) == metav1.ConditionFalse {
+		if r.Config.OPARestartEnabled() {
+			log.Error(errors.New("Restarting OPA is not implemented yet"), "Error restarting OPA")
+		}
+		system.SetCondition(v1beta1.ConditionTypeOPAUpToDate, metav1.ConditionTrue)
+	}
+
+	updateStatusStart := time.Now()
+	err = r.Status().Update(ctx, system)
+	r.Metrics.ReconcileSegmentTime.
+		WithLabelValues("updateStatusOcp").
+		Observe(time.Since(updateStatusStart).Seconds())
+	if err != nil {
+		return ctrl.Result{}, ctrlerr.Wrap(err, "Could not change status.phase to Created").
+			WithEvent(v1beta1.EventErrorPhaseToCreated)
+	}
+
+	msg := "OCP Reconciliation completed"
+	r.Recorder.Event(system, corev1.EventTypeNormal, "ReconciliationCompleted", msg)
+	log.Info(msg)
+	return ctrl.Result{}, nil
+}
+
+func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
+	ctx context.Context,
+	log logr.Logger,
+	system *v1beta1.System,
+	uniqueName string,
+	configmapName string,
+) (ctrl.Result, bool, error) {
+	log = log.WithValues("configmapName", configmapName)
+	log.Info("Reconciling OPA ConfigMap")
+
+	var expectedOPAConfigMap corev1.ConfigMap
+	var err error
+
+	var customConfig map[string]interface{}
+	if system.Spec.CustomOPAConfig != nil {
+		err := yaml.Unmarshal(system.Spec.CustomOPAConfig.Raw, &customConfig)
+		if err != nil {
+			return ctrl.Result{}, false, err
+		}
+	}
+
+	opaconf := ocp.OPAConfig{
+		Resource: fmt.Sprintf("bundles/%s/bundle.tar.gz", uniqueName),
+		URL: fmt.Sprintf("%s/%s",
+			r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.URL,
+			r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.Bucket),
+		AWSRegion: r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.Region,
+	}
+
+	expectedOPAConfigMap, err = k8sconv.OpaConfToK8sOPAConfigMapforOCP(opaconf, r.Config.OPA, customConfig)
+	if err != nil {
+		return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not convert OPA conf to ConfigMap").
+			WithEvent(v1beta1.EventErrorConvertOPAConf).
+			WithSystemCondition(v1beta1.ConditionTypeOPAConfigMapUpdated)
+	}
+
+	var cm corev1.ConfigMap
+	nsName := types.NamespacedName{Name: configmapName, Namespace: system.Namespace}
+	if err := r.Get(ctx, nsName, &cm); err != nil {
+		if k8serrors.IsNotFound(err) {
+			log.Info("Creating OPA ConfigMap")
+			cm.Data = expectedOPAConfigMap.Data
+			cm.Name = nsName.Name
+			cm.Namespace = nsName.Namespace
+			cm.Labels = system.Labels
+			if cm.Labels == nil {
+				cm.Labels = map[string]string{}
+			}
+			labels.SetManagedBy(&cm)
+			if err := controllerutil.SetControllerReference(system, &cm, r.Scheme); err != nil {
+				return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not set owner reference on OPA ConfigMap").
+					WithEvent(v1beta1.EventErrorOwnerRefOPAConfigMap).
+					WithSystemCondition(v1beta1.ConditionTypeOPAConfigMapUpdated)
+			}
+			if err := r.Create(ctx, &cm); err != nil {
+				return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not create OPA ConfigMap").
+					WithEvent(v1beta1.EventErrorCreateOPAConfigMap).
+					WithSystemCondition(v1beta1.ConditionTypeOPAConfigMapUpdated)
+			}
+			return ctrl.Result{}, true, nil
+		}
+		return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not fetch OPA ConfigMap").
+			WithEvent(v1beta1.EventErrorFetchOPAConfigMap).
+			WithSystemCondition(v1beta1.ConditionTypeOPAConfigMapUpdated)
+	}
+
+	update := false
+
+	if !metav1.IsControlledBy(&cm, system) {
+		return ctrl.Result{}, false, ctrlerr.New("ConfigMap already exists and is not owned by controller").
+			WithEvent(v1beta1.EventErrorConfigMapNotOwnedByController).
+			WithSystemCondition(v1beta1.ConditionTypeOPAConfigMapUpdated)
+	}
+
+	if cm.Data["opa-conf.yaml"] != expectedOPAConfigMap.Data["opa-conf.yaml"] {
+		log.Info("Updating OPA ConfigMap")
+		cm.Data = expectedOPAConfigMap.Data
+		update = true
+	}
+
+	if update {
+		if err := r.Update(ctx, &cm); err != nil {
+			return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not update OPA ConfigMap").
+				WithEvent(v1beta1.EventErrorUpdateOPAConfigMap).
+				WithSystemCondition(v1beta1.ConditionTypeOPAConfigMapUpdated)
+		}
+	}
+
+	log.Info("Reconciled OPA ConfigMap")
+	return ctrl.Result{}, update, nil
+}
+
+func (r *SystemReconciler) reconcileOPASecret(
+	ctx context.Context,
+	log logr.Logger,
+	system *v1beta1.System,
+	uniqueName string,
+	secretName string,
+) (ctrl.Result, bool, error) {
+	log.Info("Reconciling OPA secret")
+
+	reconcileS3CredentialsStart := time.Now()
+	s3CredentialsRead, result, err := r.reconcileS3Credentials(
+		ctx, log, system, uniqueName, secretName)
+	r.Metrics.ReconcileSegmentTime.
+		WithLabelValues("reconcileS3CredentialsOcp").
+		Observe(time.Since(reconcileS3CredentialsStart).Seconds())
+	if err != nil {
+		return result, false, err
+	}
+
+	reconcilek8sOPASecret := time.Now()
+	result, secretUpdated, err := r.reconcilek8sOPASecret(
+		ctx, log, system, s3CredentialsRead, secretName)
+	r.Metrics.ReconcileSegmentTime.
+		WithLabelValues("reconcilek8sOPASecretOcp").
+		Observe(time.Since(reconcilek8sOPASecret).Seconds())
+	if err != nil {
+		return result, false, err
+	}
+	log.Info("Reconciled OPA secret")
+	return ctrl.Result{}, secretUpdated, nil
+}
+
+func (r *SystemReconciler) getk8sOPASecret(
+	ctx context.Context,
+	system *v1beta1.System,
+	secretName string) (corev1.Secret, error) {
+	var secret corev1.Secret
+
+	nsName := types.NamespacedName{Name: secretName, Namespace: system.Namespace}
+	err := r.Get(ctx, nsName, &secret)
+	if err != nil {
+		return secret, err
+	}
+	return secret, err
+}
+
+func (r *SystemReconciler) reconcilek8sOPASecret(
+	ctx context.Context,
+	log logr.Logger,
+	system *v1beta1.System,
+	s3Credentials s3.Credentials,
+	secretName string,
+) (ctrl.Result, bool, error) {
+
+	var s corev1.Secret
+	nsName := types.NamespacedName{Name: secretName, Namespace: system.Namespace}
+	if err := r.Get(ctx, nsName, &s); err != nil {
+		if k8serrors.IsNotFound(err) {
+			log.Info("Creating OPA Secret")
+			s.Name = nsName.Name
+			s.Namespace = nsName.Namespace
+			s.Labels = system.Labels
+			if s.Labels == nil {
+				s.Labels = map[string]string{}
+			}
+			labels.SetManagedBy(&s)
+			s.Data = map[string][]byte{
+				s3.AWSSecretNameKeyID:     []byte(s3Credentials.AccessKeyID),
+				s3.AWSSecretNameSecretKey: []byte(s3Credentials.SecretAccessKey),
+				s3.AWSSecretNameRegion:    []byte(s3Credentials.Region),
+			}
+			if err := controllerutil.SetControllerReference(system, &s, r.Scheme); err != nil {
+				return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not set owner reference on Secret").
+					WithEvent(v1beta1.EventErrorOwnerRefOPATokenSecret).
+					WithSystemCondition(v1beta1.ConditionTypeOPATokenUpdated)
+			}
+			if err := r.Create(ctx, &s); err != nil {
+				return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not create OPA Secret").
+					WithEvent(v1beta1.EventErrorCreateOPATokenSecret).
+					WithSystemCondition(v1beta1.ConditionTypeOPATokenUpdated)
+			}
+			return ctrl.Result{}, true, nil
+		}
+		return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not fetch OPA Secret").
+			WithEvent(v1beta1.EventErrorFetchOPATokenSecret).
+			WithSystemCondition(v1beta1.ConditionTypeOPATokenUpdated)
+	}
+
+	update := false
+
+	if !metav1.IsControlledBy(&s, system) {
+		return ctrl.Result{}, false, ctrlerr.New("Existing secret is not owned by controller. Skipping update").
+			WithEvent(v1beta1.EventErrorSecretNotOwnedByController).
+			WithSystemCondition(v1beta1.ConditionTypeOPATokenUpdated)
+	}
+
+	if (string(s.Data[s3.AWSSecretNameKeyID]) != s3Credentials.AccessKeyID) ||
+		(string(s.Data[s3.AWSSecretNameSecretKey]) != s3Credentials.SecretAccessKey) ||
+		(string(s.Data[s3.AWSSecretNameRegion]) != s3Credentials.Region) {
+		log.Info("Secret mismatch. Updating secret.")
+		s.Data = map[string][]byte{
+			s3.AWSSecretNameKeyID:     []byte(s3Credentials.AccessKeyID),
+			s3.AWSSecretNameSecretKey: []byte(s3Credentials.SecretAccessKey),
+			s3.AWSSecretNameRegion:    []byte(s3Credentials.Region),
+		}
+		update = true
+	}
+
+	if update {
+		if err := r.Update(ctx, &s); err != nil {
+			return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not update OPA secret").
+				WithEvent(v1beta1.EventErrorUpdateOPATokenSecret).
+				WithSystemCondition(v1beta1.ConditionTypeOPATokenUpdated)
+		}
+	}
+
+	return ctrl.Result{}, update, nil
+}
+
+func (r *SystemReconciler) reconcileS3Credentials(
+	ctx context.Context,
+	log logr.Logger,
+	system *v1beta1.System,
+	uniqueName string,
+	secretName string,
+) (s3.Credentials, ctrl.Result, error) {
+	s3Credentials := s3.Credentials{}
+	s3Credentials.Region = r.Config.UserCredentialHandler.S3.Region
+	s3Credentials.AccessKeyID = fmt.Sprintf("Access-Key-%s-%s", r.Config.UserCredentialHandler.S3.Bucket, uniqueName)
+
+	userExist, err := r.S3.UserExists(ctx, s3Credentials.AccessKeyID)
+	if err != nil {
+		return s3Credentials, ctrl.Result{}, errors.Wrap(err, "reconcileS3Credentials: could not call S3 ")
+	}
+
+	if userExist {
+		secret, err := r.getk8sOPASecret(ctx, system, secretName)
+		if err != nil && !k8serrors.IsNotFound(err) {
+			return s3Credentials, ctrl.Result{}, errors.Wrap(err, "reconcileS3Credentials: error while getting secret from k8s")
+		}
+		if secret.Data == nil ||
+			len(secret.Data[s3.AWSSecretNameKeyID]) == 0 ||
+			len(secret.Data[s3.AWSSecretNameSecretKey]) == 0 {
+			log.Info(
+				"AccessKey exists, but no secret in k8s-secret.. We need to update secretKey for accessKey",
+				"accessKey", s3Credentials.AccessKeyID,
+			)
+
+			s3Credentials.SecretAccessKey, err = r.S3.SetNewUserSecretKey(ctx, s3Credentials.AccessKeyID)
+			if err != nil {
+				log.Error(err, "failed to apply new secretKey for accessKey", "accessKey", s3Credentials.AccessKeyID)
+				return s3Credentials, ctrl.Result{}, errors.Wrap(
+					err, "reconcileS3Credentials: failed to apply new secretKey for accessKey",
+				)
+			}
+			log.Info("SecretKey updated for existing accessKey", "accessKey", s3Credentials.AccessKeyID)
+			return s3Credentials, ctrl.Result{}, nil
+		}
+		log.Info("Secret found in k8s. We must assume it is valid", "accessKey", s3Credentials.AccessKeyID)
+		s3Credentials.SecretAccessKey = string(secret.Data[s3.AWSSecretNameSecretKey])
+		return s3Credentials, ctrl.Result{}, nil
+	}
+
+	if !userExist {
+		log.Info("AccessKey does not exist, creating new accessKey", "accessKey", s3Credentials.AccessKeyID)
+		// create read only user for this bundle
+		s3Credentials.SecretAccessKey, err = r.S3.CreateSystemBundleUser(
+			ctx, s3Credentials.AccessKeyID, r.Config.UserCredentialHandler.S3.Bucket, uniqueName,
+		)
+		if err != nil {
+			log.Error(err, "failed to create accessKey", "accessKey", s3Credentials.AccessKeyID)
+			return s3Credentials, ctrl.Result{}, errors.Wrap(err, "reconcileS3Credentials: could not create accessKey")
+		}
+		log.Info("AccessKey created", "accessKey", s3Credentials.AccessKeyID)
+	}
+
+	return s3Credentials, ctrl.Result{}, nil
+}
+
+func (r *SystemReconciler) reconcileSystemBundle(
+	ctx context.Context,
+	uniqueName string,
+	requirements []ocp.Requirement) (ctrl.Result, error) {
+	if r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3 == nil {
+		return ctrl.Result{}, errors.New("reconcileSystemBundle: no object storage configured")
+	}
+
+	objectStorage := ocp.ObjectStorage{
+		AmazonS3: &ocp.AmazonS3{
+			Bucket:      r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.Bucket,
+			Key:         fmt.Sprintf("bundles/%s/bundle.tar.gz", uniqueName),
+			Region:      r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.Region,
+			URL:         r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.URL,
+			Credentials: r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.OCPConfigSecretName,
+		},
+	}
+
+	bundle := &ocp.PutBundleRequest{
+		Name:          uniqueName,
+		ObjectStorage: objectStorage,
+		Requirements:  requirements,
+	}
+	err := r.OCP.PutBundle(ctx, bundle)
+
+	if err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "ocpReconcile: could not create or update bundle in OCP")
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *SystemReconciler) reconcileSystemSource(
+	ctx context.Context,
+	log logr.Logger,
+	system *v1beta1.System,
+	uniqueName string) (ctrl.Result, error) {
+
+	if system.Spec.SourceControl == nil {
+		return ctrl.Result{}, errors.New("reconcileSystemSource: no source control configured on system")
+	}
+
+	gitConfig := &ocp.GitConfig{
+		Repo:          system.Spec.SourceControl.Origin.URL,
+		IncludedFiles: []string{"*.rego"},
+	}
+	if system.Spec.SourceControl.Origin.Commit != "" {
+		gitConfig.Commit = system.Spec.SourceControl.Origin.Commit
+	}
+	if system.Spec.SourceControl.Origin.Reference != "" {
+		gitConfig.Reference = system.Spec.SourceControl.Origin.Reference
+	}
+	if system.Spec.SourceControl.Origin.Path != "" {
+		gitConfig.Path = system.Spec.SourceControl.Origin.Path
+	}
+	gitCredentialFound := false
+	for _, cred := range r.Config.OPAControlPlaneConfig.GitCredentials {
+		if strings.Contains(system.Spec.SourceControl.Origin.URL, cred.RepoPrefix) {
+			gitConfig.CredentialID = cred.ID
+			gitCredentialFound = true
+			break
+		}
+	}
+	if !gitCredentialFound {
+		return ctrl.Result{}, fmt.Errorf(
+			"reconcileSystemSource: Unsupported git repository: %s",
+			system.Spec.SourceControl.Origin.URL)
+	}
+
+	_, err := r.OCP.PutSource(ctx, uniqueName, &ocp.PutSourceRequest{
+		Name: uniqueName,
+		Git:  gitConfig,
+	})
+	if err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "reconcileSystemSource: could not create or update source in OCP")
+	}
+	log.Info("OCP source upserted", "source", uniqueName)
+	return ctrl.Result{}, nil
+}
+
+func (r *SystemReconciler) createSourceIfNotExists(
+	ctx context.Context,
+	log logr.Logger,
+	source v1beta1.Datasource) (bool, error) {
+	_, err := r.OCP.GetSource(ctx, source.Path)
+	if err == nil {
+		log.Info("Source already exists", "source", source.Path)
+		return false, nil
+	}
+
+	var httpErr *httperror.HTTPError
+	if errors.As(err, &httpErr) {
+		if httpErr.StatusCode != http.StatusNotFound {
+			return false, errors.Wrap(err, "GetSource in createSourceIfNotExists failed")
+		}
+	} else {
+		return false, errors.Wrap(err, "GetSource in createSourceIfNotExists failed")
+	}
+
+	log.Info("Creating source", "source", source.Path)
+	_, err = r.OCP.PutSource(ctx, source.Path, &ocp.PutSourceRequest{
+		Name: source.Path,
+	})
+	if err != nil {
+		return false, errors.Wrap(err, "PutSource in createSourceIfNotExists failed")
+	}
+	log.Info("Source created", "source", source.Path)
+
+	return true, nil
+}
+
+func (r *SystemReconciler) styraReconcile(
+	ctx context.Context,
+	log logr.Logger,
+	system *v1beta1.System) (ctrl.Result, error) {
 	var (
 		cfg *styra.SystemConfig
 		err error
@@ -281,7 +836,7 @@ func (r *SystemReconciler) reconcile(
 		r.Metrics.ReconcileSegmentTime.WithLabelValues("getSystem").Observe(time.Since(getSystemStart).Seconds())
 
 		if err != nil {
-			var serr *styra.HTTPError
+			var serr *httperror.HTTPError
 			if errors.As(err, &serr) && serr.StatusCode == http.StatusNotFound {
 				createSystemStart := time.Now()
 				res, err := r.createSystemWithID(ctx, log, system, systemID)
@@ -420,7 +975,8 @@ func (r *SystemReconciler) reconcile(
 		system.SetCondition(conditionType, metav1.ConditionFalse)
 		err = r.Status().Update(ctx, system)
 		if err != nil {
-			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not update system to reflect that Styra token in pods is outdated").
+			return ctrl.Result{}, ctrlerr.Wrap(err,
+				"Could not update system to reflect that Styra token in pods is outdated").
 				WithEvent(v1beta1.EventErrorUpdateStatus).
 				WithSystemCondition(conditionType)
 		}
@@ -440,7 +996,8 @@ func (r *SystemReconciler) reconcile(
 
 		err = r.Status().Update(ctx, system)
 		if err != nil {
-			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not update system to reflect that Styra token in pods is outdated").
+			return ctrl.Result{}, ctrlerr.Wrap(err,
+				"Could not update system to reflect that Styra token in pods is outdated").
 				WithEvent(v1beta1.EventErrorUpdateStatus).
 				WithSystemCondition(v1beta1.ConditionTypeOPAUpToDate)
 		}
@@ -460,7 +1017,8 @@ func (r *SystemReconciler) reconcile(
 
 		err = r.Status().Update(ctx, system)
 		if err != nil {
-			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not update system to reflect that Styra token in pods is outdated").
+			return ctrl.Result{}, ctrlerr.Wrap(err,
+				"Could not update system to reflect that Styra token in pods is outdated").
 				WithEvent(v1beta1.EventErrorUpdateStatus).
 				WithSystemCondition(v1beta1.ConditionTypeSLPUpToDate)
 		}
@@ -503,7 +1061,7 @@ func (r *SystemReconciler) reconcile(
 			WithEvent(v1beta1.EventErrorPhaseToCreated)
 	}
 
-	msg := "Reconciliation completed"
+	msg := "Styra Reconciliation completed"
 	r.Recorder.Event(system, corev1.EventTypeNormal, "ReconciliationCompleted", msg)
 	log.Info(msg)
 	return ctrl.Result{}, nil
@@ -1380,7 +1938,7 @@ func (r *SystemReconciler) updateSystem(
 	res, err := r.Styra.UpdateSystem(ctx, system.Status.ID, &styra.UpdateSystemRequest{SystemConfig: cfg})
 	if err != nil {
 		errMsg := "Could not update System"
-		var styrahttperr *styra.HTTPError
+		var styrahttperr *httperror.HTTPError
 		if errors.As(err, &styrahttperr) {
 			errMsg = fmt.Sprintf("Could not update Styra system. Error %s", styrahttperr.Error())
 		}
@@ -1552,6 +2110,20 @@ func (r *SystemReconciler) systemNeedsUpdate(
 		return true, nil
 	}
 	return false, nil
+}
+
+// CreateDefaultRequirements creates all the configured default sources in OCP
+func (r *SystemReconciler) CreateDefaultRequirements(ctx context.Context, log logr.Logger) error {
+	if r.Config.EnableOPAControlPlaneReconciliation || r.Config.EnableOPAControlPlaneReconciliationTestData {
+		log.Info("Creating ocp default requirements")
+		for _, defaultRequirement := range r.Config.OPAControlPlaneConfig.DefaultRequirements {
+			_, err := r.createSourceIfNotExists(ctx, log, v1beta1.Datasource{Path: defaultRequirement})
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 // SetupWithManager registers the the System controller with the Manager.

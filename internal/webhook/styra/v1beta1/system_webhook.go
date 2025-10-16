@@ -74,7 +74,7 @@ func (d *SystemCustomDefaulter) Default(ctx context.Context, obj runtime.Object)
 
 	if system.Spec.SourceControl != nil {
 		if system.Spec.SourceControl.Origin.Reference == "" && system.Spec.SourceControl.Origin.Commit == "" {
-			system.Spec.SourceControl.Origin.Reference = "refs/heads/master"
+			system.Spec.SourceControl.Origin.Reference = "refs/heads/main"
 		}
 	}
 
