@@ -21,6 +21,31 @@ styra:
   address: https://styra-url.example.com
   token: styra-token
 #  tokenSecretPath: /etc/styra-controller-token/styra_token
+
+opaControlPlaneConfig:
+  address: https://ocp-host/ocp
+  token: ocp-token
+  gitCredentials:
+    - id: git-credential-id
+      repoPrefix: https://github.com
+  bundleObjectStorage:
+    s3:
+      bucket: ocp
+      region: us-east-1
+      url: https://minio-host
+      ocpConfigSecretName: minio # Name of secret in ocp config
+  defaultRequirements:
+    - library1
+
+# used by controller to create users and policies
+userCredentialHandler:
+  s3:
+    bucket: ocp
+    url: https://minio-host
+    region: us-east-1 #default use for minio
+    accessKeyID: minio-access-key
+    secretAccessKey: minio-secret-key
+
 #systemPrefix:
 #systemSuffix:
 systemUserRoles:

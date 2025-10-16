@@ -32,6 +32,24 @@ func (_m *Client) LibraryDatasourceChanged(_a0 context.Context, _a1 logr.Logger,
 	return r0
 }
 
+// LibraryDatasourceChangedOCP provides a mock function with given fields: _a0, _a1, _a2
+func (_m *Client) LibraryDatasourceChangedOCP(_a0 context.Context, _a1 logr.Logger, _a2 string) error {
+	ret := _m.Called(_a0, _a1, _a2)
+
+	if len(ret) == 0 {
+		panic("no return value specified for LibraryDatasourceChangedOCP")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, logr.Logger, string) error); ok {
+		r0 = rf(_a0, _a1, _a2)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // SystemDatasourceChanged provides a mock function with given fields: _a0, _a1, _a2, _a3
 func (_m *Client) SystemDatasourceChanged(_a0 context.Context, _a1 logr.Logger, _a2 string, _a3 string) error {
 	ret := _m.Called(_a0, _a1, _a2, _a3)
@@ -43,6 +61,24 @@ func (_m *Client) SystemDatasourceChanged(_a0 context.Context, _a1 logr.Logger, 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, logr.Logger, string, string) error); ok {
 		r0 = rf(_a0, _a1, _a2, _a3)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SystemDatasourceChangedOCP provides a mock function with given fields: _a0, _a1, _a2
+func (_m *Client) SystemDatasourceChangedOCP(_a0 context.Context, _a1 logr.Logger, _a2 string) error {
+	ret := _m.Called(_a0, _a1, _a2)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SystemDatasourceChangedOCP")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, logr.Logger, string) error); ok {
+		r0 = rf(_a0, _a1, _a2)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
+	"github.com/bankdata/styra-controller/pkg/ocp"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
@@ -37,10 +38,33 @@ type credentials struct {
 	Bearer bearer `yaml:"bearer"`
 }
 
+type s3credentials struct {
+	S3Signing s3signing `yaml:"s3_signing"`
+}
+
+type s3signing struct {
+	S3EnvironmentCredentials map[string]interface{} `yaml:"environment_credentials"`
+}
+
+type authz struct {
+	Service  string `yaml:"service"`
+	Resource string `yaml:"resource"`
+}
+
+type bundle struct {
+	Authz authz `yaml:"authz"`
+}
+
 type service struct {
 	Name        string      `yaml:"name"`
 	URL         string      `yaml:"url"`
 	Credentials credentials `yaml:"credentials,omitempty"`
+}
+
+type s3service struct {
+	Name          string        `yaml:"name"`
+	URL           string        `yaml:"url"`
+	S3Credentials s3credentials `yaml:"credentials"`
 }
 
 type labels struct {
@@ -71,6 +95,69 @@ type opaConfigMap struct {
 	Labels       labels       `yaml:"labels"`
 	Discovery    discovery    `yaml:"discovery"`
 	DecisionLogs decisionLogs `yaml:"decision_logs,omitempty"`
+}
+
+type s3opaConfigMap struct {
+	Services     []s3service  `yaml:"services"`
+	Bundles      bundle       `yaml:"bundles,omitempty"`
+	DecisionLogs decisionLogs `yaml:"decision_logs,omitempty"`
+}
+
+// OpaConfToK8sOPAConfigMapforOCP creates a ConfigMap for the OPA.
+// It configures OPA to fetch bundle from MinIO.
+// OpaConfToK8sOPAConfigMapforOCP merges the information given as input into a ConfigMap for OPA
+func OpaConfToK8sOPAConfigMapforOCP(
+	opaconf ocp.OPAConfig,
+	opaDefaultConfig configv2alpha2.OPAConfig,
+	customConfig map[string]interface{},
+) (corev1.ConfigMap, error) {
+
+	s3opaConfigMap := s3opaConfigMap{
+		Bundles: bundle{
+			Authz: authz{
+				Service:  "s3",
+				Resource: opaconf.Resource,
+			},
+		},
+		Services: []s3service{{
+			Name: "s3",
+			URL:  opaconf.URL,
+			S3Credentials: s3credentials{
+				S3Signing: s3signing{
+					S3EnvironmentCredentials: map[string]interface{}{},
+				},
+			},
+		}},
+	}
+
+	if opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers != nil {
+		s3opaConfigMap.DecisionLogs = decisionLogs{
+			RequestContext: requestContext{
+				HTTP: http{
+					Headers: opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers,
+				},
+			},
+		}
+	}
+
+	opaConfigMapMapStringInterface, err := opaConfigMapToMap(s3opaConfigMap)
+	if err != nil {
+		return corev1.ConfigMap{}, err
+	}
+
+	merged := mergeMaps(opaConfigMapMapStringInterface, customConfig)
+
+	res, err := yaml.Marshal(&merged)
+	if err != nil {
+		return corev1.ConfigMap{}, errors.Wrap(err, "Could not marshal configmap data")
+	}
+
+	var cm corev1.ConfigMap
+	cm.Data = map[string]string{
+		"opa-conf.yaml": string(res),
+	}
+
+	return cm, nil
 }
 
 // OpaConfToK8sOPAConfigMap creates a corev1.ConfigMap for the OPA based on the
@@ -268,7 +355,7 @@ func OpaConfToK8sOPAConfigMapNoSLP(
 	return cm, nil
 }
 
-func opaConfigMapToMap(cm opaConfigMap) (map[string]interface{}, error) {
+func opaConfigMapToMap(cm interface{}) (map[string]interface{}, error) {
 	res, err := yaml.Marshal(&cm)
 	if err != nil {
 		return nil, errors.Wrap(err, "Could not marshal configmap data")

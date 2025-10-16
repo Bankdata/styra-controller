@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -37,7 +37,10 @@ import (
 
 	styrav1beta1 "github.com/bankdata/styra-controller/api/styra/v1beta1"
 	"github.com/bankdata/styra-controller/internal/finalizer"
+	"github.com/bankdata/styra-controller/pkg/httperror"
+	"github.com/bankdata/styra-controller/pkg/ocp"
 	"github.com/bankdata/styra-controller/pkg/ptr"
+	"github.com/bankdata/styra-controller/pkg/s3"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
@@ -780,14 +783,16 @@ discovery:
 			},
 		}, false, nil).Once()
 
-		styraClientMock.On("CreateInvitation", mock.Anything, false, "test1@test.com").Return(&styra.CreateInvitationResponse{
-			StatusCode: http.StatusOK,
-		}, nil).Once()
+		styraClientMock.On("CreateInvitation", mock.Anything, false, "test1@test.com").
+			Return(&styra.CreateInvitationResponse{
+				StatusCode: http.StatusOK,
+			}, nil).Once()
 		styraClientMock.On("InvalidateCache", mock.Anything).Return(nil).Once()
 
-		styraClientMock.On("CreateInvitation", mock.Anything, false, "test2@test.com").Return(&styra.CreateInvitationResponse{
-			StatusCode: http.StatusOK,
-		}, nil).Once()
+		styraClientMock.On("CreateInvitation", mock.Anything, false, "test2@test.com").
+			Return(&styra.CreateInvitationResponse{
+				StatusCode: http.StatusOK,
+			}, nil).Once()
 		styraClientMock.On("InvalidateCache", mock.Anything).Return(nil).Once()
 
 		styraClientMock.On("ListRoleBindingsV2", mock.Anything, &styra.ListRoleBindingsV2Params{
@@ -2253,7 +2258,7 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile1", ginkgo.Label("integration
 		styraClientMock.On("GetSystem", mock.Anything, "system_id").Return(&styra.GetSystemResponse{
 			StatusCode:   http.StatusNotFound,
 			SystemConfig: nil,
-		}, &styra.HTTPError{
+		}, &httperror.HTTPError{
 			StatusCode: http.StatusNotFound,
 			Body:       "nil",
 		}).Once()
@@ -2482,5 +2487,385 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile1", ginkgo.Label("integration
 		}, timeout, interval).Should(gomega.BeTrue())
 
 		resetMock(&styraClientMock.Mock)
+	})
+})
+
+var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("integration"), func() {
+	ginkgo.It("should reconcile", func() {
+
+		expectedGitCredentialsID := "github-credentials"
+		expectedS3CredentialsID := "s3-credentials"
+
+		sourceControl := styrav1beta1.SourceControl{
+			Origin: styrav1beta1.GitRepo{
+				URL:       "https://github.com/test/repo.git",
+				Reference: "refs/heads/master",
+				Path:      "policy",
+			},
+		}
+
+		spec := styrav1beta1.SystemSpec{
+			DeletionProtection: ptr.Bool(false),
+			SourceControl:      &sourceControl,
+			Datasources: []styrav1beta1.Datasource{{
+				Path: "path/to/datasource",
+			}},
+		}
+
+		key := types.NamespacedName{
+			Name:      "ocp-system",
+			Namespace: "default",
+		}
+
+		toCreate := &styrav1beta1.System{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      key.Name,
+				Namespace: key.Namespace,
+				Labels: map[string]string{
+					"styra-controller/control-plane": "opa-control-plane",
+				},
+			},
+			Spec: spec,
+		}
+
+		ctx := context.Background()
+
+		ginkgo.By("Creating the OCP system")
+
+		//Called in createSourceIfNotExists
+		ocpClientMock.On("GetSource", mock.Anything, "path-to-datasource").Return(&ocp.GetSourceResponse{
+			StatusCode: http.StatusNotFound,
+		},
+			httperror.NewHTTPError(http.StatusNotFound, "404")).Once()
+
+		// Called in createSourceIfNotExists
+		ocpClientMock.On("PutSource", mock.Anything, "path-to-datasource", &ocp.PutSourceRequest{
+			Name: "path-to-datasource",
+		}).Return(&ocp.PutSourceResponse{
+			StatusCode: http.StatusOK,
+		}, nil).Once()
+
+		webhookMock.On(
+			"SystemDatasourceChangedOCP",
+			mock.Anything,
+			mock.Anything,
+			"path-to-datasource",
+		).Return(nil).Once()
+
+		// Called in reconcileSystemSource
+		ocpClientMock.On("PutSource", mock.Anything, "default-ocp-system", &ocp.PutSourceRequest{
+			Name: "default-ocp-system",
+			Git: &ocp.GitConfig{
+				Repo:          "https://github.com/test/repo.git",
+				Reference:     "refs/heads/master",
+				Path:          "policy",
+				CredentialID:  expectedGitCredentialsID,
+				IncludedFiles: []string{"*.rego"},
+			},
+		}).Return(&ocp.PutSourceResponse{
+			StatusCode: http.StatusOK,
+		}, nil).Once()
+
+		// Called in reconcileSystemBundle
+		ocpClientMock.On("PutBundle", mock.Anything, &ocp.PutBundleRequest{
+			Name: "default-ocp-system",
+			ObjectStorage: ocp.ObjectStorage{
+				AmazonS3: &ocp.AmazonS3{
+					Bucket:      "test-bucket",
+					Key:         "bundles/default-ocp-system/bundle.tar.gz",
+					Region:      "eu-west-1",
+					URL:         "s3-url",
+					Credentials: expectedS3CredentialsID,
+				},
+			},
+			Requirements: []ocp.Requirement{
+				{
+					Source: "library1",
+				},
+				{
+					Source: "path-to-datasource",
+				},
+				{
+					Source: "default-ocp-system",
+				},
+			},
+		}).Return(nil).Once()
+
+		// Called in reconcileS3Credentials
+		// First time, the user does not exist in S3
+		s3ClientMock.On("UserExists", mock.Anything, "Access-Key-test-bucket-default-ocp-system").Return(false, nil).Once()
+
+		// Called in reconcileS3Credentials
+		s3ClientMock.On("CreateSystemBundleUser", mock.Anything,
+			"Access-Key-test-bucket-default-ocp-system", "test-bucket", "default-ocp-system").
+			Return("system-user-secret-key", nil).Once()
+
+		// #### New reconcile when updating secret ###
+
+		//Called in createSourceIfNotExists
+		ocpClientMock.On("GetSource", mock.Anything, "path-to-datasource").Return(&ocp.GetSourceResponse{
+			StatusCode: http.StatusOK,
+			Source: &ocp.SourceConfig{
+				Name: "path-to-datasource",
+			},
+		}, nil).Once()
+
+		// Called in reconcileSystemSource
+		ocpClientMock.On("PutSource", mock.Anything, "default-ocp-system", &ocp.PutSourceRequest{
+			Name: "default-ocp-system",
+			Git: &ocp.GitConfig{
+				Repo:          "https://github.com/test/repo.git",
+				Reference:     "refs/heads/master",
+				Path:          "policy",
+				CredentialID:  expectedGitCredentialsID,
+				IncludedFiles: []string{"*.rego"},
+			},
+		}).Return(&ocp.PutSourceResponse{
+			StatusCode: http.StatusOK,
+		}, nil).Once()
+
+		// Called in reconcileSystemBundle
+		ocpClientMock.On("PutBundle", mock.Anything, &ocp.PutBundleRequest{
+			Name: "default-ocp-system",
+			ObjectStorage: ocp.ObjectStorage{
+				AmazonS3: &ocp.AmazonS3{
+					Bucket:      "test-bucket",
+					Key:         "bundles/default-ocp-system/bundle.tar.gz",
+					Region:      "eu-west-1",
+					URL:         "s3-url",
+					Credentials: expectedS3CredentialsID,
+				},
+			},
+			Requirements: []ocp.Requirement{
+				{
+					Source: "library1",
+				},
+				{
+					Source: "path-to-datasource",
+				},
+				{
+					Source: "default-ocp-system",
+				},
+			},
+		}).Return(nil).Once()
+
+		// Called in reconcileS3Credentials
+		s3ClientMock.On("UserExists", mock.Anything, "Access-Key-test-bucket-default-ocp-system").Return(true, nil).Once()
+
+		// #### New reconcile when updating configmap ###
+
+		//Called in createSourceIfNotExists
+		ocpClientMock.On("GetSource", mock.Anything, "path-to-datasource").Return(&ocp.GetSourceResponse{
+			StatusCode: http.StatusOK,
+			Source: &ocp.SourceConfig{
+				Name: "path-to-datasource",
+			},
+		}, nil).Once()
+
+		// Called in reconcileSystemSource
+		ocpClientMock.On("PutSource", mock.Anything, "default-ocp-system", &ocp.PutSourceRequest{
+			Name: "default-ocp-system",
+			Git: &ocp.GitConfig{
+				Repo:          "https://github.com/test/repo.git",
+				Reference:     "refs/heads/master",
+				Path:          "policy",
+				CredentialID:  expectedGitCredentialsID,
+				IncludedFiles: []string{"*.rego"},
+			},
+		}).Return(&ocp.PutSourceResponse{
+			StatusCode: http.StatusOK,
+		}, nil).Once()
+
+		// Called in reconcileSystemBundle
+		ocpClientMock.On("PutBundle", mock.Anything, &ocp.PutBundleRequest{
+			Name: "default-ocp-system",
+			ObjectStorage: ocp.ObjectStorage{
+				AmazonS3: &ocp.AmazonS3{
+					Bucket:      "test-bucket",
+					Key:         "bundles/default-ocp-system/bundle.tar.gz",
+					Region:      "eu-west-1",
+					URL:         "s3-url",
+					Credentials: expectedS3CredentialsID,
+				},
+			},
+			Requirements: []ocp.Requirement{
+				{
+					Source: "library1",
+				},
+				{
+					Source: "path-to-datasource",
+				},
+				{
+					Source: "default-ocp-system",
+				},
+			},
+		}).Return(nil).Once()
+
+		// Called in reconcileS3Credentials
+		s3ClientMock.On("UserExists", mock.Anything, "Access-Key-test-bucket-default-ocp-system").Return(true, nil).Once()
+
+		gomega.Expect(k8sClient.Create(ctx, toCreate)).To(gomega.Succeed())
+
+		// Assert that the System has all the correct statuses.
+		gomega.Eventually(func() bool {
+			fetched := &styrav1beta1.System{}
+			if err := k8sClient.Get(ctx, key, fetched); err != nil {
+				return false
+			}
+
+			finalizerIsSet := finalizer.IsSet(fetched)
+			emptyID := fetched.Status.ID == ""
+			systemStatusIsReady := fetched.Status.Ready
+			systemStatusPhaseIsCreated := fetched.Status.Phase == styrav1beta1.SystemPhaseCreated
+			systemStatusFailureMessageIsEmpty := fetched.Status.FailureMessage == ""
+
+			conditionOPASecretUpdated := false
+			conditionOPAConfigMapUpdated := false
+			conditionOPAUpToDate := false
+
+			for _, condition := range fetched.Status.Conditions {
+				if condition.Type == styrav1beta1.ConditionTypeOPASecretUpdated && condition.Status == metav1.ConditionTrue {
+					conditionOPASecretUpdated = true
+				}
+				if condition.Type == styrav1beta1.ConditionTypeOPAConfigMapUpdated && condition.Status == metav1.ConditionTrue {
+					conditionOPAConfigMapUpdated = true
+				}
+				if condition.Type == styrav1beta1.ConditionTypeOPAUpToDate && condition.Status == metav1.ConditionTrue {
+					conditionOPAUpToDate = true
+				}
+			}
+
+			return finalizerIsSet &&
+				emptyID &&
+				systemStatusIsReady &&
+				systemStatusPhaseIsCreated &&
+				systemStatusFailureMessageIsEmpty &&
+				conditionOPASecretUpdated &&
+				conditionOPAConfigMapUpdated &&
+				conditionOPAUpToDate
+		}, timeout, interval).Should(gomega.BeTrue())
+
+		// Assert that the secret has correct name and content
+		gomega.Eventually(func() bool {
+			fetched := &corev1.Secret{}
+			key := types.NamespacedName{Name: fmt.Sprintf("%s-opa-secret", key.Name), Namespace: key.Namespace}
+			return k8sClient.Get(ctx, key, fetched) == nil &&
+				string(fetched.Data[s3.AWSSecretNameKeyID]) == "Access-Key-test-bucket-default-ocp-system" &&
+				string(fetched.Data[s3.AWSSecretNameSecretKey]) == "system-user-secret-key"
+		}, timeout, interval).Should(gomega.BeTrue())
+
+		// Assert that the configmap has the correct name and content.
+		gomega.Eventually(func() bool {
+			fetched := &corev1.ConfigMap{}
+			var actualMap, expectedMap map[string]interface{}
+
+			key := types.NamespacedName{Name: fmt.Sprintf("%s-opa-config", key.Name), Namespace: key.Namespace}
+			if fetchSuceeded := k8sClient.Get(ctx, key, fetched) == nil; !fetchSuceeded {
+				return false
+			}
+
+			actualYAML := fetched.Data["opa-conf.yaml"]
+			expectedYAML := `bundles:
+  authz:
+    resource: bundles/default-ocp-system/bundle.tar.gz
+    service: s3
+services:
+- credentials:
+    s3_signing:
+      environment_credentials: {}
+  name: s3
+  url: s3-url/test-bucket
+`
+
+			if err := yaml.Unmarshal([]byte(actualYAML), &actualMap); err != nil {
+				return false
+			}
+			if err := yaml.Unmarshal([]byte(expectedYAML), &expectedMap); err != nil {
+				return false
+			}
+
+			equal := reflect.DeepEqual(expectedMap, actualMap)
+			if !equal {
+				fmt.Println("Actual", string(actualYAML))
+				fmt.Println("Expected", string(expectedYAML))
+			}
+			return equal
+		}, timeout, interval).Should(gomega.BeTrue())
+
+		// Assert the correct amount of calls have been made to mocks.
+		gomega.Eventually(func() bool {
+			var (
+				getSource int
+				putSource int
+				putBundle int
+			)
+			for _, call := range ocpClientMock.Calls {
+				switch call.Method {
+				case "GetSource":
+					getSource++
+				case "PutSource":
+					putSource++
+				case "PutBundle":
+					putBundle++
+				}
+			}
+
+			expected := getSource == 3 && putSource == 4 && putBundle == 3
+			if !expected {
+				fmt.Println("GetSource expected 3, was", getSource)
+				fmt.Println("PutSource expected 4, was", putSource)
+				fmt.Println("PutBundle expected 3, was", putBundle)
+			}
+
+			return expected
+		}, timeout, interval).Should(gomega.BeTrue())
+
+		resetMock(&ocpClientMock.Mock)
+
+		gomega.Eventually(func() bool {
+			var (
+				userExists             int
+				createSystemBundleUser int
+			)
+			for _, call := range s3ClientMock.Calls {
+				switch call.Method {
+				case "UserExists":
+					userExists++
+				case "CreateSystemBundleUser":
+					createSystemBundleUser++
+				}
+			}
+
+			expected := userExists == 3 && createSystemBundleUser == 1
+			if !expected {
+				fmt.Println("UserExists expected 3, was", userExists)
+				fmt.Println("CreateSystemBundleUser expected 1, was", createSystemBundleUser)
+			}
+
+			return expected
+		}, timeout, interval).Should(gomega.BeTrue())
+
+		resetMock(&s3ClientMock.Mock)
+
+		gomega.Eventually(func() bool {
+			var (
+				systemDatasourceChangedOCP int
+			)
+			for _, call := range webhookMock.Calls {
+				switch call.Method {
+				case "SystemDatasourceChangedOCP":
+					systemDatasourceChangedOCP++
+				}
+			}
+
+			expected := systemDatasourceChangedOCP == 1
+			if !expected {
+				fmt.Println("SystemDatasourceChangedOCP expected 1, was", systemDatasourceChangedOCP)
+			}
+
+			return expected
+		}, timeout, interval).Should(gomega.BeTrue())
+
+		resetMock(&webhookMock.Mock)
 	})
 })

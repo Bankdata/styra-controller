@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -51,6 +51,8 @@ import (
 	"github.com/bankdata/styra-controller/internal/webhook"
 	webhookstyrav1alpha1 "github.com/bankdata/styra-controller/internal/webhook/styra/v1alpha1"
 	webhookstyrav1beta1 "github.com/bankdata/styra-controller/internal/webhook/styra/v1beta1"
+	"github.com/bankdata/styra-controller/pkg/ocp"
+	"github.com/bankdata/styra-controller/pkg/s3"
 	"github.com/bankdata/styra-controller/pkg/styra"
 	//+kubebuilder:scaffold:imports
 )
@@ -140,28 +142,66 @@ func main() {
 		defer sentry.Flush(2 * time.Second)
 	}
 
+	log.Info("config", "Enable OCP Reconciliation", ctrlConfig.EnableOPAControlPlaneReconciliation)
+	log.Info("config", "Enable Styra Reconciliation", ctrlConfig.EnableStyraReconciliation)
+	log.Info("config", "Enable OCP Test Data", ctrlConfig.EnableOPAControlPlaneReconciliationTestData)
+
 	mgr, err := ctrl.NewManager(restCfg, options)
 	if err != nil {
 		log.Error(err, "unable to start manager")
 		exit(err)
 	}
 
-	roles := make([]styra.Role, len(ctrlConfig.SystemUserRoles))
-	for i, role := range ctrlConfig.SystemUserRoles {
-		roles[i] = styra.Role(role)
+	var opaControlPlaneClient ocp.ClientInterface
+	var s3Client s3.Client
+	if ctrlConfig.EnableOPAControlPlaneReconciliation || ctrlConfig.EnableOPAControlPlaneReconciliationTestData {
+		if ctrlConfig.OPAControlPlaneConfig == nil ||
+			ctrlConfig.OPAControlPlaneConfig.Address == "" ||
+			ctrlConfig.OPAControlPlaneConfig.Token == "" {
+			err := errors.New(
+				"OPAControlPlane enabled: Missing OPA Control Plane configuration. Address and Token are required",
+			)
+			log.Error(err, "unable to start manager")
+			exit(err)
+		}
+
+		if ctrlConfig.OPAControlPlaneConfig.BundleObjectStorage == nil {
+			err := errors.New(
+				"OPAControlPlane enabled: But missing bundle object storage config",
+			)
+			log.Error(err, "unable to start manager")
+			exit(err)
+		}
+
+		ocpHostURL := strings.TrimSuffix(ctrlConfig.OPAControlPlaneConfig.Address, "/")
+		opaControlPlaneClient = ocp.New(ocpHostURL, ctrlConfig.OPAControlPlaneConfig.Token)
+
+		s3Client, err = s3.NewClient(*ctrlConfig.UserCredentialHandler.S3)
+		if err != nil {
+			log.Error(err, "unable to create S3 client")
+			exit(err)
+		}
 	}
 
-	styraHostURL := strings.TrimSuffix(ctrlConfig.Styra.Address, "/")
-	styraClient := styra.New(styraHostURL, styraToken)
+	var styraClient styra.ClientInterface
+	if ctrlConfig.EnableStyraReconciliation {
+		roles := make([]styra.Role, len(ctrlConfig.SystemUserRoles))
+		for i, role := range ctrlConfig.SystemUserRoles {
+			roles[i] = styra.Role(role)
+		}
 
-	if err := configureExporter(
-		styraClient, ctrlConfig.DecisionsExporter, configv2alpha2.ExporterConfigTypeDecisions); err != nil {
-		log.Error(err, fmt.Sprintf("unable to configure %s", configv2alpha2.ExporterConfigTypeDecisions))
-	}
+		styraHostURL := strings.TrimSuffix(ctrlConfig.Styra.Address, "/")
+		styraClient = styra.New(styraHostURL, styraToken)
 
-	if err := configureExporter(
-		styraClient, ctrlConfig.ActivityExporter, configv2alpha2.ExporterConfigTypeActivity); err != nil {
-		log.Error(err, fmt.Sprintf("unable to configure %s", configv2alpha2.ExporterConfigTypeActivity))
+		if err := configureExporter(
+			styraClient, ctrlConfig.DecisionsExporter, configv2alpha2.ExporterConfigTypeDecisions); err != nil {
+			log.Error(err, fmt.Sprintf("unable to configure %s", configv2alpha2.ExporterConfigTypeDecisions))
+		}
+
+		if err := configureExporter(
+			styraClient, ctrlConfig.ActivityExporter, configv2alpha2.ExporterConfigTypeActivity); err != nil {
+			log.Error(err, fmt.Sprintf("unable to configure %s", configv2alpha2.ExporterConfigTypeActivity))
+		}
 	}
 
 	// System Controller
@@ -216,20 +256,39 @@ func main() {
 	r1 := &controllers.SystemReconciler{
 		Client:    mgr.GetClient(),
 		Scheme:    mgr.GetScheme(),
-		Styra:     styraClient,
 		Recorder:  mgr.GetEventRecorderFor("system-controller"),
 		Metrics:   systemMetrics,
 		Config:    ctrlConfig,
 		APIReader: mgr.GetAPIReader(),
 	}
 
-	if ctrlConfig.NotificationWebhooks != nil && ctrlConfig.NotificationWebhooks.SystemDatasourceChanged != "" {
-		r1.WebhookClient = webhook.New(ctrlConfig.NotificationWebhooks.SystemDatasourceChanged, "")
+	if ctrlConfig.EnableOPAControlPlaneReconciliation || ctrlConfig.EnableOPAControlPlaneReconciliationTestData {
+		r1.OCP = opaControlPlaneClient
+		r1.S3 = s3Client
+	}
+
+	if ctrlConfig.EnableStyraReconciliation {
+		r1.Styra = styraClient
+	}
+
+	if ctrlConfig.NotificationWebhooks != nil {
+		r1.WebhookClient = webhook.New(
+			ctrlConfig.NotificationWebhooks.SystemDatasourceChanged,
+			"",
+			ctrlConfig.NotificationWebhooks.SystemDatasourceChangedOCP,
+			"")
 	}
 
 	if err = r1.SetupWithManager(mgr, "styra-controller"); err != nil {
 		log.Error(err, "unable to create controller", "controller", "System")
 		exit(err)
+	}
+
+	if ctrlConfig.EnableOPAControlPlaneReconciliation || ctrlConfig.EnableOPAControlPlaneReconciliationTestData {
+		if err = r1.CreateDefaultRequirements(context.Background(), log); err != nil {
+			log.Error(err, "unable to create default requirements")
+			exit(err)
+		}
 	}
 
 	if !ctrlConfig.DisableCRDWebhooks {
@@ -246,8 +305,17 @@ func main() {
 		Styra:  styraClient,
 	}
 
-	if ctrlConfig.NotificationWebhooks != nil && ctrlConfig.NotificationWebhooks.LibraryDatasourceChanged != "" {
-		libraryReconciler.WebhookClient = webhook.New("", ctrlConfig.NotificationWebhooks.LibraryDatasourceChanged)
+	if ctrlConfig.EnableOPAControlPlaneReconciliation || ctrlConfig.EnableOPAControlPlaneReconciliationTestData {
+		libraryReconciler.OCP = opaControlPlaneClient
+	}
+
+	if ctrlConfig.NotificationWebhooks != nil {
+		libraryReconciler.WebhookClient = webhook.New(
+			"",
+			ctrlConfig.NotificationWebhooks.LibraryDatasourceChanged,
+			ctrlConfig.NotificationWebhooks.LibraryDatasourceChangedOCP,
+			"",
+		)
 	}
 
 	if err = libraryReconciler.SetupWithManager(mgr); err != nil {
