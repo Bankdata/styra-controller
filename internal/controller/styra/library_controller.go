@@ -144,7 +144,8 @@ func (r *LibraryReconciler) reconcileLibrarySource(
 	}
 	if k8sLib.Spec.SourceControl.LibraryOrigin.Reference != "" {
 		gitConfig.Reference = k8sLib.Spec.SourceControl.LibraryOrigin.Reference
-	}	
+	}
+
 	gitCredentialFound := false
 	for _, cred := range r.Config.OPAControlPlaneConfig.GitCredentials {
 		if strings.Contains(k8sLib.Spec.SourceControl.LibraryOrigin.URL, cred.RepoPrefix) {
@@ -154,7 +155,10 @@ func (r *LibraryReconciler) reconcileLibrarySource(
 		}
 	}
 	if !gitCredentialFound {
-		return ctrl.Result{}, errors.New(fmt.Sprintf("createLibrarySource: Unsupported git repository: %s", k8sLib.Spec.SourceControl.LibraryOrigin.URL))
+		return ctrl.Result{}, fmt.Errorf(
+			"createLibrarySource: Unsupported git repository: %s",
+			k8sLib.Spec.SourceControl.LibraryOrigin.URL,
+		)
 	}
 
 	_, err := r.OCP.PutSource(ctx, k8sLib.Spec.Name, &ocp.PutSourceRequest{

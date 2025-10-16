@@ -305,8 +305,9 @@ func (r *SystemReconciler) ocpReconcile(
 
 		created, err := r.createSourceIfNotExists(ctx, log, datasource)
 		if err != nil {
-			return ctrl.Result{}, ctrlerr.Wrap(err, fmt.Sprintf("ocpReconcile: Could not ensure datasource/source exists: %s", datasource.Path)).
-				WithEvent(v1beta1.EventErrorUpdateSource).
+			return ctrl.Result{}, ctrlerr.Wrap(err,
+				fmt.Sprintf("ocpReconcile: Could not ensure datasource/source exists: %s", datasource.Path),
+			).WithEvent(v1beta1.EventErrorUpdateSource).
 				WithSystemCondition(v1beta1.ConditionTypeRequirementsUpdated)
 		}
 
@@ -332,7 +333,8 @@ func (r *SystemReconciler) ocpReconcile(
 		WithLabelValues("reconcileSystemSourceOcp").
 		Observe(time.Since(reconcileSystemSourceStart).Seconds())
 	if err != nil {
-		return ctrl.Result{}, ctrlerr.Wrap(err, fmt.Sprintf("ocpReconcile: Could not reconcile system source: %s", uniqueName)).
+		return result, ctrlerr.Wrap(
+			err, fmt.Sprintf("ocpReconcile: Could not reconcile system source: %s", uniqueName)).
 			WithEvent(v1beta1.EventErrorUpdateSource).
 			WithSystemCondition(v1beta1.ConditionTypeSystemSourceUpdated)
 	}
@@ -758,7 +760,9 @@ func (r *SystemReconciler) reconcileSystemSource(
 		}
 	}
 	if !gitCredentialFound {
-		return ctrl.Result{}, errors.New(fmt.Sprintf("reconcileSystemSource: Unsupported git repository: %s", system.Spec.SourceControl.Origin.URL))
+		return ctrl.Result{}, fmt.Errorf(
+			"reconcileSystemSource: Unsupported git repository: %s", 
+			system.Spec.SourceControl.Origin.URL)
 	}
 
 	_, err := r.OCP.PutSource(ctx, uniqueName, &ocp.PutSourceRequest{
