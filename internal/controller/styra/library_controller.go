@@ -96,7 +96,7 @@ func (r *LibraryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		log.Info("Styra DAS Reconciliation have been disabled")
 	}
 
-	if r.Config.EnableOPAControlPlaneReconciliation {
+	if r.Config.EnableOPAControlPlaneReconciliation || r.Config.EnableOPAControlPlaneReconciliationTestData {
 		log.Info("OPA Control Plane library reconcile starting")
 		result, err := r.ocpReconcile(ctx, log, k8sLib)
 		if err != nil {
@@ -144,12 +144,17 @@ func (r *LibraryReconciler) reconcileLibrarySource(
 	}
 	if k8sLib.Spec.SourceControl.LibraryOrigin.Reference != "" {
 		gitConfig.Reference = k8sLib.Spec.SourceControl.LibraryOrigin.Reference
-	}
+	}	
+	gitCredentialFound := false
 	for _, cred := range r.Config.OPAControlPlaneConfig.GitCredentials {
 		if strings.Contains(k8sLib.Spec.SourceControl.LibraryOrigin.URL, cred.RepoPrefix) {
 			gitConfig.CredentialID = cred.ID
+			gitCredentialFound = true
 			break
 		}
+	}
+	if !gitCredentialFound {
+		return ctrl.Result{}, errors.New(fmt.Sprintf("createLibrarySource: Unsupported git repository: %s", k8sLib.Spec.SourceControl.LibraryOrigin.URL))
 	}
 
 	_, err := r.OCP.PutSource(ctx, k8sLib.Spec.Name, &ocp.PutSourceRequest{

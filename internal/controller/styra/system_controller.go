@@ -749,12 +749,16 @@ func (r *SystemReconciler) reconcileSystemSource(
 	if system.Spec.SourceControl.Origin.Path != "" {
 		gitConfig.Path = system.Spec.SourceControl.Origin.Path
 	}
-
+	gitCredentialFound := false
 	for _, cred := range r.Config.OPAControlPlaneConfig.GitCredentials {
 		if strings.Contains(system.Spec.SourceControl.Origin.URL, cred.RepoPrefix) {
 			gitConfig.CredentialID = cred.ID
+			gitCredentialFound = true
 			break
 		}
+	}
+	if !gitCredentialFound {
+		return ctrl.Result{}, errors.New(fmt.Sprintf("reconcileSystemSource: Unsupported git repository: %s", system.Spec.SourceControl.Origin.URL))
 	}
 
 	_, err := r.OCP.PutSource(ctx, uniqueName, &ocp.PutSourceRequest{
@@ -762,7 +766,7 @@ func (r *SystemReconciler) reconcileSystemSource(
 		Git:  gitConfig,
 	})
 	if err != nil {
-		return ctrl.Result{}, errors.Wrap(err, "createSystemSource: could not create or update source in OCP")
+		return ctrl.Result{}, errors.Wrap(err, "reconcileSystemSource: could not create or update source in OCP")
 	}
 	log.Info("OCP source upserted", "source", uniqueName)
 	return ctrl.Result{}, nil
