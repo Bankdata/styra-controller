@@ -8,19 +8,19 @@ import (
 )
 
 // NewClient creates a new S3Client for MinIO
-func NewClient(awsObjectStorage configv2alpha2.AWSObjectStorage) (Client, error) {
+func NewClient(s3Handler configv2alpha2.S3Handler) (Client, error) {
 	config := Config{
-		AccessKeyID:     awsObjectStorage.AdminCredentials.AccessKeyID,
-		SecretAccessKey: awsObjectStorage.AdminCredentials.SecretAccessKey,
-		Region:          awsObjectStorage.Region,
-		PathStyle:       awsObjectStorage.URL != "", // Use path style for custom endpoints
+		AccessKeyID:     s3Handler.AccessKeyID,
+		SecretAccessKey: s3Handler.SecretAccessKey,
+		Region:          s3Handler.Region,
+		PathStyle:       s3Handler.URL != "", // Use path style for custom endpoints
 	}
 
-	if awsObjectStorage.URL != "" && strings.HasPrefix(awsObjectStorage.URL, "https://") {
-		config.Endpoint = strings.TrimPrefix(awsObjectStorage.URL, "https://")
+	if s3Handler.URL != "" && strings.HasPrefix(s3Handler.URL, "https://") {
+		config.Endpoint = strings.TrimPrefix(s3Handler.URL, "https://")
 		config.UseSSL = true
 	} else {
-		config.Endpoint = strings.TrimPrefix(awsObjectStorage.URL, "http://")
+		config.Endpoint = strings.TrimPrefix(s3Handler.URL, "http://")
 		config.UseSSL = false
 	}
 

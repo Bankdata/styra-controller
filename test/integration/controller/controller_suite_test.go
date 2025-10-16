@@ -143,19 +143,6 @@ var _ = ginkgo.BeforeSuite(func() {
 			EnableDeltaBundlesDefault:           ptr.Bool(false),
 			EnableStyraReconciliation:           true,
 			EnableOPAControlPlaneReconciliation: true,
-			DefaultRequirements:                 []string{"library1"},
-			ObjectStorage: &configv2alpha2.ObjectStorage{
-				AWS: &configv2alpha2.AWSObjectStorage{
-					Bucket:              "test-bucket",
-					Region:              "eu-west-1",
-					URL:                 "s3-url",
-					OCPConfigSecretName: "s3-credentials",
-					AdminCredentials: &configv2alpha2.AWSCredentials{
-						AccessKeyID:     "access-key-id",
-						SecretAccessKey: "secret-access-key",
-					},
-				},
-			},
 			OPAControlPlaneConfig: &configv2alpha2.OPAControlPlaneConfig{
 				Address: "ocp-url",
 				Token:   "ocp-token",
@@ -163,6 +150,24 @@ var _ = ginkgo.BeforeSuite(func() {
 					ID:         "github-credentials",
 					RepoPrefix: "https://github",
 				}},
+				DefaultRequirements: []string{"library1"},
+				BundleObjectStorage: &configv2alpha2.BundleObjectStorage{
+					S3: &configv2alpha2.S3ObjectStorage{
+						Bucket:              "test-bucket",
+						Region:              "eu-west-1",
+						URL:                 "s3-url",
+						OCPConfigSecretName: "s3-credentials",
+					},
+				},
+			},
+			UserCredentialHandler: &configv2alpha2.UserCredentialHandler{
+				S3: &configv2alpha2.S3Handler{
+					Bucket:          "test-bucket",
+					Region:          "eu-west-1",
+					URL:             "s3-url",
+					AccessKeyID:     "access-key-id",
+					SecretAccessKey: "secret-access-key",
+				},
 			},
 		},
 

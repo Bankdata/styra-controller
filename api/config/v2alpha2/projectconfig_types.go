@@ -128,16 +128,10 @@ type ProjectConfig struct {
 	// OPAControlPlaneConfig contains configuration for connecting to the
 	// OPA Control Plane APIs. If this is not set, the controller will not
 	// attempt to connect to the OPA Control Plane APIs.
-	OPAControlPlaneConfig *OPAControlPlaneConfig `json:"opaControlPlane,omitempty"`
+	OPAControlPlaneConfig *OPAControlPlaneConfig `json:"opaControlPlaneConfig,omitempty"`
 
-	// DefaultRequirements is a list of requirements that will be added to all
-	// systems/bundles created by the controller in the OCP, in addition to any requirements/datasources
-	// specified on the System resource.
-	DefaultRequirements []string `json:"defaultRequirements,omitempty"`
-
-	// ObjectStorage is the object storage configuration to use for bundles.
-	// Currently only supports aws
-	ObjectStorage *ObjectStorage `json:"objectStorage,omitempty"`
+	// UserCredentialHandler contains configuration for the controller to handle user credentials, e.g. in S3
+	UserCredentialHandler *UserCredentialHandler `json:"userCredentialHandler,omitempty"`
 
 	// EnableStyraReconciliation is a flag that sets whether the controller should use Styra
 	// A Migration flag to enable/disable Styra DAS reconciliation for all systems and libraries.
@@ -163,26 +157,6 @@ type ProjectConfig struct {
 	// Deprecated: EnableOPAControlPlaneReconciliationTestData field is deprecated.
 	// Only used in migration versions Styra->OCP. This field will be removed in a future version.
 	EnableOPAControlPlaneReconciliationTestData bool `json:"enableOPAControlPlaneReconciliationTestData,omitempty"`
-}
-
-// ObjectStorage defines the structure for object storage configuration used by bundles
-type ObjectStorage struct {
-	AWS *AWSObjectStorage `json:"aws,omitempty"`
-}
-
-// AWSObjectStorage defines the structure for AWS object storage configuration.
-type AWSObjectStorage struct {
-	Bucket              string          `json:"bucket"`
-	Region              string          `json:"region"`
-	URL                 string          `json:"url,omitempty"`
-	OCPConfigSecretName string          `json:"ocpConfigSecretName"`
-	AdminCredentials    *AWSCredentials `json:"adminCredentials"`
-}
-
-// AWSCredentials defines the structure for AWS credentials
-type AWSCredentials struct {
-	AccessKeyID     string `json:"accessKeyID"`
-	SecretAccessKey string `json:"secretAccessKey"`
 }
 
 // PodRestartConfig contains configuration for restarting OPA and SLP pods
@@ -234,6 +208,42 @@ type OPAControlPlaneConfig struct {
 
 	// GitCredentials is the name of a secret used by the OPA Control Plane Git integration.
 	GitCredentials []*GitCredentials `json:"gitCredentials,omitempty"`
+
+	// BundleObjectStorage is the object storage configuration to use for bundles.
+	// Currently only supports aws
+	BundleObjectStorage *BundleObjectStorage `json:"bundleObjectStorage,omitempty"`
+
+	// DefaultRequirements is a list of requirements that will be added to all
+	// systems/bundles created by the controller in the OCP, in addition to any requirements/datasources
+	// specified on the System resource.
+	DefaultRequirements []string `json:"defaultRequirements,omitempty"`
+}
+
+// UserCredentialHandler defines the structure of possible user credential handlers
+type UserCredentialHandler struct {
+	S3 *S3Handler `json:"s3,omitempty"`
+}
+
+// S3Handler defines the structure for S3 handler configuration.
+type S3Handler struct {
+	Bucket          string `json:"bucket"`
+	URL             string `json:"url"`
+	Region          string `json:"region"`
+	AccessKeyID     string `json:"accessKeyID"`
+	SecretAccessKey string `json:"secretAccessKey"`
+}
+
+// BundleObjectStorage defines the structure for object storage configuration used by bundles
+type BundleObjectStorage struct {
+	S3 *S3ObjectStorage `json:"s3,omitempty"`
+}
+
+// S3ObjectStorage defines the structure for S3 object storage configuration.
+type S3ObjectStorage struct {
+	Bucket              string `json:"bucket"`
+	URL                 string `json:"url,omitempty"`
+	Region              string `json:"region"`
+	OCPConfigSecretName string `json:"ocpConfigSecretName"`
 }
 
 // GitCredentials contains configuration for git credentials used by the OPA Control Plane.

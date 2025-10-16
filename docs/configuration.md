@@ -17,9 +17,7 @@ This document describes the different configuration options for the ocp-controll
 * `enableMigrations`
 
 #### Configurations options that is kept for OPA Control Plane
-* `opaControlPlane`
-* `objectStorage`
-* `defaultRequirements`
+* `opaControlPlaneConfig`
 * `systemPrefix`
 * `systemSuffix`
 * `logLevel`

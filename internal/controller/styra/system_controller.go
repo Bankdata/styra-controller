@@ -298,7 +298,7 @@ func (r *SystemReconciler) ocpReconcile(
 	ctx context.Context,
 	log logr.Logger,
 	system *v1beta1.System) (ctrl.Result, error) {
-	requirements := ocp.ToRequirements(r.Config.DefaultRequirements)
+	requirements := ocp.ToRequirements(r.Config.OPAControlPlaneConfig.DefaultRequirements)
 
 	for _, datasource := range system.Spec.Datasources {
 		datasource.Path = strings.ReplaceAll(datasource.Path, "/", "-")
@@ -447,9 +447,11 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 	}
 
 	opaconf := ocp.OPAConfig{
-		Resource:  fmt.Sprintf("bundles/%s/bundle.tar.gz", uniqueName),
-		URL:       fmt.Sprintf("%s/%s", r.Config.ObjectStorage.AWS.URL, r.Config.ObjectStorage.AWS.Bucket),
-		AWSRegion: r.Config.ObjectStorage.AWS.Region,
+		Resource: fmt.Sprintf("bundles/%s/bundle.tar.gz", uniqueName),
+		URL: fmt.Sprintf("%s/%s",
+			r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.URL,
+			r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.Bucket),
+		AWSRegion: r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.Region,
 	}
 
 	expectedOPAConfigMap, err = k8sconv.OpaConfToK8sOPAConfigMapforOCP(opaconf, r.Config.OPA, customConfig)
@@ -526,8 +528,7 @@ func (r *SystemReconciler) reconcileOPASecret(
 
 	reconcileS3CredentialsStart := time.Now()
 	s3CredentialsRead, result, err := r.reconcileS3Credentials(
-		ctx, log, system, uniqueName, *r.Config.ObjectStorage.AWS,
-		secretName)
+		ctx, log, system, uniqueName, secretName)
 	r.Metrics.ReconcileSegmentTime.
 		WithLabelValues("reconcileS3CredentialsOcp").
 		Observe(time.Since(reconcileS3CredentialsStart).Seconds())
@@ -640,12 +641,11 @@ func (r *SystemReconciler) reconcileS3Credentials(
 	log logr.Logger,
 	system *v1beta1.System,
 	uniqueName string,
-	awsConfig configv2alpha2.AWSObjectStorage,
 	secretName string,
 ) (s3.Credentials, ctrl.Result, error) {
 	s3Credentials := s3.Credentials{}
-	s3Credentials.Region = r.Config.ObjectStorage.AWS.Region
-	s3Credentials.AccessKeyID = fmt.Sprintf("Access-Key-%s-%s", awsConfig.Bucket, uniqueName)
+	s3Credentials.Region = r.Config.UserCredentialHandler.S3.Region
+	s3Credentials.AccessKeyID = fmt.Sprintf("Access-Key-%s-%s", r.Config.UserCredentialHandler.S3.Bucket, uniqueName)
 
 	userExist, err := r.S3.UserExists(ctx, s3Credentials.AccessKeyID)
 	if err != nil {
@@ -684,8 +684,7 @@ func (r *SystemReconciler) reconcileS3Credentials(
 		log.Info("AccessKey does not exist, creating new accessKey", "accessKey", s3Credentials.AccessKeyID)
 		// create read only user for this bundle
 		s3Credentials.SecretAccessKey, err = r.S3.CreateSystemBundleUser(
-			ctx, s3Credentials.AccessKeyID,
-			r.Config.ObjectStorage.AWS.Bucket, uniqueName,
+			ctx, s3Credentials.AccessKeyID, r.Config.UserCredentialHandler.S3.Bucket, uniqueName,
 		)
 		if err != nil {
 			log.Error(err, "failed to create accessKey", "accessKey", s3Credentials.AccessKeyID)
@@ -701,17 +700,17 @@ func (r *SystemReconciler) reconcileSystemBundle(
 	ctx context.Context,
 	uniqueName string,
 	requirements []ocp.Requirement) (ctrl.Result, error) {
-	if r.Config.ObjectStorage == nil || r.Config.ObjectStorage.AWS == nil {
+	if r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3 == nil {
 		return ctrl.Result{}, errors.New("reconcileSystemBundle: no object storage configured")
 	}
 
 	objectStorage := ocp.ObjectStorage{
 		AmazonS3: &ocp.AmazonS3{
-			Bucket:      r.Config.ObjectStorage.AWS.Bucket,
+			Bucket:      r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.Bucket,
 			Key:         fmt.Sprintf("bundles/%s/bundle.tar.gz", uniqueName),
-			Region:      r.Config.ObjectStorage.AWS.Region,
-			URL:         r.Config.ObjectStorage.AWS.URL,
-			Credentials: r.Config.ObjectStorage.AWS.OCPConfigSecretName,
+			Region:      r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.Region,
+			URL:         r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.URL,
+			Credentials: r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.OCPConfigSecretName,
 		},
 	}
 
@@ -2117,7 +2116,7 @@ func (r *SystemReconciler) systemNeedsUpdate(
 func (r *SystemReconciler) CreateDefaultRequirements(ctx context.Context, log logr.Logger) error {
 	if r.Config.EnableOPAControlPlaneReconciliation || r.Config.EnableOPAControlPlaneReconciliationTestData {
 		log.Info("Creating ocp default requirements")
-		for _, defaultRequirement := range r.Config.DefaultRequirements {
+		for _, defaultRequirement := range r.Config.OPAControlPlaneConfig.DefaultRequirements {
 			_, err := r.createSourceIfNotExists(ctx, log, v1beta1.Datasource{Path: defaultRequirement})
 			if err != nil {
 				return err

@@ -165,11 +165,9 @@ func main() {
 			exit(err)
 		}
 
-		if ctrlConfig.ObjectStorage == nil ||
-			ctrlConfig.ObjectStorage.AWS == nil ||
-			ctrlConfig.ObjectStorage.AWS.AdminCredentials == nil {
+		if ctrlConfig.OPAControlPlaneConfig.BundleObjectStorage == nil {
 			err := errors.New(
-				"OPAControlPlane enabled: Missing Object Storage configuration, AWS and AdminCredentials are required",
+				"OPAControlPlane enabled: But missing bundle object storage config",
 			)
 			log.Error(err, "unable to start manager")
 			exit(err)
@@ -178,7 +176,7 @@ func main() {
 		ocpHostURL := strings.TrimSuffix(ctrlConfig.OPAControlPlaneConfig.Address, "/")
 		opaControlPlaneClient = ocp.New(ocpHostURL, ctrlConfig.OPAControlPlaneConfig.Token)
 
-		s3Client, err = s3.NewClient(*ctrlConfig.ObjectStorage.AWS)
+		s3Client, err = s3.NewClient(*ctrlConfig.UserCredentialHandler.S3)
 		if err != nil {
 			log.Error(err, "unable to create S3 client")
 			exit(err)
