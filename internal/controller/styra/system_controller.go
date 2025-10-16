@@ -761,7 +761,7 @@ func (r *SystemReconciler) reconcileSystemSource(
 	}
 	if !gitCredentialFound {
 		return ctrl.Result{}, fmt.Errorf(
-			"reconcileSystemSource: Unsupported git repository: %s", 
+			"reconcileSystemSource: Unsupported git repository: %s",
 			system.Spec.SourceControl.Origin.URL)
 	}
 
