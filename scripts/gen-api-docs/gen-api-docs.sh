@@ -1,4 +1,4 @@
-# Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+# Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 
 #!/usr/bin/env bash
 
-gen-styra-v1alpha1 () {
+gen_styra_v1alpha1 () {
   echo "generating docs for api/styra/v1alpha1"
   ./bin/gen-crd-api-reference-docs \
     -config "scripts/gen-api-docs/config.json" \
@@ -24,7 +24,7 @@ gen-styra-v1alpha1 () {
 }
 
 
-gen-styra-v1beta1 () {
+gen_styra_v1beta1 () {
   echo "generating docs for api/styra/v1beta1"
   ./bin/gen-crd-api-reference-docs \
     -config "scripts/gen-api-docs/config.json" \
@@ -35,14 +35,14 @@ gen-styra-v1beta1 () {
 
 case $1 in
   styra-v1alpha1)
-    gen-styra-v1alpha1
+    gen_styra_v1alpha1
     ;;
   styra-v1beta1)
-    gen-styra-v1beta1
+    gen_styra_v1beta1
     ;;
   all)
-    gen-styra-v1alpha1
-    gen-styra-v1beta1
+    gen_styra_v1alpha1
+    gen_styra_v1beta1
     ;;
   *)
     echo "Usage: gen-api-docs.sh styra-v1alpha1|styra-v1beta1|all"

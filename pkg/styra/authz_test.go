@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import (
 	ginkgo "github.com/onsi/ginkgo/v2"
 	gomega "github.com/onsi/gomega"
 
+	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
@@ -64,7 +65,7 @@ var _ = ginkgo.Describe("ListRoleBindingsV2", func() {
 		res, err := c.ListRoleBindingsV2(context.Background(), test.listRoleBindingsV2Params)
 		if test.expectStyraErr {
 			gomega.Expect(res).To(gomega.BeNil())
-			target := &styra.HTTPError{}
+			target := &httperror.HTTPError{}
 			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
@@ -151,7 +152,7 @@ var _ = ginkgo.Describe("CreateRolebinding", func() {
 		res, err := c.CreateRoleBinding(context.Background(), test.createRoleBindingRequest)
 		if test.expectStyraErr {
 			gomega.Expect(res).To(gomega.BeNil())
-			target := &styra.HTTPError{}
+			target := &httperror.HTTPError{}
 			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
@@ -245,7 +246,7 @@ var _ = ginkgo.Describe("UpdateRoleBindingSubjects", func() {
 		res, err := c.UpdateRoleBindingSubjects(context.Background(), test.id, test.updateRoleBindingSubjectsRequest)
 		if test.expectStyraErr {
 			gomega.Expect(res).To(gomega.BeNil())
-			target := &styra.HTTPError{}
+			target := &httperror.HTTPError{}
 			gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 		} else {
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
@@ -300,7 +301,7 @@ var _ = ginkgo.Describe("DeleteRoleBindingV2", func() {
 			res, err := c.DeleteRoleBindingV2(context.Background(), test.id)
 			if test.expectStyraErr {
 				gomega.Expect(res).To(gomega.BeNil())
-				target := &styra.HTTPError{}
+				target := &httperror.HTTPError{}
 				gomega.Expect(errors.As(err, &target)).To(gomega.BeTrue())
 			} else {
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())

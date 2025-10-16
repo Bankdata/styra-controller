@@ -1,9 +1,9 @@
 # CustomResourceDefinition Design
 
 This document describes the design of the custom resource definitions that the
-styra-controller manages.
+ocp-controller manages.
 
-The custom resources managed by the styra-controller are:
+The custom resources managed by the ocp-controller are:
 
 * `System`
 * `Library`
@@ -11,10 +11,7 @@ The custom resources managed by the styra-controller are:
 ## System  
 
 The `System` custom resource definition (CRD) declaratively defines a desired
-system in Styra DAS. It provides options for configuring the name of the
-system, datasources, decision mappings, git settings, and access control as a
-list of users and/or SSO claims. It also supports the use of 
-[Styra Local Plane](https://docs.styra.com/das/policies/policy-organization/systems/use-styra-local-plane).
+bundle in OPA Control Plane (Before a System in Styra DAS). It provides options for configuring the name of the bundle, requirements/datasources, decision mappings(deprecated, only used in Styra DAS), git settings, and access control as a list of users and/or SSO claims (deprecated, only used in Styra DAS).
 
 ```yaml
 apiVersion: styra.bankdata.dk/v1beta1
@@ -52,25 +49,13 @@ spec:
       name: my-group
 ```
 
-The git credentials which Styra DAS will need for fetching policy are specified
-by referencing a secret by setting
-`.spec.sourceControl.origin.credentialsSecretName`. For instance, if you set
-`.spec.sourceControler.origin.credentialsSecretName: my-git-credentials` the
-styra-controller will look for a secret called `my-git-credentials` in the same
-namespace as the `System` resource. The secret is expected to contain a `name`
-and a `secret` key. The `name` key should contain the basic auth username and
-`secret` should contain the basic auth password.
-
-If you would rather not have to set this for every system, the controller also
-supports default credentials which will be used if the `credentialsSecretName`
-field is left empty. Read more about this in the 
+The git credentials which OPA Control Plane will need for fetching policy are specified
+by referencing to a credential ID in the controller config `opaControlPlane.gitCredentials.id` and `opaControlPlane.gitCredentials.repoPrefix`.
 [controller configuration documentation](configuration.md#default-git-credentials).
 
 ## Library
 
-The `Library` custom resource definition (CRD) declaratively defines a desired library 
-in Styra DAS. It provides options for configuring the name of the library, a 
-description of it, permissions, git settings, and datasources.
+The `Library` custom resource definition (CRD) declaratively defines a desired library in OPA Control Plane (Before Styra DAS). It provides options for configuring the name of the library, a description of it, permissions, git settings, and datasources. Note, a library is just a source in OPA Control Plane.
 
 ```yaml
 apiVersion: styra.bankdata.dk/v1alpha1
@@ -97,8 +82,6 @@ spec:
 ```
 
 The content of the library is what is found in the folder `<path>/libraries/<library-name>`. 
-There is therefore a high coupling between the library name and the path to the library in 
-the git repository. The library name is also used as the name of the library in Styra DAS.
+There is therefore a tight coupling between the library name and the path to the library in the git repository. The library name is also used as the name of the library in OPA Control Plane.
 With the above example, the content of the library would be the files found at 
-`https://github.com/Bankdata/styra-controller/tree/master/rego/path/libraries/mylibrary` 
-together with the datasource.
+`https://github.com/Bankdata/styra-controller/tree/master/rego/path/libraries/mylibrary` together with the datasource.
