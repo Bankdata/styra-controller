@@ -515,6 +515,14 @@ const (
 
 	// EventErrorUpdateBundle is an EventType used when the controller fails to update the Source in OCP.
 	EventErrorUpdateBundle EventType = "ErrorUpdateBundle"
+
+	// EventErrorDeleteBundleInOCP is an EventType used when the controller fails
+	// to delete the Bundle in OCP.
+	EventErrorDeleteBundleInOCP EventType = "ErrorDeleteBundleInOCP"
+
+	// EventErrorDeleteSourceInOCP is an EventType used when the controller fails
+	// to delete the Source in OCP.
+	EventErrorDeleteSourceInOCP EventType = "ErrorDeleteSourceInOCP"
 )
 
 //+kubebuilder:object:root=true

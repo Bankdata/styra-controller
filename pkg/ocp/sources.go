@@ -205,3 +205,29 @@ func (c *Client) PutSource(
 		Message:    res.Status,
 	}, nil
 }
+
+// DeleteSource calls the DELETE /v1/sources/{name} endpoint in the OCP API.
+func (c *Client) DeleteSource(ctx context.Context, id string) (err error) {
+	res, err := c.request(ctx, http.MethodDelete, fmt.Sprintf("%s/%s", endpointV1Sources, id), nil, nil)
+	if err != nil {
+		return err
+	}
+
+	// Close body and overwrite returned error if it is not set already.
+	defer func() {
+		closeErr := res.Body.Close()
+		if err == nil && closeErr != nil {
+			err = errors.Wrap(closeErr, "error closing response body")
+		}
+	}()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return errors.Wrap(err, "DeleteSource: could not read body")
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return httperror.NewHTTPError(res.StatusCode, string(body))
+	}
+	return nil
+}

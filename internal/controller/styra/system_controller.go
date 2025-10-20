@@ -218,38 +218,67 @@ func (r *SystemReconciler) reconcileDeletion(
 	system *v1beta1.System,
 ) (ctrl.Result, error) {
 	log.Info("System deletion is in progress")
-	if finalizer.IsSet(system) {
-		if r.Config.EnableStyraReconciliation {
-			// finalizer is present so we need to ensure system is deleted in
-			// styra, unless deletion protection is enabled or styra reconciliation is disabled
-			if system.Status.ID != "" {
-				deletionProtected := false
-				if system.Spec.DeletionProtection != nil {
-					deletionProtected = *system.Spec.DeletionProtection
-				} else {
-					deletionProtected = r.Config.DeletionProtectionDefault
-				}
-				if !deletionProtected {
-					log.Info("Deleting system in styra")
-					_, err := r.Styra.DeleteSystem(ctx, system.Status.ID)
-					if err != nil {
-						return ctrl.Result{}, ctrlerr.Wrap(err, "Could not delete system in styra").
-							WithEvent(v1beta1.EventErrorDeleteSystemInStyra)
-					}
+	if !finalizer.IsSet(system) {
+		return ctrl.Result{}, nil
+	}
+	if r.Config.EnableStyraReconciliation && system.Labels[labels.LabelControlPlane] == "" {
+		// finalizer is present so we need to ensure system is deleted in
+		// styra, unless deletion protection is enabled or styra reconciliation is disabled
+		if system.Status.ID != "" {
+			deletionProtected := false
+			if system.Spec.DeletionProtection != nil {
+				deletionProtected = *system.Spec.DeletionProtection
+			} else {
+				deletionProtected = r.Config.DeletionProtectionDefault
+			}
+			if !deletionProtected {
+				log.Info("Deleting system in styra")
+				_, err := r.Styra.DeleteSystem(ctx, system.Status.ID)
+				if err != nil {
+					return ctrl.Result{}, ctrlerr.Wrap(err, "Could not delete system in styra").
+						WithEvent(v1beta1.EventErrorDeleteSystemInStyra)
 				}
 			}
 		}
+	}
 
-		if r.Config.EnableOPAControlPlaneReconciliation || r.Config.EnableOPAControlPlaneReconciliationTestData {
-			log.Info("TODO: OCP deletion logic is not implemented")
-		}
+	if r.Config.EnableOPAControlPlaneReconciliation || r.Config.EnableOPAControlPlaneReconciliationTestData {
+		if system.Labels[labels.LabelControlPlane] == "opa-control-plane" {
+			// Delete associated bundle and source for system. Also delete datasources.
+			// There is a safeguard in OCP that protects from deleting a source that is used by a bundle
+			deletionProtected := false
+			if system.Spec.DeletionProtection != nil {
+				deletionProtected = *system.Spec.DeletionProtection
+			} else {
+				deletionProtected = r.Config.DeletionProtectionDefault
+			}
+			if !deletionProtected {
+				log.Info("Deleting bundle and source for system in OCP")
+				uniqueName := system.OCPUniqueName(r.Config.SystemPrefix, r.Config.SystemSuffix)
+				if err := r.OCP.DeleteBundle(ctx, uniqueName); err != nil {
+					return ctrl.Result{}, ctrlerr.Wrap(err, "Could not delete bundle in OCP").
+						WithEvent(v1beta1.EventErrorDeleteBundleInOCP)
+				}
+				if err := r.OCP.DeleteSource(ctx, uniqueName); err != nil {
+					return ctrl.Result{}, ctrlerr.Wrap(err, "Could not delete source in OCP").
+						WithEvent(v1beta1.EventErrorDeleteSourceInOCP)
+				}
 
-		log.Info("Removing finalizer")
-		finalizer.Remove(system)
-		if err := r.Update(ctx, system); err != nil {
-			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not remove finalizer").
-				WithEvent(v1beta1.EventErrorRemovingFinalizer)
+				for _, datasource := range system.Spec.Datasources {
+					datasourceID := strings.ReplaceAll(datasource.Path, "/", "-")
+					// OCP returns 500 when deleting a source used by a bundle.
+					// A datasource could be used by another system, so ignore error.
+					_ = r.OCP.DeleteSource(ctx, datasourceID)
+				}
+			}
 		}
+	}
+
+	log.Info("Removing finalizer")
+	finalizer.Remove(system)
+	if err := r.Update(ctx, system); err != nil {
+		return ctrl.Result{}, ctrlerr.Wrap(err, "Could not remove finalizer").
+			WithEvent(v1beta1.EventErrorRemovingFinalizer)
 	}
 	return ctrl.Result{}, nil
 }

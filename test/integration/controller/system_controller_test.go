@@ -2867,5 +2867,21 @@ services:
 		}, timeout, interval).Should(gomega.BeTrue())
 
 		resetMock(&webhookMock.Mock)
+
+		ginkgo.By("Deleting the system")
+
+		ocpClientMock.On("DeleteBundle", mock.Anything, "default-ocp-system").Return(nil)
+		ocpClientMock.On("DeleteSource", mock.Anything, "default-ocp-system").Return(nil)
+		ocpClientMock.On("DeleteSource", mock.Anything, "path-to-datasource").Return(nil)
+
+		gomega.Expect(k8sClient.Delete(ctx, toCreate)).To(gomega.Succeed())
+
+		gomega.Eventually(func() bool {
+			fetched := &styrav1beta1.System{}
+			err := k8sClient.Get(ctx, key, fetched)
+			return k8serrors.IsNotFound(err)
+		}, timeout, interval).Should(gomega.BeTrue())
+
+		resetMock(&styraClientMock.Mock)
 	})
 })
