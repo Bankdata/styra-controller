@@ -218,38 +218,86 @@ func (r *SystemReconciler) reconcileDeletion(
 	system *v1beta1.System,
 ) (ctrl.Result, error) {
 	log.Info("System deletion is in progress")
-	if finalizer.IsSet(system) {
-		if r.Config.EnableStyraReconciliation {
-			// finalizer is present so we need to ensure system is deleted in
-			// styra, unless deletion protection is enabled or styra reconciliation is disabled
-			if system.Status.ID != "" {
-				deletionProtected := false
-				if system.Spec.DeletionProtection != nil {
-					deletionProtected = *system.Spec.DeletionProtection
-				} else {
-					deletionProtected = r.Config.DeletionProtectionDefault
-				}
-				if !deletionProtected {
-					log.Info("Deleting system in styra")
-					_, err := r.Styra.DeleteSystem(ctx, system.Status.ID)
-					if err != nil {
-						return ctrl.Result{}, ctrlerr.Wrap(err, "Could not delete system in styra").
-							WithEvent(v1beta1.EventErrorDeleteSystemInStyra)
-					}
+	if !finalizer.IsSet(system) {
+		return ctrl.Result{}, nil
+	}
+
+	systemConfiguredToUseStyra := system.Labels[labels.LabelControlPlane] == "" ||
+		system.Labels[labels.LabelControlPlane] == labels.LabelValueControlPlaneStyra
+
+	if r.Config.EnableStyraReconciliation && systemConfiguredToUseStyra {
+		// finalizer is present so we need to ensure system is deleted in styra,
+		// unless deletion protection is enabled or styra reconciliation is disabled
+		if system.Status.ID != "" {
+			deletionProtected := false
+			if system.Spec.DeletionProtection != nil {
+				deletionProtected = *system.Spec.DeletionProtection
+			} else {
+				deletionProtected = r.Config.DeletionProtectionDefault
+			}
+			if !deletionProtected {
+				log.Info("Deleting system in styra")
+				_, err := r.Styra.DeleteSystem(ctx, system.Status.ID)
+				if err != nil {
+					return ctrl.Result{}, ctrlerr.Wrap(err, "Could not delete system in styra").
+						WithEvent(v1beta1.EventErrorDeleteSystemInStyra)
 				}
 			}
 		}
+	}
 
-		if r.Config.EnableOPAControlPlaneReconciliation || r.Config.EnableOPAControlPlaneReconciliationTestData {
-			log.Info("TODO: OCP deletion logic is not implemented")
-		}
+	//OCP is also enabled if nothing is configured in controller config (everything is set to false)
+	ocpEnabled := r.Config.EnableOPAControlPlaneReconciliation || r.Config.EnableOPAControlPlaneReconciliationTestData ||
+		(!r.Config.EnableOPAControlPlaneReconciliation &&
+			!r.Config.EnableOPAControlPlaneReconciliationTestData &&
+			!r.Config.EnableStyraReconciliation)
 
-		log.Info("Removing finalizer")
-		finalizer.Remove(system)
-		if err := r.Update(ctx, system); err != nil {
-			return ctrl.Result{}, ctrlerr.Wrap(err, "Could not remove finalizer").
-				WithEvent(v1beta1.EventErrorRemovingFinalizer)
+	systemConfiguredToUseOCP := system.Labels[labels.LabelControlPlane] == labels.LabelValueControlPlaneOCP
+
+	if ocpEnabled && systemConfiguredToUseOCP {
+		// Delete associated bundle and source for system. Also delete datasources.
+		// There is a safeguard in OCP that protects from deleting a source that is used by a bundle
+		deletionProtected := false
+		if system.Spec.DeletionProtection != nil {
+			deletionProtected = *system.Spec.DeletionProtection
+		} else {
+			deletionProtected = r.Config.DeletionProtectionDefault
 		}
+		if !deletionProtected {
+			log.Info("Deleting bundle and source for system in OCP")
+			uniqueName := system.OCPUniqueName(r.Config.SystemPrefix, r.Config.SystemSuffix)
+			if err := r.OCP.DeleteBundle(ctx, uniqueName); err != nil {
+				return ctrl.Result{}, ctrlerr.Wrap(err, "Could not delete bundle in OCP").
+					WithEvent(v1beta1.EventErrorDeleteBundleInOCP)
+			}
+			if err := r.OCP.DeleteSource(ctx, uniqueName); err != nil {
+				return ctrl.Result{}, ctrlerr.Wrap(err, "Could not delete source in OCP").
+					WithEvent(v1beta1.EventErrorDeleteSourceInOCP)
+			}
+
+			for _, datasource := range system.Spec.Datasources {
+				datasourceID := strings.ReplaceAll(datasource.Path, "/", "-")
+				if err := r.OCP.DeleteSource(ctx, datasourceID); err != nil {
+					var httpErr *httperror.HTTPError
+					if errors.As(err, &httpErr) {
+						if httpErr.StatusCode == http.StatusInternalServerError {
+							// OCP returns 500 when deleting a source used by a bundle.
+							// A datasource could be used by another system, so ignore error.
+							continue
+						}
+					}
+					return ctrl.Result{}, ctrlerr.Wrap(err, "Could not delete datasource source in OCP").
+						WithEvent(v1beta1.EventErrorDeleteSourceInOCP)
+				}
+			}
+		}
+	}
+
+	log.Info("Removing finalizer")
+	finalizer.Remove(system)
+	if err := r.Update(ctx, system); err != nil {
+		return ctrl.Result{}, ctrlerr.Wrap(err, "Could not remove finalizer").
+			WithEvent(v1beta1.EventErrorRemovingFinalizer)
 	}
 	return ctrl.Result{}, nil
 }
@@ -649,7 +697,7 @@ func (r *SystemReconciler) reconcileS3Credentials(
 
 	userExist, err := r.S3.UserExists(ctx, s3Credentials.AccessKeyID)
 	if err != nil {
-		return s3Credentials, ctrl.Result{}, errors.Wrap(err, "reconcileS3Credentials: could not call S3 ")
+		return s3Credentials, ctrl.Result{}, errors.Wrap(err, "reconcileS3Credentials: could not call S3")
 	}
 
 	if userExist {
@@ -661,7 +709,7 @@ func (r *SystemReconciler) reconcileS3Credentials(
 			len(secret.Data[s3.AWSSecretNameKeyID]) == 0 ||
 			len(secret.Data[s3.AWSSecretNameSecretKey]) == 0 {
 			log.Info(
-				"AccessKey exists, but no secret in k8s-secret.. We need to update secretKey for accessKey",
+				"AccessKey exists, but no secret in k8s-secret. We need to update secretKey for accessKey",
 				"accessKey", s3Credentials.AccessKeyID,
 			)
 
@@ -675,7 +723,8 @@ func (r *SystemReconciler) reconcileS3Credentials(
 			log.Info("SecretKey updated for existing accessKey", "accessKey", s3Credentials.AccessKeyID)
 			return s3Credentials, ctrl.Result{}, nil
 		}
-		log.Info("Secret found in k8s. We must assume it is valid", "accessKey", s3Credentials.AccessKeyID)
+		log.Info("User exists in MinIO and secret found in k8s. We must assume it is valid",
+			"accessKey", s3Credentials.AccessKeyID)
 		s3Credentials.SecretAccessKey = string(secret.Data[s3.AWSSecretNameSecretKey])
 		return s3Credentials, ctrl.Result{}, nil
 	}

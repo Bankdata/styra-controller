@@ -120,3 +120,29 @@ func (c *Client) PutBundle(ctx context.Context, bundle *PutBundleRequest) (err e
 	}
 	return nil
 }
+
+// DeleteBundle calls the DELETE /v1/bundles/{name} endpoint in the OCP API.
+func (c *Client) DeleteBundle(ctx context.Context, name string) (err error) {
+	res, err := c.request(ctx, http.MethodDelete, path.Join(endpointV1Bundles, name), nil, nil)
+	if err != nil {
+		return err
+	}
+
+	// Close body and overwrite returned error if it is not set already.
+	defer func() {
+		closeErr := res.Body.Close()
+		if err == nil && closeErr != nil {
+			err = errors.Wrap(closeErr, "error closing response body")
+		}
+	}()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return errors.Wrap(err, "DeleteBundle: could not read body")
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return httperror.NewHTTPError(res.StatusCode, string(body))
+	}
+	return nil
+}

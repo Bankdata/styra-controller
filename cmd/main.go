@@ -275,7 +275,7 @@ func main() {
 		r1.WebhookClient = webhook.New(
 			ctrlConfig.NotificationWebhooks.SystemDatasourceChanged,
 			"",
-			ctrlConfig.NotificationWebhooks.SystemDatasourceChangedOCP,
+			ctrlConfig.OPAControlPlaneConfig.SystemDatasourceChanged,
 			"")
 	}
 
@@ -313,7 +313,7 @@ func main() {
 		libraryReconciler.WebhookClient = webhook.New(
 			"",
 			ctrlConfig.NotificationWebhooks.LibraryDatasourceChanged,
-			ctrlConfig.NotificationWebhooks.LibraryDatasourceChangedOCP,
+			ctrlConfig.OPAControlPlaneConfig.LibraryDatasourceChanged,
 			"",
 		)
 	}

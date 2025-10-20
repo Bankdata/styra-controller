@@ -14,6 +14,42 @@ type ClientInterface struct {
 	mock.Mock
 }
 
+// DeleteBundle provides a mock function with given fields: ctx, name
+func (_m *ClientInterface) DeleteBundle(ctx context.Context, name string) error {
+	ret := _m.Called(ctx, name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteBundle")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, name)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeleteSource provides a mock function with given fields: ctx, id
+func (_m *ClientInterface) DeleteSource(ctx context.Context, id string) error {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteSource")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetSource provides a mock function with given fields: ctx, id
 func (_m *ClientInterface) GetSource(ctx context.Context, id string) (*ocp.GetSourceResponse, error) {
 	ret := _m.Called(ctx, id)

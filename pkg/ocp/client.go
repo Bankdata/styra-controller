@@ -33,7 +33,9 @@ import (
 type ClientInterface interface {
 	GetSource(ctx context.Context, id string) (*GetSourceResponse, error)
 	PutSource(ctx context.Context, id string, request *PutSourceRequest) (*PutSourceResponse, error)
+	DeleteSource(ctx context.Context, id string) error
 	PutBundle(ctx context.Context, bundle *PutBundleRequest) error
+	DeleteBundle(ctx context.Context, name string) error
 }
 
 // Client is a client for the OCP APIs.

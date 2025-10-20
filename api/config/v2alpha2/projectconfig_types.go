@@ -217,6 +217,11 @@ type OPAControlPlaneConfig struct {
 	// systems/bundles created by the controller in the OCP, in addition to any requirements/datasources
 	// specified on the System resource.
 	DefaultRequirements []string `json:"defaultRequirements,omitempty"`
+
+	// SystemDatasourceChanged is the URL to be called when a system datasource has changed.
+	SystemDatasourceChanged string `json:"systemDatasourceChanged,omitempty"`
+	// LibraryDatasourceChanged is the URL to be called when a library datasource has changed.
+	LibraryDatasourceChanged string `json:"libraryDatasourceChanged,omitempty"`
 }
 
 // UserCredentialHandler defines the structure of possible user credential handlers
@@ -307,9 +312,7 @@ type NotificationWebhooksConfig struct {
 	//+kubebuilder:deprecatedversion:warning="LibraryDatasourceChanged field is deprecated, only used in Styra"
 	// Deprecated: LibraryDatasourceChanged field is deprecated, only used in Styra.
 	// This field will be removed in a future version.
-	LibraryDatasourceChanged    string `json:"libraryDatasourceChanged,omitempty"`
-	SystemDatasourceChangedOCP  string `json:"systemDatasourceChangedOCP,omitempty"`
-	LibraryDatasourceChangedOCP string `json:"libraryDatasourceChangedOCP,omitempty"`
+	LibraryDatasourceChanged string `json:"libraryDatasourceChanged,omitempty"`
 }
 
 // SSOConfig contains configuration for how to use SSO tokens for determining
