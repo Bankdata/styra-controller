@@ -788,9 +788,8 @@ func (r *SystemReconciler) reconcileSystemSource(
 
 	valid, err := isURLValid(system.Spec.SourceControl.Origin.URL)
 	if err != nil {
-		return ctrl.Result{}, ctrlerr.Wrap(err, "Error while validating URL")		
+		return ctrl.Result{}, ctrlerr.Wrap(err, "Error while validating URL")
 	}
-
 	if !valid {
 		return ctrl.Result{}, ctrlerr.New("Invalid URL for source control")
 	}
@@ -822,7 +821,7 @@ func (r *SystemReconciler) reconcileSystemSource(
 			system.Spec.SourceControl.Origin.URL)
 	}
 
-	_, err := r.OCP.PutSource(ctx, uniqueName, &ocp.PutSourceRequest{
+	_, err = r.OCP.PutSource(ctx, uniqueName, &ocp.PutSourceRequest{
 		Name: uniqueName,
 		Git:  gitConfig,
 	})
