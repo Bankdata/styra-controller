@@ -452,7 +452,7 @@ func (r *SystemReconciler) ocpReconcile(
 	if system.GetCondition(v1beta1.ConditionTypeOPAUpToDate) != nil &&
 		*system.GetCondition(v1beta1.ConditionTypeOPAUpToDate) == metav1.ConditionFalse {
 		if r.Config.OPARestartEnabled() {
-			log.Error(errors.New("Restarting OPA is not implemented yet"), "Error restarting OPA")
+			log.Error(ctrlerr.New("Restarting OPA is not implemented yet"), "Error restarting OPA")
 		}
 		system.SetCondition(v1beta1.ConditionTypeOPAUpToDate, metav1.ConditionTrue)
 	}
@@ -697,13 +697,13 @@ func (r *SystemReconciler) reconcileS3Credentials(
 
 	userExist, err := r.S3.UserExists(ctx, s3Credentials.AccessKeyID)
 	if err != nil {
-		return s3Credentials, ctrl.Result{}, errors.Wrap(err, "reconcileS3Credentials: could not call S3")
+		return s3Credentials, ctrl.Result{}, ctrlerr.Wrap(err, "reconcileS3Credentials: could not call S3")
 	}
 
 	if userExist {
 		secret, err := r.getk8sOPASecret(ctx, system, secretName)
 		if err != nil && !k8serrors.IsNotFound(err) {
-			return s3Credentials, ctrl.Result{}, errors.Wrap(err, "reconcileS3Credentials: error while getting secret from k8s")
+			return s3Credentials, ctrl.Result{}, ctrlerr.Wrap(err, "reconcileS3Credentials: error while getting secret from k8s")
 		}
 		if secret.Data == nil ||
 			len(secret.Data[s3.AWSSecretNameKeyID]) == 0 ||
@@ -716,7 +716,7 @@ func (r *SystemReconciler) reconcileS3Credentials(
 			s3Credentials.SecretAccessKey, err = r.S3.SetNewUserSecretKey(ctx, s3Credentials.AccessKeyID)
 			if err != nil {
 				log.Error(err, "failed to apply new secretKey for accessKey", "accessKey", s3Credentials.AccessKeyID)
-				return s3Credentials, ctrl.Result{}, errors.Wrap(
+				return s3Credentials, ctrl.Result{}, ctrlerr.Wrap(
 					err, "reconcileS3Credentials: failed to apply new secretKey for accessKey",
 				)
 			}
@@ -737,7 +737,7 @@ func (r *SystemReconciler) reconcileS3Credentials(
 		)
 		if err != nil {
 			log.Error(err, "failed to create accessKey", "accessKey", s3Credentials.AccessKeyID)
-			return s3Credentials, ctrl.Result{}, errors.Wrap(err, "reconcileS3Credentials: could not create accessKey")
+			return s3Credentials, ctrl.Result{}, ctrlerr.Wrap(err, "reconcileS3Credentials: could not create accessKey")
 		}
 		log.Info("AccessKey created", "accessKey", s3Credentials.AccessKeyID)
 	}
@@ -750,7 +750,7 @@ func (r *SystemReconciler) reconcileSystemBundle(
 	uniqueName string,
 	requirements []ocp.Requirement) (ctrl.Result, error) {
 	if r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3 == nil {
-		return ctrl.Result{}, errors.New("reconcileSystemBundle: no object storage configured")
+		return ctrl.Result{}, ctrlerr.New("reconcileSystemBundle: no object storage configured")
 	}
 
 	objectStorage := ocp.ObjectStorage{
@@ -771,7 +771,7 @@ func (r *SystemReconciler) reconcileSystemBundle(
 	err := r.OCP.PutBundle(ctx, bundle)
 
 	if err != nil {
-		return ctrl.Result{}, errors.Wrap(err, "ocpReconcile: could not create or update bundle in OCP")
+		return ctrl.Result{}, ctrlerr.Wrap(err, "ocpReconcile: could not create or update bundle in OCP")
 	}
 	return ctrl.Result{}, nil
 }
@@ -783,7 +783,15 @@ func (r *SystemReconciler) reconcileSystemSource(
 	uniqueName string) (ctrl.Result, error) {
 
 	if system.Spec.SourceControl == nil {
-		return ctrl.Result{}, errors.New("reconcileSystemSource: no source control configured on system")
+		return ctrl.Result{}, ctrlerr.New("reconcileSystemSource: no source control configured on system")
+	}
+
+	valid, err := isURLValid(system.Spec.SourceControl.Origin.URL)
+	if err != nil {
+		return ctrl.Result{}, ctrlerr.Wrap(err, "Error while validating URL")
+	}
+	if !valid {
+		return ctrl.Result{}, ctrlerr.New("Invalid URL for source control")
 	}
 
 	gitConfig := &ocp.GitConfig{
@@ -813,12 +821,12 @@ func (r *SystemReconciler) reconcileSystemSource(
 			system.Spec.SourceControl.Origin.URL)
 	}
 
-	_, err := r.OCP.PutSource(ctx, uniqueName, &ocp.PutSourceRequest{
+	_, err = r.OCP.PutSource(ctx, uniqueName, &ocp.PutSourceRequest{
 		Name: uniqueName,
 		Git:  gitConfig,
 	})
 	if err != nil {
-		return ctrl.Result{}, errors.Wrap(err, "reconcileSystemSource: could not create or update source in OCP")
+		return ctrl.Result{}, ctrlerr.Wrap(err, "reconcileSystemSource: could not create or update source in OCP")
 	}
 	log.Info("OCP source upserted", "source", uniqueName)
 	return ctrl.Result{}, nil
@@ -837,10 +845,10 @@ func (r *SystemReconciler) createSourceIfNotExists(
 	var httpErr *httperror.HTTPError
 	if errors.As(err, &httpErr) {
 		if httpErr.StatusCode != http.StatusNotFound {
-			return false, errors.Wrap(err, "GetSource in createSourceIfNotExists failed")
+			return false, ctrlerr.Wrap(err, "GetSource in createSourceIfNotExists failed")
 		}
 	} else {
-		return false, errors.Wrap(err, "GetSource in createSourceIfNotExists failed")
+		return false, ctrlerr.Wrap(err, "GetSource in createSourceIfNotExists failed")
 	}
 
 	log.Info("Creating source", "source", source.Path)
@@ -848,7 +856,7 @@ func (r *SystemReconciler) createSourceIfNotExists(
 		Name: source.Path,
 	})
 	if err != nil {
-		return false, errors.Wrap(err, "PutSource in createSourceIfNotExists failed")
+		return false, ctrlerr.Wrap(err, "PutSource in createSourceIfNotExists failed")
 	}
 	log.Info("Source created", "source", source.Path)
 
