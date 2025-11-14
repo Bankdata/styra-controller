@@ -387,6 +387,10 @@ func mergeMaps(map1, map2 map[string]interface{}) map[string]interface{} {
 	}
 
 	// Copy all key-value pairs from map2 to mergedMap
+	// Overwrite rule:
+	// - If key(from map2) is absent in mergedMap: take map2's value.
+	// - If key(from map2) exists in mergedMap, but either cannot normalize to map[string]interface{}: overwrite.
+	// - If both normalize to maps: recurse (preserving existing nested keys and applying overrides).
 	for key, value := range map2 {
 		if existingValue, ok := mergedMap[key]; ok {
 			// Attempt to normalize both existing and new values to map[string]interface{} before deciding overwrite
@@ -397,7 +401,6 @@ func mergeMaps(map1, map2 map[string]interface{}) map[string]interface{} {
 				continue
 			}
 		}
-		// Overwrite or add new key
 		mergedMap[key] = value
 	}
 

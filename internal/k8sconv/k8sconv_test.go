@@ -455,6 +455,7 @@ distributed_tracing:
 })
 
 // Test without PersistBundle config
+// And custom config overriding opaconf
 var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
 
 	type test struct {
@@ -506,7 +507,7 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
 				},
 				"bundles": map[string]interface{}{
 					"authz": map[string]interface{}{
-						"test": 123,
+						"service": "s4", //test that custom config overrides default opaconf
 					},
 				},
 			},
@@ -519,8 +520,7 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
 bundles:
   authz:
     resource: bundles/system/bundle.tar.gz
-    service: s3
-    test: 123
+    service: s4
 decision_logs:
   request_context:
     http:
