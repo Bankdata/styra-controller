@@ -65,6 +65,7 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMap", func() {
 						},
 					},
 				},
+				PersistBundle: true, // test that PersistBundle is ignored for non-OCP
 			},
 			opaconf: styra.OPAConfig{
 				HostURL:    "styra-host-url-123",
@@ -179,6 +180,7 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapNoSLP", func() {
 						},
 					},
 				},
+				PersistBundle: true, // test that PersistBundle is ignored for non-OCP
 			},
 			opaconf: styra.OPAConfig{
 				HostURL:    "styra-host-url-123",
@@ -252,6 +254,7 @@ var _ = ginkgo.Describe("OpaCustomConfToK8sWithSLP", func() {
 						},
 					},
 				},
+				PersistBundle: true, // test that PersistBundle is ignored for non-OCP
 			},
 			opaconf: styra.OPAConfig{
 				HostURL:    "styra-host-url-123",
@@ -325,6 +328,7 @@ var _ = ginkgo.Describe("OpaCustomConfToK8sNoSLP", func() {
 						},
 					},
 				},
+				PersistBundle: true, // test that PersistBundle is ignored for non-OCP
 			},
 			opaconf: styra.OPAConfig{
 				HostURL:    "styra-host-url-123",
