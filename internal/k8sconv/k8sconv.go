@@ -49,6 +49,7 @@ type s3signing struct {
 type authz struct {
 	Service  string `yaml:"service"`
 	Resource string `yaml:"resource"`
+	Persist  bool   `yaml:"persist,omitempty"`
 }
 
 type bundle struct {
@@ -98,9 +99,10 @@ type opaConfigMap struct {
 }
 
 type s3opaConfigMap struct {
-	Services     []s3service  `yaml:"services"`
-	Bundles      bundle       `yaml:"bundles,omitempty"`
-	DecisionLogs decisionLogs `yaml:"decision_logs,omitempty"`
+	Services             []s3service  `yaml:"services"`
+	Bundles              bundle       `yaml:"bundles,omitempty"`
+	DecisionLogs         decisionLogs `yaml:"decision_logs,omitempty"`
+	PersistenceDirectory string       `yaml:"persistence_directory,omitempty"`
 }
 
 // OpaConfToK8sOPAConfigMapforOCP creates a ConfigMap for the OPA.
@@ -115,19 +117,23 @@ func OpaConfToK8sOPAConfigMapforOCP(
 	s3opaConfigMap := s3opaConfigMap{
 		Bundles: bundle{
 			Authz: authz{
-				Service:  "s3",
-				Resource: opaconf.Resource,
+				Service:  opaconf.BundleService,
+				Resource: opaconf.BundleResource,
 			},
 		},
 		Services: []s3service{{
-			Name: "s3",
-			URL:  opaconf.URL,
+			Name: opaconf.ServiceName,
+			URL:  opaconf.ServiceURL,
 			S3Credentials: s3credentials{
 				S3Signing: s3signing{
 					S3EnvironmentCredentials: map[string]interface{}{},
 				},
 			},
 		}},
+	}
+	if opaDefaultConfig.PersistBundle {
+		s3opaConfigMap.Bundles.Authz.Persist = opaDefaultConfig.PersistBundle
+		s3opaConfigMap.PersistenceDirectory = opaDefaultConfig.PersistBundleDirectory
 	}
 
 	if opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers != nil {
@@ -381,19 +387,57 @@ func mergeMaps(map1, map2 map[string]interface{}) map[string]interface{} {
 	}
 
 	// Copy all key-value pairs from map2 to mergedMap
+	// Overwrite rule:
+	// - If key(from map2) is absent in mergedMap: take map2's value.
+	// - If key(from map2) exists in mergedMap, but either cannot normalize to map[string]interface{}: overwrite.
+	// - If both normalize to maps: recurse (preserving existing nested keys and applying overrides).
 	for key, value := range map2 {
 		if existingValue, ok := mergedMap[key]; ok {
-			// If the key exists in both maps and both values are maps, merge them recursively
-			if existingMap, ok := existingValue.(map[string]interface{}); ok {
-				if valueMap, ok := value.(map[string]interface{}); ok {
-					mergedMap[key] = mergeMaps(existingMap, valueMap)
-					continue
-				}
+			// Attempt to normalize both existing and new values to map[string]interface{} before deciding overwrite
+			existingMap, existingIsMap := normalizeToStringMap(existingValue)
+			valueMap, valueIsMap := normalizeToStringMap(value)
+			if existingIsMap && valueIsMap {
+				mergedMap[key] = mergeMaps(existingMap, valueMap)
+				continue
 			}
 		}
-		// Otherwise, overwrite the value from map1 with the value from map2
 		mergedMap[key] = value
 	}
 
 	return mergedMap
+}
+
+// normalizeToStringMap converts supported map types (map[string]interface{} or map[interface{}]interface{})
+// into map[string]interface{} recursively. Returns the normalized map and a bool indicating success.
+func normalizeToStringMap(in interface{}) (map[string]interface{}, bool) {
+	switch m := in.(type) {
+	case map[string]interface{}:
+		// Need to recursively normalize nested maps that may still be map[interface{}]interface{}
+		res := make(map[string]interface{}, len(m))
+		for k, v := range m {
+			if nested, ok := normalizeToStringMap(v); ok {
+				res[k] = nested
+			} else {
+				res[k] = v
+			}
+		}
+		return res, true
+	case map[interface{}]interface{}:
+		res := make(map[string]interface{}, len(m))
+		for k, v := range m {
+			ks, ok := k.(string)
+			if !ok {
+				// Skip non-string keys; YAML object keys for our use-case should be strings
+				continue
+			}
+			if nested, ok := normalizeToStringMap(v); ok {
+				res[ks] = nested
+			} else {
+				res[ks] = v
+			}
+		}
+		return res, true
+	default:
+		return nil, false
+	}
 }
