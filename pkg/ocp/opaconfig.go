@@ -18,7 +18,8 @@ package ocp
 
 // OPAConfig stores the information going into the ConfigMap for the OPA
 type OPAConfig struct {
-	Resource  string
-	URL       string
-	AWSRegion string
+	BundleResource string
+	BundleService  string
+	ServiceURL     string
+	ServiceName    string
 }

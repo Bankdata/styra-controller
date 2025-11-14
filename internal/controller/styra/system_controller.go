@@ -495,11 +495,12 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 	}
 
 	opaconf := ocp.OPAConfig{
-		Resource: fmt.Sprintf("bundles/%s/bundle.tar.gz", uniqueName),
-		URL: fmt.Sprintf("%s/%s",
+		BundleResource: fmt.Sprintf("bundles/%s/bundle.tar.gz", uniqueName),
+		BundleService:  "s3",
+		ServiceURL: fmt.Sprintf("%s/%s",
 			r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.URL,
 			r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.Bucket),
-		AWSRegion: r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.Region,
+		ServiceName: "s3",
 	}
 
 	expectedOPAConfigMap, err = k8sconv.OpaConfToK8sOPAConfigMapforOCP(opaconf, r.Config.OPA, customConfig)

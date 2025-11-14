@@ -24,6 +24,7 @@ import (
 
 	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
 	"github.com/bankdata/styra-controller/internal/k8sconv"
+	"github.com/bankdata/styra-controller/pkg/ocp"
 	"github.com/bankdata/styra-controller/pkg/styra"
 	"gopkg.in/yaml.v2"
 )
@@ -355,6 +356,171 @@ discovery:
   name: discovery
   prefix: /systems/system-id-123
   service: styra
+decision_logs:
+  request_context:
+    http:
+      headers:
+      - header1
+      - header2
+distributed_tracing:
+  type: grpc
+  address: localhost:1234
+`,
+		}),
+	)
+})
+
+// Test PersistBundle config
+var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
+
+	type test struct {
+		opaDefaultConfig  configv2alpha2.OPAConfig
+		opaconf           ocp.OPAConfig
+		customConfig      map[string]interface{}
+		expectedCMContent string
+	}
+
+	ginkgo.DescribeTable("OpaConfToK8sOPAConfigMapforOCP", func(test test) {
+		cm, err := k8sconv.OpaConfToK8sOPAConfigMapforOCP(test.opaconf, test.opaDefaultConfig, test.customConfig)
+
+		gomega.Expect(err).To(gomega.BeNil())
+
+		var actualMap, expectedMap map[string]interface{}
+		actualYAML := cm.Data["opa-conf.yaml"]
+		expectedYAML := test.expectedCMContent
+
+		err = yaml.Unmarshal([]byte(actualYAML), &actualMap)
+		gomega.Expect(err).ToNot(gomega.HaveOccurred(), "Failed to unmarshal actual YAML")
+
+		err = yaml.Unmarshal([]byte(expectedYAML), &expectedMap)
+		gomega.Expect(err).ToNot(gomega.HaveOccurred(), "Failed to unmarshal expected YAML")
+
+		gomega.Expect(actualMap).To(gomega.Equal(expectedMap))
+	},
+
+		ginkgo.Entry("success", test{
+			opaDefaultConfig: configv2alpha2.OPAConfig{
+				DecisionLogs: configv2alpha2.DecisionLog{
+					RequestContext: configv2alpha2.RequestContext{
+						HTTP: configv2alpha2.HTTP{
+							Headers: strings.Split("header1,header2", ","),
+						},
+					},
+				},
+				PersistBundle:          true,
+				PersistBundleDirectory: "/opa-bundles",
+			},
+			opaconf: ocp.OPAConfig{
+				BundleResource: "bundles/system/bundle.tar.gz",
+				ServiceURL:     "https://minio/ocp",
+				ServiceName:    "s3",
+				BundleService:  "s3",
+			},
+			customConfig: map[string]interface{}{
+				"distributed_tracing": map[string]interface{}{
+					"type":    "grpc",
+					"address": "localhost:1234",
+				},
+				"bundles": map[string]interface{}{
+					"authz": map[string]interface{}{
+						"test": 123,
+					},
+				},
+			},
+			expectedCMContent: `services:
+- name: s3
+  url: https://minio/ocp
+  credentials:
+    s3_signing:
+      environment_credentials: {}
+bundles:
+  authz:
+    resource: bundles/system/bundle.tar.gz
+    service: s3
+    persist: true
+    test: 123
+persistence_directory: /opa-bundles
+decision_logs:
+  request_context:
+    http:
+      headers:
+      - header1
+      - header2
+distributed_tracing:
+  type: grpc
+  address: localhost:1234
+`,
+		}),
+	)
+})
+
+// Test without PersistBundle config
+var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
+
+	type test struct {
+		opaDefaultConfig  configv2alpha2.OPAConfig
+		opaconf           ocp.OPAConfig
+		customConfig      map[string]interface{}
+		expectedCMContent string
+	}
+
+	ginkgo.DescribeTable("OpaConfToK8sOPAConfigMapforOCP", func(test test) {
+		cm, err := k8sconv.OpaConfToK8sOPAConfigMapforOCP(test.opaconf, test.opaDefaultConfig, test.customConfig)
+
+		gomega.Expect(err).To(gomega.BeNil())
+
+		var actualMap, expectedMap map[string]interface{}
+		actualYAML := cm.Data["opa-conf.yaml"]
+		expectedYAML := test.expectedCMContent
+
+		err = yaml.Unmarshal([]byte(actualYAML), &actualMap)
+		gomega.Expect(err).ToNot(gomega.HaveOccurred(), "Failed to unmarshal actual YAML")
+
+		err = yaml.Unmarshal([]byte(expectedYAML), &expectedMap)
+		gomega.Expect(err).ToNot(gomega.HaveOccurred(), "Failed to unmarshal expected YAML")
+
+		gomega.Expect(actualMap).To(gomega.Equal(expectedMap))
+	},
+
+		ginkgo.Entry("success", test{
+			opaDefaultConfig: configv2alpha2.OPAConfig{
+				DecisionLogs: configv2alpha2.DecisionLog{
+					RequestContext: configv2alpha2.RequestContext{
+						HTTP: configv2alpha2.HTTP{
+							Headers: strings.Split("header1,header2", ","),
+						},
+					},
+				},
+				PersistBundle: false,
+			},
+			opaconf: ocp.OPAConfig{
+				BundleResource: "bundles/system/bundle.tar.gz",
+				ServiceURL:     "https://minio/ocp",
+				ServiceName:    "s3",
+				BundleService:  "s3",
+			},
+			customConfig: map[string]interface{}{
+				"distributed_tracing": map[string]interface{}{
+					"type":    "grpc",
+					"address": "localhost:1234",
+				},
+				"bundles": map[string]interface{}{
+					"authz": map[string]interface{}{
+						"test": 123,
+					},
+				},
+			},
+			expectedCMContent: `services:
+- name: s3
+  url: https://minio/ocp
+  credentials:
+    s3_signing:
+      environment_credentials: {}
+bundles:
+  authz:
+    resource: bundles/system/bundle.tar.gz
+    service: s3
+    test: 123
 decision_logs:
   request_context:
     http:
