@@ -2769,6 +2769,9 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
   authz:
     resource: bundles/default-ocp-system/bundle.tar.gz
     service: s3
+labels:
+  namespace: default
+  unique-name: default-ocp-system
 services:
 - credentials:
     s3_signing:
