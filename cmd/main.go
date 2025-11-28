@@ -210,7 +210,7 @@ func main() {
 			Name: "controller_system_status_ready",
 			Help: "Show if a system is in status ready",
 		},
-		[]string{"system_name", "namespace", "system_id"},
+		[]string{"system_name", "namespace", "system_id", "control_plane"},
 	)
 
 	if err := metrics.Registry.Register(systemReadyMetric); err != nil {

@@ -73,6 +73,11 @@ type labels struct {
 	SystemType string `yaml:"system-type"`
 }
 
+type labelsOCP struct {
+	UniqueName string `yaml:"unique-name"`
+	Namespace  string `yaml:"namespace"`
+}
+
 type discovery struct {
 	Name    string `yaml:"name"`
 	Prefix  string `yaml:"prefix,omitempty"`
@@ -103,6 +108,7 @@ type s3opaConfigMap struct {
 	Bundles              bundle       `yaml:"bundles,omitempty"`
 	DecisionLogs         decisionLogs `yaml:"decision_logs,omitempty"`
 	PersistenceDirectory string       `yaml:"persistence_directory,omitempty"`
+	Labels               labelsOCP    `yaml:"labels,omitempty"`
 }
 
 // OpaConfToK8sOPAConfigMapforOCP creates a ConfigMap for the OPA.
@@ -130,6 +136,10 @@ func OpaConfToK8sOPAConfigMapforOCP(
 				},
 			},
 		}},
+		Labels: labelsOCP{
+			UniqueName: opaconf.UniqueName,
+			Namespace:  opaconf.Namespace,
+		},
 	}
 	if opaDefaultConfig.PersistBundle {
 		s3opaConfigMap.Bundles.Authz.Persist = opaDefaultConfig.PersistBundle

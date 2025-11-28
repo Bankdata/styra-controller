@@ -22,4 +22,6 @@ type OPAConfig struct {
 	BundleService  string
 	ServiceURL     string
 	ServiceName    string
+	UniqueName     string
+	Namespace      string
 }
