@@ -177,7 +177,7 @@ var _ = ginkgo.BeforeSuite(func() {
 					Name: "controller_system_status_ready",
 					Help: "Show if a system is in status ready",
 				},
-				[]string{"system_name", "namespace", "system_id"},
+				[]string{"system_name", "namespace", "system_id", "control_plane"},
 			),
 			ReconcileSegmentTime: prometheus.NewHistogramVec(
 				prometheus.HistogramOpts{
@@ -271,7 +271,7 @@ var _ = ginkgo.BeforeSuite(func() {
 					Name: "controller_system_status_ready",
 					Help: "Show if a system is in status ready",
 				},
-				[]string{"system_name", "namespace", "system_id"},
+				[]string{"system_name", "namespace", "system_id", "control_plane"},
 			),
 			ReconcileSegmentTime: prometheus.NewHistogramVec(
 				prometheus.HistogramOpts{

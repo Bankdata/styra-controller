@@ -129,11 +129,20 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	if system.ObjectMeta.DeletionTimestamp.IsZero() {
 		res, err = r.reconcile(ctx, log, &system)
-		r.updateMetric(req, system.Status.ID, system.Status.Ready)
+		if system.Labels[labels.LabelControlPlane] == labels.LabelValueControlPlaneOCP {
+			r.updateMetric(req, system.Status.ID, system.Status.Ready, system.Labels[labels.LabelControlPlane])
+		} else {
+			r.updateMetric(req, system.Status.ID, system.Status.Ready, "styra-das")
+		}
+
 	} else {
 		res, err = r.reconcileDeletion(ctx, log, &system)
 		if err != nil {
-			r.updateMetric(req, system.Status.ID, system.Status.Ready)
+			if system.Labels[labels.LabelControlPlane] == labels.LabelValueControlPlaneOCP {
+				r.updateMetric(req, system.Status.ID, system.Status.Ready, system.Labels[labels.LabelControlPlane])
+			} else {
+				r.updateMetric(req, system.Status.ID, system.Status.Ready, "styra-das")
+			}
 		} else {
 			r.deleteMetrics(req)
 			r.Metrics.ReconcileTime.WithLabelValues("delete").Observe(time.Since(start).Seconds())
@@ -169,7 +178,7 @@ func (r *SystemReconciler) setSystemStatusError(System *v1beta1.System, err erro
 	}
 }
 
-func (r *SystemReconciler) updateMetric(req ctrl.Request, systemID string, ready bool) {
+func (r *SystemReconciler) updateMetric(req ctrl.Request, systemID string, ready bool, controlPlane string) {
 	if r.Metrics == nil || r.Metrics.ControllerSystemStatusReady == nil {
 		return
 	}
@@ -178,7 +187,7 @@ func (r *SystemReconciler) updateMetric(req ctrl.Request, systemID string, ready
 	if ready {
 		value = 1
 	}
-	r.Metrics.ControllerSystemStatusReady.WithLabelValues(req.Name, req.Namespace, systemID).Set(value)
+	r.Metrics.ControllerSystemStatusReady.WithLabelValues(req.Name, req.Namespace, systemID, controlPlane).Set(value)
 }
 
 func (r *SystemReconciler) deleteMetrics(req ctrl.Request) {
@@ -315,7 +324,7 @@ func (r *SystemReconciler) reconcile(
 		}
 	}
 
-	if system.Labels[labels.LabelControlPlane] == "opa-control-plane" {
+	if system.Labels[labels.LabelControlPlane] == labels.LabelValueControlPlaneOCP {
 		if r.Config.EnableOPAControlPlaneReconciliation {
 			log.Info("OPA Control Plane system reconcile starting")
 			return r.ocpReconcile(ctx, log, system)
@@ -501,6 +510,8 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 			r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.URL,
 			r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.Bucket),
 		ServiceName: "s3",
+		UniqueName:  uniqueName,
+		Namespace:   system.Namespace,
 	}
 
 	expectedOPAConfigMap, err = k8sconv.OpaConfToK8sOPAConfigMapforOCP(opaconf, r.Config.OPA, customConfig)
