@@ -132,7 +132,7 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		if system.Labels[labels.LabelControlPlane] == labels.LabelValueControlPlaneOCP {
 			r.updateMetric(req, system.Status.ID, system.Status.Ready, system.Labels[labels.LabelControlPlane])
 		} else {
-			r.updateMetric(req, system.Status.ID, system.Status.Ready, "styra-das")
+			r.updateMetric(req, system.Status.ID, system.Status.Ready, labels.LabelValueControlPlaneStyra)
 		}
 
 	} else {
@@ -141,7 +141,7 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			if system.Labels[labels.LabelControlPlane] == labels.LabelValueControlPlaneOCP {
 				r.updateMetric(req, system.Status.ID, system.Status.Ready, system.Labels[labels.LabelControlPlane])
 			} else {
-				r.updateMetric(req, system.Status.ID, system.Status.Ready, "styra-das")
+				r.updateMetric(req, system.Status.ID, system.Status.Ready, labels.LabelValueControlPlaneStyra)
 			}
 		} else {
 			r.deleteMetrics(req)
@@ -188,6 +188,26 @@ func (r *SystemReconciler) updateMetric(req ctrl.Request, systemID string, ready
 		value = 1
 	}
 	r.Metrics.ControllerSystemStatusReady.WithLabelValues(req.Name, req.Namespace, systemID, controlPlane).Set(value)
+
+	// If system switched control plane, we need to delete the old metric with the other control plane label
+	var labelToDelete string
+	if controlPlane == labels.LabelValueControlPlaneOCP {
+		labelToDelete = labels.LabelValueControlPlaneStyra
+	}
+	if controlPlane == labels.LabelValueControlPlaneStyra {
+		labelToDelete = labels.LabelValueControlPlaneOCP
+	}
+
+	// We cannot know if the metric exists before deleting it.
+	// Therefore, we just delete and ignore the output of DeletePartialMatch.
+	r.Metrics.ControllerSystemStatusReady.DeletePartialMatch(
+		prometheus.Labels{
+			"system_name":   req.Name,
+			"namespace":     req.Namespace,
+			"system_id":     systemID,
+			"control_plane": labelToDelete,
+		},
+	)
 }
 
 func (r *SystemReconciler) deleteMetrics(req ctrl.Request) {
