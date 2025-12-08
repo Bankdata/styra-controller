@@ -226,7 +226,7 @@ func (c *Client) DeleteSource(ctx context.Context, id string) (err error) {
 		return errors.Wrap(err, "DeleteSource: could not read body")
 	}
 
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode != http.StatusNotFound && res.StatusCode != http.StatusOK {
 		return httperror.NewHTTPError(res.StatusCode, string(body))
 	}
 	return nil
