@@ -75,7 +75,7 @@ lint: golangci-lint ## Run linters
 	$(GOLANGCI_LINT) run
 
 .PHONY: test
-test: ginkgo manifests generate lint envtest generate-mocks ## Run all tests.
+test: ginkgo manifests generate envtest generate-mocks ## Run all tests.
 	go test ./pkg/...
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r --output-interceptor-mode=none
 

@@ -38,13 +38,13 @@ type credentials struct {
 	Bearer bearer `yaml:"bearer"`
 }
 
-type s3credentials struct {
-	S3Signing s3signing `yaml:"s3_signing"`
-}
+// type s3credentials struct {
+// 	S3Signing s3signing `yaml:"s3_signing"`
+// }
 
-type s3signing struct {
-	S3EnvironmentCredentials map[string]interface{} `yaml:"environment_credentials"`
-}
+// type s3signing struct {
+// 	S3EnvironmentCredentials map[string]interface{} `yaml:"environment_credentials"`
+// }
 
 type authz struct {
 	Service  string `yaml:"service"`
@@ -62,11 +62,11 @@ type service struct {
 	Credentials credentials `yaml:"credentials,omitempty"`
 }
 
-type s3service struct {
-	Name          string        `yaml:"name"`
-	URL           string        `yaml:"url"`
-	S3Credentials s3credentials `yaml:"credentials"`
-}
+// type s3service struct {
+// 	Name          string        `yaml:"name"`
+// 	URL           string        `yaml:"url"`
+// 	S3Credentials s3credentials `yaml:"credentials"`
+// }
 
 type labels struct {
 	SystemID   string `yaml:"system-id"`
@@ -92,23 +92,36 @@ type requestContext struct {
 	HTTP http `yaml:"http"`
 }
 
-type decisionLogs struct {
-	RequestContext requestContext `yaml:"request_context"`
+// DecisionLogs contains configuration for decision logs
+type DecisionLogs struct {
+	RequestContext requestContext        `json:"request_context,omitempty" yaml:"request_context,omitempty"`
+	ServiceName    string                `json:"service,omitempty" yaml:"service,omitempty"`
+	ResourcePath   string                `json:"resource_path,omitempty" yaml:"resource_path,omitempty"`
+	Reporting      *DecisionLogReporting `json:"reporting,omitempty" yaml:"reporting,omitempty"`
 }
 
-type opaConfigMap struct {
+// DecisionLogReporting contains configuration for decision log reporting
+type DecisionLogReporting struct {
+	MaxDelaySeconds      int `json:"max_delay_seconds,omitempty" yaml:"max_delay_seconds,omitempty"`
+	MinDelaySeconds      int `json:"min_delay_seconds,omitempty" yaml:"min_delay_seconds,omitempty"`
+	UploadSizeLimitBytes int `json:"upload_size_limit_bytes,omitempty" yaml:"upload_size_limit_bytes,omitempty"`
+}
+
+// OpaConfigMap represents the structure of the OPA configuration file
+type OpaConfigMap struct {
 	Services     []service    `yaml:"services"`
 	Labels       labels       `yaml:"labels"`
 	Discovery    discovery    `yaml:"discovery"`
-	DecisionLogs decisionLogs `yaml:"decision_logs,omitempty"`
+	DecisionLogs DecisionLogs `yaml:"decision_logs,omitempty"`
 }
 
-type s3opaConfigMap struct {
-	Services             []s3service  `yaml:"services"`
-	Bundles              bundle       `yaml:"bundles,omitempty"`
-	DecisionLogs         decisionLogs `yaml:"decision_logs,omitempty"`
-	PersistenceDirectory string       `yaml:"persistence_directory,omitempty"`
-	Labels               labelsOCP    `yaml:"labels,omitempty"`
+// OcpOpaConfigMap represents the structure of the OPA configuration file for OCP
+type OcpOpaConfigMap struct {
+	Services             []*configv2alpha2.OPAServiceConfig `yaml:"services"`
+	Bundles              bundle                             `yaml:"bundles,omitempty"`
+	DecisionLogs         DecisionLogs                       `yaml:"decision_logs,omitempty"`
+	PersistenceDirectory string                             `yaml:"persistence_directory,omitempty"`
+	Labels               labelsOCP                          `yaml:"labels,omitempty"`
 }
 
 // OpaConfToK8sOPAConfigMapforOCP creates a ConfigMap for the OPA.
@@ -120,34 +133,54 @@ func OpaConfToK8sOPAConfigMapforOCP(
 	customConfig map[string]interface{},
 ) (corev1.ConfigMap, error) {
 
-	s3opaConfigMap := s3opaConfigMap{
+	var services []*configv2alpha2.OPAServiceConfig
+
+	if opaconf.BundleService != nil {
+		services = append(services, opaconf.BundleService)
+	}
+	if opaconf.LogService != nil {
+		services = append(services, opaconf.LogService)
+	}
+
+	fmt.Println("Services in OCP OPA ConfigMap:")
+	for _, svc := range services {
+		fmt.Printf("- Name: %s, URL: %s\n", svc.Name, svc.URL)
+		fmt.Println("  Credentials:", svc.Credentials,
+			" ResponseHeaderTimeoutSeconds:", svc.ResponseHeaderTimeoutSeconds)
+	}
+
+	fmt.Println("{}", opaconf.DecisionLogReporting)
+
+	ocpOpaConfigMap := OcpOpaConfigMap{
 		Bundles: bundle{
 			Authz: authz{
-				Service:  opaconf.BundleService,
+				Service:  opaconf.BundleService.Name,
 				Resource: opaconf.BundleResource,
 			},
 		},
-		Services: []s3service{{
-			Name: opaconf.ServiceName,
-			URL:  opaconf.ServiceURL,
-			S3Credentials: s3credentials{
-				S3Signing: s3signing{
-					S3EnvironmentCredentials: map[string]interface{}{},
-				},
-			},
-		}},
+		Services: services,
 		Labels: labelsOCP{
 			UniqueName: opaconf.UniqueName,
 			Namespace:  opaconf.Namespace,
 		},
+		DecisionLogs: DecisionLogs{
+			ServiceName:  opaconf.LogService.Name,
+			ResourcePath: "/logs",
+			Reporting: &DecisionLogReporting{
+				MaxDelaySeconds:      opaconf.DecisionLogReporting.MaxDelaySeconds,
+				MinDelaySeconds:      opaconf.DecisionLogReporting.MinDelaySeconds,
+				UploadSizeLimitBytes: opaconf.DecisionLogReporting.UploadSizeLimitBytes,
+			},
+		},
 	}
+
 	if opaDefaultConfig.PersistBundle {
-		s3opaConfigMap.Bundles.Authz.Persist = opaDefaultConfig.PersistBundle
-		s3opaConfigMap.PersistenceDirectory = opaDefaultConfig.PersistBundleDirectory
+		ocpOpaConfigMap.Bundles.Authz.Persist = opaDefaultConfig.PersistBundle
+		ocpOpaConfigMap.PersistenceDirectory = opaDefaultConfig.PersistBundleDirectory
 	}
 
 	if opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers != nil {
-		s3opaConfigMap.DecisionLogs = decisionLogs{
+		ocpOpaConfigMap.DecisionLogs = DecisionLogs{
 			RequestContext: requestContext{
 				HTTP: http{
 					Headers: opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers,
@@ -156,7 +189,7 @@ func OpaConfToK8sOPAConfigMapforOCP(
 		}
 	}
 
-	opaConfigMapMapStringInterface, err := opaConfigMapToMap(s3opaConfigMap)
+	opaConfigMapMapStringInterface, err := opaConfigMapToMap(ocpOpaConfigMap)
 	if err != nil {
 		return corev1.ConfigMap{}, err
 	}
@@ -186,7 +219,7 @@ func OpaConfToK8sOPAConfigMap(
 	customConfig map[string]interface{},
 ) (corev1.ConfigMap, error) {
 
-	opaConfigMap := opaConfigMap{
+	opaConfigMap := OpaConfigMap{
 		Services: []service{{
 			Name: "styra",
 			URL:  slpURL,
@@ -202,7 +235,7 @@ func OpaConfToK8sOPAConfigMap(
 	}
 
 	if opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers != nil {
-		opaConfigMap.DecisionLogs = decisionLogs{
+		opaConfigMap.DecisionLogs = DecisionLogs{
 			RequestContext: requestContext{
 				HTTP: http{
 					Headers: opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers,
@@ -309,7 +342,7 @@ func OpaConfToK8sOPAConfigMapNoSLP(
 	customConfig map[string]interface{},
 ) (corev1.ConfigMap, error) {
 
-	opaConfigMap := opaConfigMap{
+	opaConfigMap := OpaConfigMap{
 		Services: []service{{
 			Name: "styra",
 			URL:  opaconf.HostURL,
@@ -341,7 +374,7 @@ func OpaConfToK8sOPAConfigMapNoSLP(
 	}
 
 	if opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers != nil {
-		opaConfigMap.DecisionLogs = decisionLogs{
+		opaConfigMap.DecisionLogs = DecisionLogs{
 			RequestContext: requestContext{
 				HTTP: http{
 					Headers: opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers,
@@ -372,6 +405,8 @@ func OpaConfToK8sOPAConfigMapNoSLP(
 }
 
 func opaConfigMapToMap(cm interface{}) (map[string]interface{}, error) {
+	// TODO: input should be of type opaConfigMap. Difference between s3opaConfigMap and opaConfigMap
+	// should be handled elsewhere. Marhsalling and unmarshalling back to map[string]interface{} is not optimal.
 	res, err := yaml.Marshal(&cm)
 	if err != nil {
 		return nil, errors.Wrap(err, "Could not marshal configmap data")
@@ -389,6 +424,9 @@ func opaConfigMapToMap(cm interface{}) (map[string]interface{}, error) {
 
 // mergeMaps recursively merges two map[string]interface{} variables
 func mergeMaps(map1, map2 map[string]interface{}) map[string]interface{} {
+	// TODO: some times, yaml structs have a name as a key and the value under it
+	// but other times, it is a list, where 'name' is one of the fields.
+	// This function does not handle that case yet.
 	mergedMap := make(map[string]interface{})
 
 	// Copy all key-value pairs from map1 to mergedMap

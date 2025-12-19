@@ -524,14 +524,34 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 	}
 
 	opaconf := ocp.OPAConfig{
-		BundleResource: fmt.Sprintf("bundles/%s/bundle.tar.gz", uniqueName),
-		BundleService:  "s3",
-		ServiceURL: fmt.Sprintf("%s/%s",
-			r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.URL,
-			r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.Bucket),
-		ServiceName: "s3",
-		UniqueName:  uniqueName,
-		Namespace:   system.Namespace,
+		BundleService: &configv2alpha2.OPAServiceConfig{
+			Name: "s3",
+			URL: fmt.Sprintf("%s/%s",
+				r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.URL,
+				r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.Bucket),
+			Credentials: configv2alpha2.ServiceCredentials{
+				S3: &configv2alpha2.S3Credentials{
+					S3Signing: configv2alpha2.S3Signing{
+						S3EnvironmentCredentials: map[string]configv2alpha2.EmptyStruct{},
+					},
+				},
+			},
+		},
+		LogService: &configv2alpha2.OPAServiceConfig{
+			Name: "logs",
+			URL:  r.Config.OPAControlPlaneConfig.DecisionLogs.ServiceName,
+			Credentials: configv2alpha2.ServiceCredentials{
+				S3: &configv2alpha2.S3Credentials{
+					S3Signing: configv2alpha2.S3Signing{
+						S3EnvironmentCredentials: map[string]configv2alpha2.EmptyStruct{},
+					},
+				},
+			},
+		},
+		DecisionLogReporting: r.Config.OPAControlPlaneConfig.DecisionLogs.Reporting,
+		BundleResource:       fmt.Sprintf("bundles/%s/bundle.tar.gz", uniqueName),
+		UniqueName:           uniqueName,
+		Namespace:            system.Namespace,
 	}
 
 	expectedOPAConfigMap, err = k8sconv.OpaConfToK8sOPAConfigMapforOCP(opaconf, r.Config.OPA, customConfig)

@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,12 +16,16 @@ limitations under the License.
 
 package ocp
 
+import (
+	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
+)
+
 // OPAConfig stores the information going into the ConfigMap for the OPA
 type OPAConfig struct {
-	BundleResource string
-	BundleService  string
-	ServiceURL     string
-	ServiceName    string
-	UniqueName     string
-	Namespace      string
+	BundleService        *configv2alpha2.OPAServiceConfig
+	LogService           *configv2alpha2.OPAServiceConfig
+	UniqueName           string
+	Namespace            string
+	BundleResource       string
+	DecisionLogReporting configv2alpha2.DecisionLogReporting
 }
