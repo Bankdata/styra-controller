@@ -115,6 +115,7 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	log = log.WithValues("systemID", system.Status.ID)
 	log = log.WithValues("controlPlane", system.Labels["styra-controller/control-plane"])
+	log = log.WithValues("uniqueName", system.OCPUniqueName(r.Config.SystemPrefix, r.Config.SystemSuffix))
 
 	if !labels.ControllerClassMatches(&system, r.Config.ControllerClass) {
 		log.Info("This is not a System we are managing. Skipping reconciliation.")
@@ -524,17 +525,31 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 	}
 
 	opaconf := ocp.OPAConfig{
-		BundleResource: fmt.Sprintf("bundles/%s/bundle.tar.gz", uniqueName),
-		BundleService:  "s3",
-		ServiceURL: fmt.Sprintf("%s/%s",
-			r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.URL,
-			r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.Bucket),
-		ServiceName: "s3",
-		UniqueName:  uniqueName,
-		Namespace:   system.Namespace,
+		BundleService: &ocp.OPAServiceConfig{
+			Name: "s3",
+			URL:  path.Join(r.Config.OPA.BundleServer.URL, r.Config.OPA.BundleServer.Path),
+			Credentials: &ocp.ServiceCredentials{
+				S3: &ocp.S3Signing{
+					S3EnvironmentCredentials: map[string]ocp.EmptyStruct{},
+				},
+			},
+		},
+		LogService: &ocp.OPAServiceConfig{
+			Name: "logs",
+			URL:  r.Config.OPAControlPlaneConfig.DecisionAPIConfig.ServiceURL,
+			Credentials: &ocp.ServiceCredentials{
+				Bearer: &ocp.Bearer{
+					TokenPath: "/run/secrets/kubernetes.io/serviceaccount/token",
+				},
+			},
+		},
+		DecisionLogReporting: r.Config.OPAControlPlaneConfig.DecisionAPIConfig.Reporting,
+		BundleResource:       fmt.Sprintf("bundles/%s/bundle.tar.gz", uniqueName),
+		UniqueName:           uniqueName,
+		Namespace:            system.Namespace,
 	}
 
-	expectedOPAConfigMap, err = k8sconv.OpaConfToK8sOPAConfigMapforOCP(opaconf, r.Config.OPA, customConfig)
+	expectedOPAConfigMap, err = k8sconv.OPAConfToK8sOPAConfigMapforOCP(opaconf, r.Config.OPA, customConfig, log)
 	if err != nil {
 		return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not convert OPA conf to ConfigMap").
 			WithEvent(v1beta1.EventErrorConvertOPAConf).
@@ -906,7 +921,6 @@ func (r *SystemReconciler) styraReconcile(
 
 	systemID := system.Status.ID
 	migrationID := system.ObjectMeta.Annotations["styra-controller/migration-id"]
-
 	if r.Config.EnableMigrations && systemID == "" && migrationID != "" {
 		log.Info(fmt.Sprintf("Use migrationId(%s) to fetch system from Styra DAS", migrationID))
 		getSystemStart := time.Now()
@@ -1855,10 +1869,10 @@ func (r *SystemReconciler) reconcileOPAConfigMap(
 
 	if system.Spec.LocalPlane == nil {
 		log.Info("No styra local plane defined for System")
-		expectedOPAConfigMap, err = k8sconv.OpaConfToK8sOPAConfigMapNoSLP(opaconf, r.Config.OPA, customConfig)
+		expectedOPAConfigMap, err = k8sconv.OPAConfToK8sOPAConfigMapNoSLP(opaconf, r.Config.OPA, customConfig)
 	} else {
 		slpURL := fmt.Sprintf("http://%s/v1", system.Spec.LocalPlane.Name)
-		expectedOPAConfigMap, err = k8sconv.OpaConfToK8sOPAConfigMap(opaconf, slpURL, r.Config.OPA, customConfig)
+		expectedOPAConfigMap, err = k8sconv.OPAConfToK8sOPAConfigMap(opaconf, slpURL, r.Config.OPA, customConfig)
 	}
 	if err != nil {
 		return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not convert OPA conf to ConfigMap").
@@ -1939,7 +1953,7 @@ func (r *SystemReconciler) reconcileSLPConfigMap(
 	configmapName := fmt.Sprintf("%s-slp", system.Name)
 	log = log.WithValues("configmapName", configmapName)
 
-	expectedSLPConfigMap, err := k8sconv.OpaConfToK8sSLPConfigMap(opaconf)
+	expectedSLPConfigMap, err := k8sconv.OPAConfToK8sSLPConfigMap(opaconf)
 	if err != nil {
 		return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not convert OPA Conf to SLP ConfigMap").
 			WithEvent(v1beta1.EventErrorConvertOPAConf).

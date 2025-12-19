@@ -19,6 +19,7 @@ package k8sconv_test
 import (
 	"strings"
 
+	"github.com/go-logr/logr"
 	ginkgo "github.com/onsi/ginkgo/v2"
 	gomega "github.com/onsi/gomega"
 
@@ -29,7 +30,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMap", func() {
+var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMap", func() {
 
 	type test struct {
 		opaDefaultConfig  configv2alpha2.OPAConfig
@@ -38,8 +39,8 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMap", func() {
 		expectedCMContent string
 	}
 
-	ginkgo.DescribeTable("OpaConfToK8sOPAConfigMap", func(test test) {
-		cm, err := k8sconv.OpaConfToK8sOPAConfigMap(test.opaconf, test.slpURL, test.opaDefaultConfig, nil)
+	ginkgo.DescribeTable("OPAConfToK8sOPAConfigMap", func(test test) {
+		cm, err := k8sconv.OPAConfToK8sOPAConfigMap(test.opaconf, test.slpURL, test.opaDefaultConfig, nil)
 
 		gomega.Expect(err).To(gomega.BeNil())
 
@@ -94,15 +95,15 @@ decision_logs:
 	)
 })
 
-var _ = ginkgo.Describe("OpaConfToK8sSLPConfigMap", func() {
+var _ = ginkgo.Describe("OPAConfToK8sSLPConfigMap", func() {
 
 	type test struct {
 		opaconf           styra.OPAConfig
 		expectedCMContent string
 	}
 
-	ginkgo.DescribeTable("OpaConfToK8sOPAConfigMap", func(test test) {
-		cm, err := k8sconv.OpaConfToK8sSLPConfigMap(test.opaconf)
+	ginkgo.DescribeTable("OPAConfToK8sOPAConfigMap", func(test test) {
+		cm, err := k8sconv.OPAConfToK8sSLPConfigMap(test.opaconf)
 
 		gomega.Expect(err).To(gomega.BeNil())
 
@@ -144,7 +145,7 @@ discovery:
 	)
 })
 
-var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapNoSLP", func() {
+var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMapNoSLP", func() {
 
 	type test struct {
 		opaDefaultConfig  configv2alpha2.OPAConfig
@@ -152,8 +153,8 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapNoSLP", func() {
 		expectedCMContent string
 	}
 
-	ginkgo.DescribeTable("OpaConfToK8sOPAConfigMapNoSLP", func(test test) {
-		cm, err := k8sconv.OpaConfToK8sOPAConfigMapNoSLP(test.opaconf, test.opaDefaultConfig, nil)
+	ginkgo.DescribeTable("OPAConfToK8sOPAConfigMapNoSLP", func(test test) {
+		cm, err := k8sconv.OPAConfToK8sOPAConfigMapNoSLP(test.opaconf, test.opaDefaultConfig, nil)
 
 		gomega.Expect(err).To(gomega.BeNil())
 
@@ -217,7 +218,7 @@ decision_logs:
 	)
 })
 
-var _ = ginkgo.Describe("OpaCustomConfToK8sWithSLP", func() {
+var _ = ginkgo.Describe("OPACustomConfToK8sWithSLP", func() {
 
 	type test struct {
 		opaDefaultConfig  configv2alpha2.OPAConfig
@@ -227,8 +228,8 @@ var _ = ginkgo.Describe("OpaCustomConfToK8sWithSLP", func() {
 		expectedCMContent string
 	}
 
-	ginkgo.DescribeTable("OpaCustomConfToK8sWithSLP", func(test test) {
-		cm, err := k8sconv.OpaConfToK8sOPAConfigMap(test.opaconf, test.slpURL, test.opaDefaultConfig, test.customConfig)
+	ginkgo.DescribeTable("OPACustomConfToK8sWithSLP", func(test test) {
+		cm, err := k8sconv.OPAConfToK8sOPAConfigMap(test.opaconf, test.slpURL, test.opaDefaultConfig, test.customConfig)
 
 		gomega.Expect(err).To(gomega.BeNil())
 
@@ -292,7 +293,7 @@ distributed_tracing:
 	)
 })
 
-var _ = ginkgo.Describe("OpaCustomConfToK8sNoSLP", func() {
+var _ = ginkgo.Describe("OPACustomConfToK8sNoSLP", func() {
 
 	type test struct {
 		opaDefaultConfig  configv2alpha2.OPAConfig
@@ -301,8 +302,8 @@ var _ = ginkgo.Describe("OpaCustomConfToK8sNoSLP", func() {
 		expectedCMContent string
 	}
 
-	ginkgo.DescribeTable("OpaCustomConfToK8sNoSLP", func(test test) {
-		cm, err := k8sconv.OpaConfToK8sOPAConfigMapNoSLP(test.opaconf, test.opaDefaultConfig, test.customConfig)
+	ginkgo.DescribeTable("OPACustomConfToK8sNoSLP", func(test test) {
+		cm, err := k8sconv.OPAConfToK8sOPAConfigMapNoSLP(test.opaconf, test.opaDefaultConfig, test.customConfig)
 
 		gomega.Expect(err).To(gomega.BeNil())
 
@@ -375,7 +376,7 @@ distributed_tracing:
 })
 
 // Test PersistBundle config
-var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
+var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMapforOCP", func() {
 
 	type test struct {
 		opaDefaultConfig  configv2alpha2.OPAConfig
@@ -384,8 +385,12 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
 		expectedCMContent string
 	}
 
-	ginkgo.DescribeTable("OpaConfToK8sOPAConfigMapforOCP", func(test test) {
-		cm, err := k8sconv.OpaConfToK8sOPAConfigMapforOCP(test.opaconf, test.opaDefaultConfig, test.customConfig)
+	ginkgo.DescribeTable("OPAConfToK8sOPAConfigMapforOCP", func(test test) {
+		cm, err := k8sconv.OPAConfToK8sOPAConfigMapforOCP(
+			test.opaconf,
+			test.opaDefaultConfig,
+			test.customConfig,
+			logr.Discard())
 
 		gomega.Expect(err).To(gomega.BeNil())
 
@@ -401,7 +406,6 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
 
 		gomega.Expect(actualMap).To(gomega.Equal(expectedMap))
 	},
-
 		ginkgo.Entry("success", test{
 			opaDefaultConfig: configv2alpha2.OPAConfig{
 				DecisionLogs: configv2alpha2.DecisionLog{
@@ -416,9 +420,29 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
 			},
 			opaconf: ocp.OPAConfig{
 				BundleResource: "bundles/system/bundle.tar.gz",
-				ServiceURL:     "https://minio/ocp",
-				ServiceName:    "s3",
-				BundleService:  "s3",
+				BundleService: &ocp.OPAServiceConfig{
+					Name: "s3",
+					URL:  "https://minio/ocp",
+					Credentials: &ocp.ServiceCredentials{
+						S3: &ocp.S3Signing{
+							S3EnvironmentCredentials: map[string]ocp.EmptyStruct{},
+						},
+					},
+				},
+				LogService: &ocp.OPAServiceConfig{
+					Name: "logs",
+					URL:  "https://log-service/ocp",
+					Credentials: &ocp.ServiceCredentials{
+						Bearer: &ocp.Bearer{
+							TokenPath: "/etc/opa/auth/token",
+						},
+					},
+				},
+				DecisionLogReporting: configv2alpha2.DecisionLogReporting{
+					UploadSizeLimitBytes: 1,
+					MinDelaySeconds:      2,
+					MaxDelaySeconds:      3,
+				},
 			},
 			customConfig: map[string]interface{}{
 				"distributed_tracing": map[string]interface{}{
@@ -437,6 +461,11 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
   credentials:
     s3_signing:
       environment_credentials: {}
+- name: logs
+  url: https://log-service/ocp
+  credentials:
+    bearer:
+      token_path: /etc/opa/auth/token
 bundles:
   authz:
     resource: bundles/system/bundle.tar.gz
@@ -445,11 +474,17 @@ bundles:
     test: 123
 persistence_directory: /opa-bundles
 decision_logs:
+  reporting:
+    upload_size_limit_bytes: 1
+    min_delay_seconds: 2
+    max_delay_seconds: 3
   request_context:
     http:
       headers:
       - header1
       - header2
+  service: logs
+  resource_path: /logs
 distributed_tracing:
   type: grpc
   address: localhost:1234
@@ -460,7 +495,7 @@ distributed_tracing:
 
 // Test without PersistBundle config
 // And custom config overriding opaconf
-var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
+var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMapforOCP", func() {
 
 	type test struct {
 		opaDefaultConfig  configv2alpha2.OPAConfig
@@ -469,8 +504,12 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
 		expectedCMContent string
 	}
 
-	ginkgo.DescribeTable("OpaConfToK8sOPAConfigMapforOCP", func(test test) {
-		cm, err := k8sconv.OpaConfToK8sOPAConfigMapforOCP(test.opaconf, test.opaDefaultConfig, test.customConfig)
+	ginkgo.DescribeTable("OPAConfToK8sOPAConfigMapforOCP", func(test test) {
+		cm, err := k8sconv.OPAConfToK8sOPAConfigMapforOCP(
+			test.opaconf,
+			test.opaDefaultConfig,
+			test.customConfig,
+			logr.Discard())
 
 		gomega.Expect(err).To(gomega.BeNil())
 
@@ -499,10 +538,30 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
 				PersistBundle: false,
 			},
 			opaconf: ocp.OPAConfig{
+				LogService: &ocp.OPAServiceConfig{
+					Name: "logs",
+					URL:  "https://log-service/ocp",
+					Credentials: &ocp.ServiceCredentials{
+						Bearer: &ocp.Bearer{
+							TokenPath: "/etc/opa/auth/token",
+						},
+					},
+				},
 				BundleResource: "bundles/system/bundle.tar.gz",
-				ServiceURL:     "https://minio/ocp",
-				ServiceName:    "s3",
-				BundleService:  "s3",
+				BundleService: &ocp.OPAServiceConfig{
+					Name: "s3",
+					URL:  "https://minio/ocp",
+					Credentials: &ocp.ServiceCredentials{
+						S3: &ocp.S3Signing{
+							S3EnvironmentCredentials: map[string]ocp.EmptyStruct{},
+						},
+					},
+				},
+				DecisionLogReporting: configv2alpha2.DecisionLogReporting{
+					UploadSizeLimitBytes: 1048576,
+					MinDelaySeconds:      1,
+					MaxDelaySeconds:      30,
+				},
 			},
 			customConfig: map[string]interface{}{
 				"distributed_tracing": map[string]interface{}{
@@ -521,11 +580,22 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
   credentials:
     s3_signing:
       environment_credentials: {}
+- name: logs
+  url: https://log-service/ocp
+  credentials:
+    bearer:
+      token_path: /etc/opa/auth/token
 bundles:
   authz:
     resource: bundles/system/bundle.tar.gz
     service: s4
 decision_logs:
+  reporting:
+    upload_size_limit_bytes: 1048576
+    min_delay_seconds: 1
+    max_delay_seconds: 30
+  service: logs
+  resource_path: /logs
   request_context:
     http:
       headers:
