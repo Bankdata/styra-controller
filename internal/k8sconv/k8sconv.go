@@ -149,7 +149,8 @@ func OpaConfToK8sOPAConfigMapforOCP(
 			" ResponseHeaderTimeoutSeconds:", svc.ResponseHeaderTimeoutSeconds)
 	}
 
-	fmt.Println("{}", opaconf.DecisionLogReporting)
+	fmt.Println("1{}", opaconf.DecisionLogReporting)
+	fmt.Println("2{}", opaDefaultConfig.DecisionLogs.Reporting)
 
 	ocpOpaConfigMap := OcpOpaConfigMap{
 		Bundles: bundle{
@@ -167,9 +168,9 @@ func OpaConfToK8sOPAConfigMapforOCP(
 			ServiceName:  opaconf.LogService.Name,
 			ResourcePath: "/logs",
 			Reporting: &DecisionLogReporting{
-				MaxDelaySeconds:      opaconf.DecisionLogReporting.MaxDelaySeconds,
-				MinDelaySeconds:      opaconf.DecisionLogReporting.MinDelaySeconds,
-				UploadSizeLimitBytes: opaconf.DecisionLogReporting.UploadSizeLimitBytes,
+				MaxDelaySeconds:      opaDefaultConfig.DecisionLogs.Reporting.MaxDelaySeconds,
+				MinDelaySeconds:      opaDefaultConfig.DecisionLogs.Reporting.MinDelaySeconds,
+				UploadSizeLimitBytes: opaDefaultConfig.DecisionLogs.Reporting.UploadSizeLimitBytes,
 			},
 		},
 	}
@@ -182,11 +183,9 @@ func OpaConfToK8sOPAConfigMapforOCP(
 	}
 
 	if opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers != nil {
-		ocpOpaConfigMap.DecisionLogs = DecisionLogs{
-			RequestContext: requestContext{
-				HTTP: http{
-					Headers: opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers,
-				},
+		ocpOpaConfigMap.DecisionLogs.RequestContext = requestContext{
+			HTTP: http{
+				Headers: opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers,
 			},
 		}
 	}

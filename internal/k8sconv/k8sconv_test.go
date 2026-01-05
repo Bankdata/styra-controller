@@ -405,6 +405,8 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
 		ginkgo.Entry("success", test{
 			opaDefaultConfig: configv2alpha2.OPAConfig{
 				DecisionLogs: configv2alpha2.DecisionLog{
+					ServiceName:  "logs",
+					ResourcePath: "/logs",
 					RequestContext: configv2alpha2.RequestContext{
 						HTTP: configv2alpha2.HTTP{
 							Headers: strings.Split("header1,header2", ","),
@@ -422,12 +424,16 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
 			opaconf: ocp.OPAConfig{
 				BundleResource: "bundles/system/bundle.tar.gz",
 				BundleService: &configv2alpha2.OPAServiceConfig{
-					Name:        "s3",
-					URL:         "https://minio/ocp",
-					Credentials: configv2alpha2.ServiceCredentials{},
+					Name: "s3",
+					URL:  "https://minio/ocp",
+					Credentials: configv2alpha2.ServiceCredentials{
+						S3: &configv2alpha2.S3Signing{
+							S3EnvironmentCredentials: map[string]configv2alpha2.EmptyStruct{},
+						},
+					},
 				},
 				LogService: &configv2alpha2.OPAServiceConfig{
-					Name: "log",
+					Name: "logs",
 					URL:  "https://log-service/ocp",
 					Credentials: configv2alpha2.ServiceCredentials{
 						Bearer: &configv2alpha2.Bearer{
@@ -453,7 +459,7 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
   credentials:
     s3_signing:
       environment_credentials: {}
-- name: log
+- name: logs
   url: https://log-service/ocp
   credentials:
     bearer:
@@ -475,6 +481,8 @@ decision_logs:
       headers:
       - header1
       - header2
+  service: logs
+  resource_path: /logs
 distributed_tracing:
   type: grpc
   address: localhost:1234
@@ -518,9 +526,9 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
 					ServiceName:  "logs",
 					ResourcePath: "/logs",
 					Reporting: configv2alpha2.DecisionLogReporting{
-						UploadSizeLimitBytes: 4,
-						MinDelaySeconds:      5,
-						MaxDelaySeconds:      6,
+						UploadSizeLimitBytes: 1048576,
+						MinDelaySeconds:      1,
+						MaxDelaySeconds:      30,
 					},
 					RequestContext: configv2alpha2.RequestContext{
 						HTTP: configv2alpha2.HTTP{
@@ -568,20 +576,22 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
   credentials:
     s3_signing:
       environment_credentials: {}
-- name: log
+- name: logs
   url: https://log-service/ocp
   credentials:
-    s3_signing:
-      environment_credentials: {}
+    bearer:
+      token_path: /etc/opa/auth/token
 bundles:
   authz:
     resource: bundles/system/bundle.tar.gz
     service: s4
 decision_logs:
   reporting:
-    upload_size_limit_bytes: 4
-    min_delay_seconds: 5
-    max_delay_seconds: 6
+    upload_size_limit_bytes: 1048576
+    min_delay_seconds: 1
+    max_delay_seconds: 30
+  service: logs
+  resource_path: /logs
   request_context:
     http:
       headers:
