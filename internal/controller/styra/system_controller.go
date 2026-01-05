@@ -925,7 +925,7 @@ func (r *SystemReconciler) styraReconcile(
 
 	systemID := system.Status.ID
 	migrationID := system.ObjectMeta.Annotations["styra-controller/migration-id"]
-
+	log.Info(fmt.Sprintf("ID: %s", systemID))
 	if r.Config.EnableMigrations && systemID == "" && migrationID != "" {
 		log.Info(fmt.Sprintf("Use migrationId(%s) to fetch system from Styra DAS", migrationID))
 		getSystemStart := time.Now()

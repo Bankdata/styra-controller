@@ -66,8 +66,8 @@ podRestart:
     deploymentType: StatefulSet
 
 
-opa:
- decision_logs:
+# opa:
+#  decision_logs:
 #    request_context:
 #      http:
 #        headers:

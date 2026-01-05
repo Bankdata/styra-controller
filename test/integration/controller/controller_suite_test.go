@@ -248,58 +248,58 @@ var _ = ginkgo.BeforeSuite(func() {
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	// Controller with PodRestart enabled for SLPs.
-	systemReconcilerPodRestart := styractrls.SystemReconciler{
-		Client:        k8sClient,
-		APIReader:     k8sManagerPodRestart.GetAPIReader(),
-		Scheme:        k8sManagerPodRestart.GetScheme(),
-		Styra:         styraClientMock,
-		OCP:           ocpClientMock,
-		WebhookClient: webhookMock,
-		Recorder:      k8sManagerPodRestart.GetEventRecorderFor("system-controller"),
-		Config: &configv2alpha2.ProjectConfig{
-			ControllerClass: "styra-controller-pod-restart",
-			SystemUserRoles: []string{string(styra.RoleSystemViewer)},
-			SSO: &configv2alpha2.SSOConfig{
-				IdentityProvider: "AzureAD Bankdata",
-				JWTGroupsClaim:   "groups",
-			},
-			DatasourceIgnorePatterns:  []string{"^.*/ignore$"},
-			ReadOnly:                  true,
-			EnableDeltaBundlesDefault: ptr.Bool(false),
-			PodRestart: &configv2alpha2.PodRestartConfig{
-				SLPRestart: &configv2alpha2.SLPRestartConfig{
-					Enabled:        true,
-					DeploymentType: "statefulset",
-				},
-			},
-			EnableStyraReconciliation: true,
-		},
-		Metrics: &styractrls.SystemReconcilerMetrics{
-			ControllerSystemStatusReady: prometheus.NewGaugeVec(
-				prometheus.GaugeOpts{
-					Name: "controller_system_status_ready",
-					Help: "Show if a system is in status ready",
-				},
-				[]string{"system_name", "namespace", "system_id", "control_plane"},
-			),
-			ReconcileSegmentTime: prometheus.NewHistogramVec(
-				prometheus.HistogramOpts{
-					Name:    "controller_system_reconcile_segment_seconds",
-					Help:    "Time taken to perform one segment of reconciling a system",
-					Buckets: prometheus.DefBuckets,
-				}, []string{"segment"},
-			),
-			ReconcileTime: prometheus.NewHistogramVec(
-				prometheus.HistogramOpts{
-					Name:    "controller_system_reconcile_seconds",
-					Help:    "Time taken to reconcile a system",
-					Buckets: prometheus.DefBuckets,
-				}, []string{"result"},
-			),
-		},
-	}
+	// systemReconcilerPodRestart := styractrls.SystemReconciler{
+	// 	Client:        k8sClient,
+	// 	APIReader:     k8sManagerPodRestart.GetAPIReader(),
+	// 	Scheme:        k8sManagerPodRestart.GetScheme(),
+	// 	Styra:         styraClientMock,
+	// 	OCP:           ocpClientMock,
+	// 	WebhookClient: webhookMock,
+	// 	Recorder:      k8sManagerPodRestart.GetEventRecorderFor("system-controller"),
+	// 	Config: &configv2alpha2.ProjectConfig{
+	// 		ControllerClass: "styra-controller-pod-restart",
+	// 		SystemUserRoles: []string{string(styra.RoleSystemViewer)},
+	// 		SSO: &configv2alpha2.SSOConfig{
+	// 			IdentityProvider: "AzureAD Bankdata",
+	// 			JWTGroupsClaim:   "groups",
+	// 		},
+	// 		DatasourceIgnorePatterns:  []string{"^.*/ignore$"},
+	// 		ReadOnly:                  true,
+	// 		EnableDeltaBundlesDefault: ptr.Bool(false),
+	// 		PodRestart: &configv2alpha2.PodRestartConfig{
+	// 			SLPRestart: &configv2alpha2.SLPRestartConfig{
+	// 				Enabled:        true,
+	// 				DeploymentType: "statefulset",
+	// 			},
+	// 		},
+	// 		EnableStyraReconciliation: true,
+	// 	},
+	// 	Metrics: &styractrls.SystemReconcilerMetrics{
+	// 		ControllerSystemStatusReady: prometheus.NewGaugeVec(
+	// 			prometheus.GaugeOpts{
+	// 				Name: "controller_system_status_ready",
+	// 				Help: "Show if a system is in status ready",
+	// 			},
+	// 			[]string{"system_name", "namespace", "system_id", "control_plane"},
+	// 		),
+	// 		ReconcileSegmentTime: prometheus.NewHistogramVec(
+	// 			prometheus.HistogramOpts{
+	// 				Name:    "controller_system_reconcile_segment_seconds",
+	// 				Help:    "Time taken to perform one segment of reconciling a system",
+	// 				Buckets: prometheus.DefBuckets,
+	// 			}, []string{"segment"},
+	// 		),
+	// 		ReconcileTime: prometheus.NewHistogramVec(
+	// 			prometheus.HistogramOpts{
+	// 				Name:    "controller_system_reconcile_seconds",
+	// 				Help:    "Time taken to reconcile a system",
+	// 				Buckets: prometheus.DefBuckets,
+	// 			}, []string{"result"},
+	// 		),
+	// 	},
+	// }
 
-	err = systemReconcilerPodRestart.SetupWithManager(k8sManagerPodRestart, "styra-controller-pod-restart")
+	// err = systemReconcilerPodRestart.SetupWithManager(k8sManagerPodRestart, "styra-controller-pod-restart")
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	managerCtxPodRestart, managerCancelPodRestart = context.WithCancel(context.Background())
