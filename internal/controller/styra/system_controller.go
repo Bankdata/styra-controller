@@ -115,6 +115,7 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	log = log.WithValues("systemID", system.Status.ID)
 	log = log.WithValues("controlPlane", system.Labels["styra-controller/control-plane"])
+	// TODO: log.withvalue namespacedname, namespacedname
 
 	if !labels.ControllerClassMatches(&system, r.Config.ControllerClass) {
 		log.Info("This is not a System we are managing. Skipping reconciliation.")
@@ -356,6 +357,8 @@ func (r *SystemReconciler) reconcile(
 	if r.Config.EnableOPAControlPlaneReconciliationTestData {
 		log.Info("OPA Control Plane Test Data flag is enabled - first lets do OCP reconciliation of test data")
 
+		// TODO: if 'OCP dry-run' is enabled, run Styra reconciliation first.
+		// Otherwise, error in OCP will block regular operations.
 		result, err := r.ocpReconcile(ctx, log, system)
 		if err != nil {
 			return result, err

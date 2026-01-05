@@ -142,16 +142,6 @@ func OpaConfToK8sOPAConfigMapforOCP(
 		services = append(services, opaconf.LogService)
 	}
 
-	fmt.Println("Services in OCP OPA ConfigMap:")
-	for _, svc := range services {
-		fmt.Printf("- Name: %s, URL: %s\n", svc.Name, svc.URL)
-		fmt.Println("  Credentials:", svc.Credentials,
-			" ResponseHeaderTimeoutSeconds:", svc.ResponseHeaderTimeoutSeconds)
-	}
-
-	fmt.Println("1{}", opaconf.DecisionLogReporting)
-	fmt.Println("2{}", opaDefaultConfig.DecisionLogs.Reporting)
-
 	ocpOpaConfigMap := OcpOpaConfigMap{
 		Bundles: bundle{
 			Authz: authz{
@@ -175,8 +165,6 @@ func OpaConfToK8sOPAConfigMapforOCP(
 		},
 	}
 
-	fmt.Println(ocpOpaConfigMap.DecisionLogs)
-
 	if opaDefaultConfig.PersistBundle {
 		ocpOpaConfigMap.Bundles.Authz.Persist = opaDefaultConfig.PersistBundle
 		ocpOpaConfigMap.PersistenceDirectory = opaDefaultConfig.PersistBundleDirectory
@@ -194,9 +182,6 @@ func OpaConfToK8sOPAConfigMapforOCP(
 	if err != nil {
 		return corev1.ConfigMap{}, err
 	}
-
-	fmt.Println(opaConfigMapMapStringInterface)
-	fmt.Println(customConfig)
 
 	merged := mergeMaps(opaConfigMapMapStringInterface, customConfig)
 

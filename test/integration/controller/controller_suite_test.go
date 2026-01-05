@@ -159,6 +159,15 @@ var _ = ginkgo.BeforeSuite(func() {
 						OCPConfigSecretName: "s3-credentials",
 					},
 				},
+				DecisionLogs: &configv2alpha2.DecisionLog{
+					ServiceName:  "logs",
+					ResourcePath: "/logs",
+					Reporting: configv2alpha2.DecisionLogReporting{
+						MaxDelaySeconds:      60,
+						UploadSizeLimitBytes: 1024,
+						MinDelaySeconds:      5,
+					},
+				},
 			},
 			UserCredentialHandler: &configv2alpha2.UserCredentialHandler{
 				S3: &configv2alpha2.S3Handler{
