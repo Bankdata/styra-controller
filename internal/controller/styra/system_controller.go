@@ -530,10 +530,8 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 				r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.URL,
 				r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.Bucket),
 			Credentials: configv2alpha2.ServiceCredentials{
-				S3: &configv2alpha2.S3Credentials{
-					S3Signing: configv2alpha2.S3Signing{
-						S3EnvironmentCredentials: map[string]configv2alpha2.EmptyStruct{},
-					},
+				S3: &configv2alpha2.S3Signing{
+					S3EnvironmentCredentials: map[string]configv2alpha2.EmptyStruct{},
 				},
 			},
 		},
@@ -541,10 +539,8 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 			Name: "logs",
 			URL:  r.Config.OPAControlPlaneConfig.DecisionLogs.ServiceName,
 			Credentials: configv2alpha2.ServiceCredentials{
-				S3: &configv2alpha2.S3Credentials{
-					S3Signing: configv2alpha2.S3Signing{
-						S3EnvironmentCredentials: map[string]configv2alpha2.EmptyStruct{},
-					},
+				Bearer: &configv2alpha2.Bearer{
+					TokenPath: "/etc/opa/auth/token", //todo:correct path
 				},
 			},
 		},

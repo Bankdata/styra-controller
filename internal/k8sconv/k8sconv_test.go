@@ -515,7 +515,7 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
 		ginkgo.Entry("success", test{
 			opaDefaultConfig: configv2alpha2.OPAConfig{
 				DecisionLogs: configv2alpha2.DecisionLog{
-					ServiceName:  "log",
+					ServiceName:  "logs",
 					ResourcePath: "/logs",
 					Reporting: configv2alpha2.DecisionLogReporting{
 						UploadSizeLimitBytes: 4,
@@ -532,7 +532,7 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
 			},
 			opaconf: ocp.OPAConfig{
 				LogService: &configv2alpha2.OPAServiceConfig{
-					Name: "log",
+					Name: "logs",
 					URL:  "https://log-service/ocp",
 					Credentials: configv2alpha2.ServiceCredentials{
 						Bearer: &configv2alpha2.Bearer{
@@ -545,10 +545,8 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
 					Name: "s3",
 					URL:  "https://minio/ocp",
 					Credentials: configv2alpha2.ServiceCredentials{
-						S3: &configv2alpha2.S3Credentials{
-							S3Signing: configv2alpha2.S3Signing{
-								S3EnvironmentCredentials: map[string]configv2alpha2.EmptyStruct{},
-							},
+						S3: &configv2alpha2.S3Signing{
+							S3EnvironmentCredentials: map[string]configv2alpha2.EmptyStruct{},
 						},
 					},
 				},

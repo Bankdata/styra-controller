@@ -236,18 +236,13 @@ type OPAServiceConfig struct {
 
 // ServiceCredentials defines the structure for service credentials.
 type ServiceCredentials struct {
-	Bearer *Bearer        `json:"bearer,omitempty"`
-	S3     *S3Credentials `json:"s3_signing,omitempty"`
-}
-
-// S3Credentials defines the structure for S3 credentials.
-type S3Credentials struct {
-	S3Signing S3Signing `json:"s3_signing"`
+	Bearer *Bearer    `json:"bearer,omitempty" yaml:"bearer,omitempty"`
+	S3     *S3Signing `json:"s3_signing,omitempty" yaml:"s3_signing,omitempty"`
 }
 
 // S3Signing defines the structure for S3 signing configuration.
 type S3Signing struct {
-	S3EnvironmentCredentials map[string]EmptyStruct `json:"environment_credentials"`
+	S3EnvironmentCredentials map[string]EmptyStruct `json:"environment_credentials" yaml:"environment_credentials"`
 }
 
 // EmptyStruct is an empty struct used for mapping empty values in S3EnvironmentCredentials
@@ -255,26 +250,26 @@ type EmptyStruct struct{}
 
 // Bearer defines the structure for bearer token credentials.
 type Bearer struct {
-	TokenPath string `json:"token_path" `
+	TokenPath string `json:"token_path" yaml:"token_path"`
 }
 
 // UserCredentialHandler defines the structure of possible user credential handlers
 type UserCredentialHandler struct {
-	S3 *S3Handler `json:"s3,omitempty"`
+	S3 *S3Handler `json:"s3,omitempty" yaml:"s3,omitempty"`
 }
 
 // S3Handler defines the structure for S3 handler configuration.
 type S3Handler struct {
-	Bucket          string `json:"bucket"`
-	URL             string `json:"url"`
-	Region          string `json:"region"`
-	AccessKeyID     string `json:"accessKeyID"`
-	SecretAccessKey string `json:"secretAccessKey"`
+	Bucket          string `json:"bucket" yaml:"bucket"`
+	URL             string `json:"url" yaml:"url"`
+	Region          string `json:"region" yaml:"region"`
+	AccessKeyID     string `json:"accessKeyID" yaml:"accessKeyID"`
+	SecretAccessKey string `json:"secretAccessKey" yaml:"secretAccessKey"`
 }
 
 // BundleObjectStorage defines the structure for object storage configuration used by bundles
 type BundleObjectStorage struct {
-	S3 *S3ObjectStorage `json:"s3,omitempty"`
+	S3 *S3ObjectStorage `json:"s3,omitempty" yaml:"s3,omitempty"`
 }
 
 // S3ObjectStorage defines the structure for S3 object storage configuration.

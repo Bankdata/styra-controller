@@ -174,6 +174,8 @@ func OpaConfToK8sOPAConfigMapforOCP(
 		},
 	}
 
+	fmt.Println(ocpOpaConfigMap.DecisionLogs)
+
 	if opaDefaultConfig.PersistBundle {
 		ocpOpaConfigMap.Bundles.Authz.Persist = opaDefaultConfig.PersistBundle
 		ocpOpaConfigMap.PersistenceDirectory = opaDefaultConfig.PersistBundleDirectory
@@ -193,6 +195,9 @@ func OpaConfToK8sOPAConfigMapforOCP(
 	if err != nil {
 		return corev1.ConfigMap{}, err
 	}
+
+	fmt.Println(opaConfigMapMapStringInterface)
+	fmt.Println(customConfig)
 
 	merged := mergeMaps(opaConfigMapMapStringInterface, customConfig)
 
