@@ -2202,7 +2202,7 @@ distributed_tracing:
 		styraClientMock.On("GetSystemByName", mock.Anything, key5.String()).Return(&styra.GetSystemResponse{
 			StatusCode:   http.StatusOK,
 			SystemConfig: nil,
-		}, nil).Times(14)
+		}, nil).Times(13)
 
 		// Create the system in the Kubernetes cluster
 		gomega.Expect(k8sClient.Create(ctx, toCreate5)).To(gomega.Succeed())
@@ -2431,11 +2431,6 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcilePodRestart", ginkgo.Label("in
 			if err := k8sClient.Get(ctx, key, fetched); err != nil {
 				return false
 			}
-			// fmt.Println("Fetched System:", finalizer.IsSet(fetched))
-			// fmt.Println("Fetched System Status:", fetched.Status)
-			// fmt.Println("Fetched System ID:", fetched.Status.ID)
-			// fmt.Println("Fetched System Phase:", fetched.Status.Phase)
-			// fmt.Println("Fetched System Ready:", fetched.Status.Ready)
 			return finalizer.IsSet(fetched) &&
 				fetched.Status.ID == "system_id" &&
 				fetched.Status.Phase == styrav1beta1.SystemPhaseCreated &&
@@ -2497,7 +2492,7 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcilePodRestart", ginkgo.Label("in
 	})
 })
 
-var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("integration"), func() {
+var _ = ginkgo.Describe("SystemReconciler.Reconcile1", ginkgo.Label("integration"), func() {
 	ginkgo.It("should reconcile", func() {
 
 		expectedGitCredentialsID := "github-credentials"
@@ -2741,15 +2736,6 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 					conditionOPAUpToDate = true
 				}
 			}
-
-			fmt.Println("\nfinalizerIsSet:", finalizerIsSet)
-			fmt.Println("emptyID:", emptyID)
-			fmt.Println("systemStatusIsReady:", systemStatusIsReady)
-			fmt.Println("systemStatusPhaseIsCreated:", systemStatusPhaseIsCreated)
-			fmt.Println("systemStatusFailureMessageIsEmpty:", systemStatusFailureMessageIsEmpty)
-			fmt.Println("conditionOPASecretUpdated:", conditionOPASecretUpdated)
-			fmt.Println("conditionOPAConfigMapUpdated:", conditionOPAConfigMapUpdated)
-			fmt.Println("conditionOPAUpToDate:", conditionOPAUpToDate)
 
 			return finalizerIsSet &&
 				emptyID &&
