@@ -134,8 +134,6 @@ func OpaConfToK8sOPAConfigMapforOCP(
 	customConfig map[string]interface{},
 	log logr.Logger,
 ) (corev1.ConfigMap, error) {
-	log.Info(fmt.Sprintf("Before %v", opaconf.DecisionLogReporting))
-
 	var services []*configv2alpha2.OPAServiceConfig
 
 	if opaconf.BundleService != nil {
@@ -168,8 +166,6 @@ func OpaConfToK8sOPAConfigMapforOCP(
 		},
 	}
 
-	// log.Info(fmt.Sprintf("midway: %v\n", ocpOpaConfigMap.DecisionLogs.Reporting))
-
 	if opaDefaultConfig.PersistBundle {
 		ocpOpaConfigMap.Bundles.Authz.Persist = opaDefaultConfig.PersistBundle
 		ocpOpaConfigMap.PersistenceDirectory = opaDefaultConfig.PersistBundleDirectory
@@ -188,11 +184,7 @@ func OpaConfToK8sOPAConfigMapforOCP(
 		return corev1.ConfigMap{}, err
 	}
 
-	fmt.Printf("Pre-merge: %v\n", opaConfigMapMapStringInterface)
-
 	merged := mergeMaps(opaConfigMapMapStringInterface, customConfig)
-
-	fmt.Printf("Post-merge: %v\n", merged)
 
 	res, err := yaml.Marshal(&merged)
 	if err != nil {

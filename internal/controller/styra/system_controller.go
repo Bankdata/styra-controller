@@ -526,8 +526,6 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 		}
 	}
 
-	log.Info(fmt.Sprintf("DecisionLogsConfig Reporting: %v", r.Config.OPAControlPlaneConfig.DecisionApiConfig.Reporting))
-
 	opaconf := ocp.OPAConfig{
 		BundleService: &configv2alpha2.OPAServiceConfig{
 			Name: "s3",
@@ -555,16 +553,12 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 		Namespace:            system.Namespace,
 	}
 
-	log.Info("Generating expected OPA ConfigMap", "reporting", opaconf.DecisionLogReporting)
-
 	expectedOPAConfigMap, err = k8sconv.OpaConfToK8sOPAConfigMapforOCP(opaconf, r.Config.OPA, customConfig, log)
 	if err != nil {
 		return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not convert OPA conf to ConfigMap").
 			WithEvent(v1beta1.EventErrorConvertOPAConf).
 			WithSystemCondition(v1beta1.ConditionTypeOPAConfigMapUpdated)
 	}
-
-	log.Info("result of opaConfToK8sOPAConfigMap", "data", expectedOPAConfigMap.Data)
 
 	var cm corev1.ConfigMap
 	nsName := types.NamespacedName{Name: configmapName, Namespace: system.Namespace}
