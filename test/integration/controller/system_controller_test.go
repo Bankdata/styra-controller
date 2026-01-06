@@ -2429,8 +2429,15 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcilePodRestart", ginkgo.Label("in
 		gomega.Eventually(func() bool {
 			fetched := &styrav1beta1.System{}
 			if err := k8sClient.Get(ctx, key, fetched); err != nil {
+				fmt.Println("Error fetching System:", err)
 				return false
 			}
+
+			fmt.Println("Is finalizer set?", finalizer.IsSet(fetched))
+			fmt.Println("status id:", fetched.Status.ID)
+			fmt.Println("status phase:", fetched.Status.Phase)
+			fmt.Println("status ready:", fetched.Status.Ready)
+
 			return finalizer.IsSet(fetched) &&
 				fetched.Status.ID == "system_id" &&
 				fetched.Status.Phase == styrav1beta1.SystemPhaseCreated &&
@@ -2763,6 +2770,7 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile1", ginkgo.Label("integration
 
 			key := types.NamespacedName{Name: fmt.Sprintf("%s-opa-config", key.Name), Namespace: key.Namespace}
 			if fetchSuceeded := k8sClient.Get(ctx, key, fetched) == nil; !fetchSuceeded {
+				fmt.Println("Failed to fetch ConfigMap")
 				return false
 			}
 
@@ -2771,16 +2779,16 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile1", ginkgo.Label("integration
   authz:
     resource: bundles/default-ocp-system/bundle.tar.gz
     service: s3
+decision_logs:
+  reporting:
+    max_delay_seconds: 60
+    min_delay_seconds: 5
+    upload_size_limit_bytes: 1024
+  resource_path: /logs
+  service: logs
 labels:
   namespace: default
   unique-name: default-ocp-system
-decision_logs:
-  resource_path: /logs
-  service: logs
-  reporting:
-	min_delay_seconds: 5
-	max_delay_seconds: 60
-	upload_size_limit: 1024
 services:
 - credentials:
     s3_signing:
@@ -2795,17 +2803,21 @@ services:
 `
 
 			if err := yaml.Unmarshal([]byte(actualYAML), &actualMap); err != nil {
+				fmt.Println("Failed to unmarshal actual YAML:", err)
 				return false
 			}
 			if err := yaml.Unmarshal([]byte(expectedYAML), &expectedMap); err != nil {
+				fmt.Println("Failed to unmarshal expected YAML:", err)
 				return false
 			}
 
 			equal := reflect.DeepEqual(expectedMap, actualMap)
 			if !equal {
 				fmt.Println("reconciliation failed")
-				fmt.Println("Actual \n", string(actualYAML))
-				fmt.Println("Expected \n", string(expectedYAML))
+				fmt.Println("Actual: \n", string(actualYAML))
+				fmt.Println("Expected: \n", string(expectedYAML))
+				fmt.Println("Actual Map: \n", actualMap)
+				fmt.Println("Expected Map: \n", expectedMap)
 			}
 			return equal
 		}, timeout, interval).Should(gomega.BeTrue())

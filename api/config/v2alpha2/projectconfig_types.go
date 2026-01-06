@@ -223,7 +223,7 @@ type OPAControlPlaneConfig struct {
 	// LibraryDatasourceChanged is the URL to be called when a library datasource has changed.
 	LibraryDatasourceChanged string `json:"libraryDatasourceChanged,omitempty"`
 
-	DecisionApiConfig *DecisionApiConfig `json:"decisionApiConfig,omitempty"`
+	DecisionAPIConfig *DecisionAPIConfig `json:"decisionApiConfig,omitempty"`
 }
 
 // OPAServiceConfig defines a services added to the OPAs' config files.
@@ -306,10 +306,10 @@ type DecisionLog struct {
 	// Reporting      DecisionLogReporting `json:"reporting,omitempty"`
 }
 
-// DecisionLog contains configuration for the decision logs
-type DecisionApiConfig struct {
-	ServiceURL   string               `json:"serviceUrl,omitempty"`
-	Reporting    DecisionLogReporting `json:"reporting,omitempty"`
+// DecisionAPIConfig contains configuration for decision log dispatch
+type DecisionAPIConfig struct {
+	ServiceURL string               `json:"serviceUrl,omitempty"`
+	Reporting  DecisionLogReporting `json:"reporting,omitempty"`
 }
 
 // DecisionLogReporting contains configuration for decision log reporting

@@ -132,7 +132,7 @@ func OpaConfToK8sOPAConfigMapforOCP(
 	opaconf ocp.OPAConfig,
 	opaDefaultConfig configv2alpha2.OPAConfig,
 	customConfig map[string]interface{},
-	log logr.Logger,
+	_ logr.Logger,
 ) (corev1.ConfigMap, error) {
 	var services []*configv2alpha2.OPAServiceConfig
 

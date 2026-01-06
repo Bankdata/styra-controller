@@ -159,7 +159,7 @@ var _ = ginkgo.BeforeSuite(func() {
 						OCPConfigSecretName: "s3-credentials",
 					},
 				},
-				DecisionApiConfig: &configv2alpha2.DecisionApiConfig{
+				DecisionAPIConfig: &configv2alpha2.DecisionAPIConfig{
 					ServiceURL: "log-api-url",
 					Reporting: configv2alpha2.DecisionLogReporting{
 						MaxDelaySeconds:      60,

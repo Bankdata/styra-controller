@@ -386,7 +386,11 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
 	}
 
 	ginkgo.DescribeTable("OpaConfToK8sOPAConfigMapforOCP", func(test test) {
-		cm, err := k8sconv.OpaConfToK8sOPAConfigMapforOCP(test.opaconf, test.opaDefaultConfig, test.customConfig, logr.Discard())
+		cm, err := k8sconv.OpaConfToK8sOPAConfigMapforOCP(
+			test.opaconf,
+			test.opaDefaultConfig,
+			test.customConfig,
+			logr.Discard())
 
 		gomega.Expect(err).To(gomega.BeNil())
 
@@ -501,7 +505,11 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
 	}
 
 	ginkgo.DescribeTable("OpaConfToK8sOPAConfigMapforOCP", func(test test) {
-		cm, err := k8sconv.OpaConfToK8sOPAConfigMapforOCP(test.opaconf, test.opaDefaultConfig, test.customConfig, logr.Discard())
+		cm, err := k8sconv.OpaConfToK8sOPAConfigMapforOCP(
+			test.opaconf,
+			test.opaDefaultConfig,
+			test.customConfig,
+			logr.Discard())
 
 		gomega.Expect(err).To(gomega.BeNil())
 

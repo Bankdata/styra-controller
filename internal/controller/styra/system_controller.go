@@ -540,14 +540,14 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 		},
 		LogService: &configv2alpha2.OPAServiceConfig{
 			Name: "logs",
-			URL:  r.Config.OPAControlPlaneConfig.DecisionApiConfig.ServiceURL,
+			URL:  r.Config.OPAControlPlaneConfig.DecisionAPIConfig.ServiceURL,
 			Credentials: configv2alpha2.ServiceCredentials{
 				Bearer: &configv2alpha2.Bearer{
 					TokenPath: "/run/secrets/kubernetes.io/serviceaccount/token",
 				},
 			},
 		},
-		DecisionLogReporting: r.Config.OPAControlPlaneConfig.DecisionApiConfig.Reporting,
+		DecisionLogReporting: r.Config.OPAControlPlaneConfig.DecisionAPIConfig.Reporting,
 		BundleResource:       fmt.Sprintf("bundles/%s/bundle.tar.gz", uniqueName),
 		UniqueName:           uniqueName,
 		Namespace:            system.Namespace,
