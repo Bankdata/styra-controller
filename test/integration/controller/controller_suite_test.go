@@ -18,6 +18,7 @@ package styra
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"testing"
 	"time"
@@ -45,6 +46,9 @@ import (
 	s3clientmock "github.com/bankdata/styra-controller/pkg/s3/mocks"
 	"github.com/bankdata/styra-controller/pkg/styra"
 	styraclientmock "github.com/bankdata/styra-controller/pkg/styra/mocks"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -155,6 +159,14 @@ var _ = ginkgo.BeforeSuite(func() {
 						OCPConfigSecretName: "s3-credentials",
 					},
 				},
+				DecisionApiConfig: &configv2alpha2.DecisionApiConfig{
+					ServiceURL: "log-api-url",
+					Reporting: configv2alpha2.DecisionLogReporting{
+						MaxDelaySeconds:      60,
+						MinDelaySeconds:      5,
+						UploadSizeLimitBytes: 1024,
+					},
+				},
 			},
 			UserCredentialHandler: &configv2alpha2.UserCredentialHandler{
 				S3: &configv2alpha2.S3Handler{
@@ -218,11 +230,11 @@ var _ = ginkgo.BeforeSuite(func() {
 
 	managerCtx, managerCancel = context.WithCancel(context.Background())
 
-	// go func() {
-	// 	defer ginkgo.GinkgoRecover()
-	// 	err = k8sManager.Start(managerCtx)
-	// 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	// }()
+	go func() {
+		defer ginkgo.GinkgoRecover()
+		err = k8sManager.Start(managerCtx)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	}()
 
 	// Test setup for systemReconcilerPodRestart that deploys a system with an ID and a Statefulset for a SLP
 	k8sManagerPodRestart, err := ctrl.NewManager(cfg, ctrl.Options{
@@ -290,65 +302,65 @@ var _ = ginkgo.BeforeSuite(func() {
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	managerCtxPodRestart, managerCancelPodRestart = context.WithCancel(context.Background())
-	// go func() {
-	// 	// Test setup function to systemReconcilerPodRestart that deploys a system with an ID and a Statefulset for a SLP
-	// 	// and restarts the SLP pods.
-	// 	defer ginkgo.GinkgoRecover()
+	go func() {
+		// Test setup function to systemReconcilerPodRestart that deploys a system with an ID and a Statefulset for a SLP
+		// and restarts the SLP pods.
+		defer ginkgo.GinkgoRecover()
 
-	// 	systemName := "test-pod-restart"
-	// 	systemNamespace := "default"
+		systemName := "test-pod-restart"
+		systemNamespace := "default"
 
-	// 	systemToCreate := &styrav1beta1.System{
-	// 		ObjectMeta: metav1.ObjectMeta{
-	// 			Name:      systemName,
-	// 			Namespace: systemNamespace,
-	// 			Labels: map[string]string{
-	// 				"styra-controller/class": "styra-controller-pod-restart",
-	// 			},
-	// 		},
-	// 		Spec: styrav1beta1.SystemSpec{
-	// 			LocalPlane: &styrav1beta1.LocalPlane{
-	// 				Name: fmt.Sprintf("%v-slp", systemName),
-	// 			},
-	// 		},
-	// 	}
+		systemToCreate := &styrav1beta1.System{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      systemName,
+				Namespace: systemNamespace,
+				Labels: map[string]string{
+					"styra-controller/class": "styra-controller-pod-restart",
+				},
+			},
+			Spec: styrav1beta1.SystemSpec{
+				LocalPlane: &styrav1beta1.LocalPlane{
+					Name: fmt.Sprintf("%v-slp", systemName),
+				},
+			},
+		}
 
-	// 	gomega.Expect(k8sClient.Create(managerCtxPodRestart, systemToCreate)).To(gomega.Succeed())
-	// 	patch := client.MergeFrom(systemToCreate.DeepCopy())
-	// 	systemToCreate.Status.ID = "system_id"
-	// 	systemToCreate.Status.Ready = true
-	// 	gomega.Expect(k8sClient.Status().Patch(managerCtxPodRestart, systemToCreate, patch)).To(gomega.Succeed())
+		gomega.Expect(k8sClient.Create(managerCtxPodRestart, systemToCreate)).To(gomega.Succeed())
+		patch := client.MergeFrom(systemToCreate.DeepCopy())
+		systemToCreate.Status.ID = "system_id"
+		systemToCreate.Status.Ready = true
+		gomega.Expect(k8sClient.Status().Patch(managerCtxPodRestart, systemToCreate, patch)).To(gomega.Succeed())
 
-	// 	sts := &appsv1.StatefulSet{
-	// 		ObjectMeta: metav1.ObjectMeta{
-	// 			Name:      fmt.Sprintf("%v-slp", systemName),
-	// 			Namespace: systemNamespace,
-	// 		},
-	// 		Spec: appsv1.StatefulSetSpec{
-	// 			Selector: &metav1.LabelSelector{
-	// 				MatchLabels: map[string]string{"app": fmt.Sprintf("%v-slp", systemName)},
-	// 			},
-	// 			ServiceName: fmt.Sprintf("%v-slp", systemName),
-	// 			Template: corev1.PodTemplateSpec{
-	// 				ObjectMeta: metav1.ObjectMeta{
-	// 					Labels: map[string]string{"app": fmt.Sprintf("%v-slp", systemName)},
-	// 				},
-	// 				Spec: corev1.PodSpec{
-	// 					Containers: []corev1.Container{{
-	// 						Name:    "busybox",
-	// 						Image:   "busybox",
-	// 						Command: []string{"sleep", "3600"},
-	// 					}},
-	// 				},
-	// 			},
-	// 		},
-	// 	}
+		sts := &appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("%v-slp", systemName),
+				Namespace: systemNamespace,
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{"app": fmt.Sprintf("%v-slp", systemName)},
+				},
+				ServiceName: fmt.Sprintf("%v-slp", systemName),
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{"app": fmt.Sprintf("%v-slp", systemName)},
+					},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{{
+							Name:    "busybox",
+							Image:   "busybox",
+							Command: []string{"sleep", "3600"},
+						}},
+					},
+				},
+			},
+		}
 
-	// 	gomega.Expect(k8sClient.Create(managerCtxPodRestart, sts)).To(gomega.Succeed())
+		gomega.Expect(k8sClient.Create(managerCtxPodRestart, sts)).To(gomega.Succeed())
 
-	// 	err = k8sManagerPodRestart.Start(managerCtxPodRestart)
-	// 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	// }()
+		err = k8sManagerPodRestart.Start(managerCtxPodRestart)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	}()
 })
 
 var _ = ginkgo.AfterSuite(func() {
