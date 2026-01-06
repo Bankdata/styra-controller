@@ -526,6 +526,8 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 		}
 	}
 
+	log.Info(fmt.Sprintf("DecisionLogsConfig Reporting: %v", r.Config.OPAControlPlaneConfig.DecisionApiConfig.Reporting))
+
 	opaconf := ocp.OPAConfig{
 		BundleService: &configv2alpha2.OPAServiceConfig{
 			Name: "s3",
@@ -540,25 +542,29 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 		},
 		LogService: &configv2alpha2.OPAServiceConfig{
 			Name: "logs",
-			URL:  r.Config.OPAControlPlaneConfig.DecisionLogs.ServiceName,
+			URL:  r.Config.OPAControlPlaneConfig.DecisionApiConfig.ServiceURL,
 			Credentials: configv2alpha2.ServiceCredentials{
 				Bearer: &configv2alpha2.Bearer{
-					TokenPath: "/etc/opa/auth/token", //todo:correct path
+					TokenPath: "/run/secrets/kubernetes.io/serviceaccount/token",
 				},
 			},
 		},
-		DecisionLogReporting: r.Config.OPAControlPlaneConfig.DecisionLogs.Reporting,
+		DecisionLogReporting: r.Config.OPAControlPlaneConfig.DecisionApiConfig.Reporting,
 		BundleResource:       fmt.Sprintf("bundles/%s/bundle.tar.gz", uniqueName),
 		UniqueName:           uniqueName,
 		Namespace:            system.Namespace,
 	}
 
-	expectedOPAConfigMap, err = k8sconv.OpaConfToK8sOPAConfigMapforOCP(opaconf, r.Config.OPA, customConfig)
+	log.Info("Generating expected OPA ConfigMap", "reporting", opaconf.DecisionLogReporting)
+
+	expectedOPAConfigMap, err = k8sconv.OpaConfToK8sOPAConfigMapforOCP(opaconf, r.Config.OPA, customConfig, log)
 	if err != nil {
 		return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not convert OPA conf to ConfigMap").
 			WithEvent(v1beta1.EventErrorConvertOPAConf).
 			WithSystemCondition(v1beta1.ConditionTypeOPAConfigMapUpdated)
 	}
+
+	log.Info("result of opaConfToK8sOPAConfigMap", "data", expectedOPAConfigMap.Data)
 
 	var cm corev1.ConfigMap
 	nsName := types.NamespacedName{Name: configmapName, Namespace: system.Namespace}
@@ -925,7 +931,6 @@ func (r *SystemReconciler) styraReconcile(
 
 	systemID := system.Status.ID
 	migrationID := system.ObjectMeta.Annotations["styra-controller/migration-id"]
-	log.Info(fmt.Sprintf("ID: %s", systemID))
 	if r.Config.EnableMigrations && systemID == "" && migrationID != "" {
 		log.Info(fmt.Sprintf("Use migrationId(%s) to fetch system from Styra DAS", migrationID))
 		getSystemStart := time.Now()

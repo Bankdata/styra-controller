@@ -80,13 +80,13 @@ test: ginkgo manifests generate envtest generate-mocks ## Run all tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r --output-interceptor-mode=none
 
 .PHONY: test-unit
-test-unit: ginkgo manifests generate lint generate-mocks ## Run unit tests.
+test-unit: ginkgo manifests generate generate-mocks ## Run unit tests.
 	go test ./pkg/...
 	$(GINKGO) -r --label-filter "!integration" --output-interceptor-mode=none
 
 .PHONY: test-integration ## Run integration tests.
 test-integration: ginkgo manifests generate lint envtest generate-mocks ## Run integration tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r --label-filter "integration" --output-interceptor-mode=none
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r -v --label-filter "integration" --output-interceptor-mode=none
 
 .PHONY: kind-create
 kind-create: kind ## Create kind cluster

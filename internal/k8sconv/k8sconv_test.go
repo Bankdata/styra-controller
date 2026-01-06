@@ -19,6 +19,7 @@ package k8sconv_test
 import (
 	"strings"
 
+	"github.com/go-logr/logr"
 	ginkgo "github.com/onsi/ginkgo/v2"
 	gomega "github.com/onsi/gomega"
 
@@ -385,7 +386,7 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
 	}
 
 	ginkgo.DescribeTable("OpaConfToK8sOPAConfigMapforOCP", func(test test) {
-		cm, err := k8sconv.OpaConfToK8sOPAConfigMapforOCP(test.opaconf, test.opaDefaultConfig, test.customConfig)
+		cm, err := k8sconv.OpaConfToK8sOPAConfigMapforOCP(test.opaconf, test.opaDefaultConfig, test.customConfig, logr.Discard())
 
 		gomega.Expect(err).To(gomega.BeNil())
 
@@ -401,21 +402,13 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
 
 		gomega.Expect(actualMap).To(gomega.Equal(expectedMap))
 	},
-
 		ginkgo.Entry("success", test{
 			opaDefaultConfig: configv2alpha2.OPAConfig{
 				DecisionLogs: configv2alpha2.DecisionLog{
-					ServiceName:  "logs",
-					ResourcePath: "/logs",
 					RequestContext: configv2alpha2.RequestContext{
 						HTTP: configv2alpha2.HTTP{
 							Headers: strings.Split("header1,header2", ","),
 						},
-					},
-					Reporting: configv2alpha2.DecisionLogReporting{
-						UploadSizeLimitBytes: 1,
-						MinDelaySeconds:      2,
-						MaxDelaySeconds:      3,
 					},
 				},
 				PersistBundle:          true,
@@ -440,6 +433,11 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
 							TokenPath: "/etc/opa/auth/token",
 						},
 					},
+				},
+				DecisionLogReporting: configv2alpha2.DecisionLogReporting{
+					UploadSizeLimitBytes: 1,
+					MinDelaySeconds:      2,
+					MaxDelaySeconds:      3,
 				},
 			},
 			customConfig: map[string]interface{}{
@@ -503,7 +501,7 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
 	}
 
 	ginkgo.DescribeTable("OpaConfToK8sOPAConfigMapforOCP", func(test test) {
-		cm, err := k8sconv.OpaConfToK8sOPAConfigMapforOCP(test.opaconf, test.opaDefaultConfig, test.customConfig)
+		cm, err := k8sconv.OpaConfToK8sOPAConfigMapforOCP(test.opaconf, test.opaDefaultConfig, test.customConfig, logr.Discard())
 
 		gomega.Expect(err).To(gomega.BeNil())
 
@@ -523,13 +521,6 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
 		ginkgo.Entry("success", test{
 			opaDefaultConfig: configv2alpha2.OPAConfig{
 				DecisionLogs: configv2alpha2.DecisionLog{
-					ServiceName:  "logs",
-					ResourcePath: "/logs",
-					Reporting: configv2alpha2.DecisionLogReporting{
-						UploadSizeLimitBytes: 1048576,
-						MinDelaySeconds:      1,
-						MaxDelaySeconds:      30,
-					},
 					RequestContext: configv2alpha2.RequestContext{
 						HTTP: configv2alpha2.HTTP{
 							Headers: strings.Split("header1,header2", ","),
@@ -557,6 +548,11 @@ var _ = ginkgo.Describe("OpaConfToK8sOPAConfigMapforOCP", func() {
 							S3EnvironmentCredentials: map[string]configv2alpha2.EmptyStruct{},
 						},
 					},
+				},
+				DecisionLogReporting: configv2alpha2.DecisionLogReporting{
+					UploadSizeLimitBytes: 1048576,
+					MinDelaySeconds:      1,
+					MaxDelaySeconds:      30,
 				},
 			},
 			customConfig: map[string]interface{}{

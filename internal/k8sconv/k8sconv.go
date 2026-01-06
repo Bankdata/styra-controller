@@ -21,6 +21,7 @@ package k8sconv
 import (
 	"fmt"
 
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
@@ -131,7 +132,9 @@ func OpaConfToK8sOPAConfigMapforOCP(
 	opaconf ocp.OPAConfig,
 	opaDefaultConfig configv2alpha2.OPAConfig,
 	customConfig map[string]interface{},
+	log logr.Logger,
 ) (corev1.ConfigMap, error) {
+	log.Info(fmt.Sprintf("Before %v", opaconf.DecisionLogReporting))
 
 	var services []*configv2alpha2.OPAServiceConfig
 
@@ -158,12 +161,14 @@ func OpaConfToK8sOPAConfigMapforOCP(
 			ServiceName:  opaconf.LogService.Name,
 			ResourcePath: "/logs",
 			Reporting: &DecisionLogReporting{
-				MaxDelaySeconds:      opaDefaultConfig.DecisionLogs.Reporting.MaxDelaySeconds,
-				MinDelaySeconds:      opaDefaultConfig.DecisionLogs.Reporting.MinDelaySeconds,
-				UploadSizeLimitBytes: opaDefaultConfig.DecisionLogs.Reporting.UploadSizeLimitBytes,
+				MaxDelaySeconds:      opaconf.DecisionLogReporting.MaxDelaySeconds,
+				MinDelaySeconds:      opaconf.DecisionLogReporting.MinDelaySeconds,
+				UploadSizeLimitBytes: opaconf.DecisionLogReporting.UploadSizeLimitBytes,
 			},
 		},
 	}
+
+	// log.Info(fmt.Sprintf("midway: %v\n", ocpOpaConfigMap.DecisionLogs.Reporting))
 
 	if opaDefaultConfig.PersistBundle {
 		ocpOpaConfigMap.Bundles.Authz.Persist = opaDefaultConfig.PersistBundle
@@ -183,7 +188,11 @@ func OpaConfToK8sOPAConfigMapforOCP(
 		return corev1.ConfigMap{}, err
 	}
 
+	fmt.Printf("Pre-merge: %v\n", opaConfigMapMapStringInterface)
+
 	merged := mergeMaps(opaConfigMapMapStringInterface, customConfig)
+
+	fmt.Printf("Post-merge: %v\n", merged)
 
 	res, err := yaml.Marshal(&merged)
 	if err != nil {
