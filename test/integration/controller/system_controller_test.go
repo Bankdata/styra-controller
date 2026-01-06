@@ -2240,7 +2240,7 @@ distributed_tracing:
 	})
 })
 
-var _ = ginkgo.Describe("SystemReconciler.ReconcilePodRestart", ginkgo.Label("integration"), func() {
+var _ = ginkgo.Describe("SystemReconciler.Reconcile1", ginkgo.Label("integration"), func() {
 	ginkgo.It("should reconcile", func() {
 		key := types.NamespacedName{
 			Name:      "test-pod-restart",
@@ -2499,7 +2499,7 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcilePodRestart", ginkgo.Label("in
 	})
 })
 
-var _ = ginkgo.Describe("SystemReconciler.Reconcile1", ginkgo.Label("integration"), func() {
+var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("integration"), func() {
 	ginkgo.It("should reconcile", func() {
 
 		expectedGitCredentialsID := "github-credentials"
