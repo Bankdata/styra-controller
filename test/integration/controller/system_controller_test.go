@@ -2229,8 +2229,6 @@ distributed_tracing:
 				}
 			}
 
-			fmt.Println("GetSystemByName was called", getSystemByName, "times")
-
 			return getSystemByName == 13
 		}, timeout, interval).Should(gomega.BeTrue())
 
@@ -2240,14 +2238,55 @@ distributed_tracing:
 	})
 })
 
-var _ = ginkgo.Describe("SystemReconciler.Reconcile1", ginkgo.Label("integration"), func() {
+var _ = ginkgo.Describe("SystemReconciler.WithPodRestart", ginkgo.Label("integration"), func() {
 	ginkgo.It("should reconcile", func() {
+
+		ctx := context.Background()
+
 		key := types.NamespacedName{
 			Name:      "test-pod-restart",
 			Namespace: "default",
 		}
 
-		ctx := context.Background()
+		systemToCreate := &styrav1beta1.System{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      key.Name,
+				Namespace: key.Namespace,
+				Labels: map[string]string{
+					"styra-controller/class": "styra-controller-pod-restart",
+				},
+			},
+			Spec: styrav1beta1.SystemSpec{
+				LocalPlane: &styrav1beta1.LocalPlane{
+					Name: fmt.Sprintf("%v-slp", key.Name),
+				},
+			},
+		}
+
+		sts := &appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("%v-slp", key.Name),
+				Namespace: key.Namespace,
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{"app": fmt.Sprintf("%v-slp", key.Name)},
+				},
+				ServiceName: fmt.Sprintf("%v-slp", key.Name),
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{"app": fmt.Sprintf("%v-slp", key.Name)},
+					},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{{
+							Name:    "busybox",
+							Image:   "busybox",
+							Command: []string{"sleep", "3600"},
+						}},
+					},
+				},
+			},
+		}
 
 		cfg := &styra.SystemConfig{
 			ID:       "system_id",
@@ -2255,30 +2294,14 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile1", ginkgo.Label("integration
 			ReadOnly: true,
 		}
 
-		ginkgo.By("Empty System already has ID but does not exist in Styra")
+		ginkgo.By("Create system and see SLP pods are restarted")
 
-		styraClientMock.On("GetSystem", mock.Anything, "system_id").Return(&styra.GetSystemResponse{
-			StatusCode:   http.StatusNotFound,
+		styraClientMock.On("GetSystemByName", mock.Anything, key.String()).Return(&styra.GetSystemResponse{
+			StatusCode:   http.StatusOK,
 			SystemConfig: nil,
-		}, &httperror.HTTPError{
-			StatusCode: http.StatusNotFound,
-			Body:       "nil",
-		}).Once()
+		}, nil).Once()
 
-		styraClientMock.On("PutSystem",
-			mock.Anything,
-			mock.MatchedBy(func(req *styra.PutSystemRequest) bool {
-				matchesDecisionmapping := len(req.SystemConfig.DecisionMappings) == 0
-				matchesDescription := req.SystemConfig.Description == cfg.Description
-				matchesSourceControl := req.SystemConfig.SourceControl == nil
-
-				return matchesDecisionmapping &&
-					matchesDescription &&
-					matchesSourceControl
-			}),
-			"system_id",
-			map[string]string{"If-None-Match": "*"},
-		).Return(&styra.PutSystemResponse{
+		styraClientMock.On("CreateSystem", mock.Anything, mock.Anything).Return(&styra.CreateSystemResponse{
 			StatusCode:   http.StatusOK,
 			SystemConfig: cfg,
 		}, nil).Once()
@@ -2426,17 +2449,15 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile1", ginkgo.Label("integration
 			SystemType: "custom",
 		}, nil).Once()
 
+		// Create StatefulSet representing SLP and deploy system
+		gomega.Expect(k8sClient.Create(ctx, sts)).To(gomega.Succeed())
+		gomega.Expect(k8sClient.Create(ctx, systemToCreate)).To(gomega.Succeed())
+
 		gomega.Eventually(func() bool {
 			fetched := &styrav1beta1.System{}
 			if err := k8sClient.Get(ctx, key, fetched); err != nil {
-				fmt.Println("Error fetching System:", err)
 				return false
 			}
-
-			fmt.Println("Is finalizer set?", finalizer.IsSet(fetched))
-			fmt.Println("status id:", fetched.Status.ID)
-			fmt.Println("status phase:", fetched.Status.Phase)
-			fmt.Println("status ready:", fetched.Status.Ready)
 
 			return finalizer.IsSet(fetched) &&
 				fetched.Status.ID == "system_id" &&
@@ -2463,36 +2484,44 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile1", ginkgo.Label("integration
 
 		gomega.Eventually(func() bool {
 			var (
-				getSystem          int
-				putSystem          int
+				getSystemByName    int
+				createSystem       int
 				deletePolicy       int
+				updateSystem       int
+				getSystem          int
 				getUsers           int
 				rolebindingsListed int
 				getOPAConfig       int
 			)
 			for _, call := range styraClientMock.Calls {
 				switch call.Method {
-				case "GetSystem":
-					getSystem++
-				case "PutSystem":
-					putSystem++
+				case "GetSystemByName":
+					getSystemByName++
+				case "CreateSystem":
+					createSystem++
 				case "DeletePolicy":
 					deletePolicy++
-				case "GetUsers":
-					getUsers++
+				case "UpdateSystem":
+					updateSystem++
 				case "ListRoleBindingsV2":
 					rolebindingsListed++
+				case "GetSystem":
+					getSystem++
+				case "GetUsers":
+					getUsers++
 				case "GetOPAConfig":
 					getOPAConfig++
 				}
 			}
 
-			return getSystem == 4 &&
-				putSystem == 1 &&
+			return getSystemByName == 1 &&
+				createSystem == 1 &&
 				deletePolicy == 2 &&
+				updateSystem == 1 &&
 				getUsers == 4 &&
 				rolebindingsListed == 4 &&
-				getOPAConfig == 4
+				getOPAConfig == 4 &&
+				getSystem == 3
 		}, timeout, interval).Should(gomega.BeTrue())
 
 		resetMock(&styraClientMock.Mock)
