@@ -246,7 +246,7 @@ the configuration of the System are updated in Styra.</p>
 </td>
 </tr><tr><td><p>&#34;SystemSourceUpdated&#34;</p></td>
 <td><p>ConditionTypeSystemSourceUpdated is a ConditionType used when
-the datasources of the System are updated in Styra.</p>
+the source for the System is updated in OCP.</p>
 </td>
 </tr></tbody>
 </table>
@@ -457,12 +457,20 @@ secret referenced by the System resource under Spec.SourceControl.Origin.Credent
 <td><p>EventErrorCredentialsSecretNotFound is an EventType used when the controller gets a 404 when fetching
 secret referenced by the System resource under Spec.SourceControl.Origin.CredentialsSecretName.</p>
 </td>
+</tr><tr><td><p>&#34;ErrorDeleteBundleInOCP&#34;</p></td>
+<td><p>EventErrorDeleteBundleInOCP is an EventType used when the controller fails
+to delete the System&rsquo;s Bundle in OCP.</p>
+</td>
 </tr><tr><td><p>&#34;ErrorDeleteDatasource&#34;</p></td>
 <td><p>EventErrorDeleteDatasource is an EventType used when the controller fails to delete a datasource in Styra.</p>
 </td>
 </tr><tr><td><p>&#34;ErrorDeleteDefaultPolicy&#34;</p></td>
 <td><p>EventErrorDeleteDefaultPolicy is an EventType used when the controller fails to delete the default policy
 in the System in Styra.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorDeleteSourceInOCP&#34;</p></td>
+<td><p>EventErrorDeleteSourceInOCP is an EventType used when the controller fails
+to delete the System&rsquo;s Source in OCP.</p>
 </td>
 </tr><tr><td><p>&#34;ErrorDeleteSystemInStyra&#34;</p></td>
 <td><p>EventErrorDeleteSystemInStyra is an EventType used when the controller fails
@@ -542,8 +550,14 @@ the finalizer on the System resource.</p>
 <td><p>EventErrorStatefulSetNotFound is an EventType used when a system with &lsquo;localPlane&rsquo; enabled but which
 does not have a StatefulSet created for the SLP.</p>
 </td>
+</tr><tr><td><p>&#34;ErrorUpdateBundle&#34;</p></td>
+<td><p>EventErrorUpdateBundle is an EventType used when the controller fails to update the Source in OCP.</p>
+</td>
 </tr><tr><td><p>&#34;ErrorUpdateOPAConfigMap&#34;</p></td>
 <td><p>EventErrorUpdateOPAConfigMap is an EventType used when the controller fails to update the OPA ConfigMap.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorUpdateOPASecret&#34;</p></td>
+<td><p>EventErrorUpdateOPASecret is an EventType used when the controller fails to update the OPA ConfigMap.</p>
 </td>
 </tr><tr><td><p>&#34;ErrorUpdateOPATokenSecret&#34;</p></td>
 <td><p>EventErrorUpdateOPATokenSecret is an EventType used when the controller fails to update the OPA token Secret.</p>
@@ -554,6 +568,9 @@ for a user in Styra.</p>
 </td>
 </tr><tr><td><p>&#34;ErrorUpdateSLPConfigMap&#34;</p></td>
 <td><p>EventErrorUpdateSLPConfigmap is an EventType used when the controller fails to update the SLP ConfigMap.</p>
+</td>
+</tr><tr><td><p>&#34;ErrorUpdateSource&#34;</p></td>
+<td><p>EventErrorUpdateSource is an EventType used when the controller fails to update the Source in OCP.</p>
 </td>
 </tr><tr><td><p>&#34;ErrorUpdateStatus&#34;</p></td>
 <td><p>EventErrorUpdateStatus is an EventType used when the controller fails to update
@@ -1407,5 +1424,5 @@ System.</p>
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>b550add7</code>.
+on git commit <code>4901ef1</code>.
 </em></p>

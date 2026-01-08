@@ -21,6 +21,7 @@ package k8sconv
 import (
 	"fmt"
 
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
@@ -38,14 +39,6 @@ type credentials struct {
 	Bearer bearer `yaml:"bearer"`
 }
 
-type s3credentials struct {
-	S3Signing s3signing `yaml:"s3_signing"`
-}
-
-type s3signing struct {
-	S3EnvironmentCredentials map[string]interface{} `yaml:"environment_credentials"`
-}
-
 type authz struct {
 	Service  string `yaml:"service"`
 	Resource string `yaml:"resource"`
@@ -60,12 +53,6 @@ type service struct {
 	Name        string      `yaml:"name"`
 	URL         string      `yaml:"url"`
 	Credentials credentials `yaml:"credentials,omitempty"`
-}
-
-type s3service struct {
-	Name          string        `yaml:"name"`
-	URL           string        `yaml:"url"`
-	S3Credentials s3credentials `yaml:"credentials"`
 }
 
 type labels struct {
@@ -92,71 +79,135 @@ type requestContext struct {
 	HTTP http `yaml:"http"`
 }
 
-type decisionLogs struct {
-	RequestContext requestContext `yaml:"request_context"`
+// DecisionLogs contains configuration for decision logs
+type DecisionLogs struct {
+	RequestContext requestContext        `json:"request_context,omitempty" yaml:"request_context,omitempty"`
+	ServiceName    string                `json:"service,omitempty" yaml:"service,omitempty"`
+	ResourcePath   string                `json:"resource_path,omitempty" yaml:"resource_path,omitempty"`
+	Reporting      *DecisionLogReporting `json:"reporting,omitempty" yaml:"reporting,omitempty"`
 }
 
-type opaConfigMap struct {
+// DecisionLogReporting contains configuration for decision log reporting
+type DecisionLogReporting struct {
+	MaxDelaySeconds      int `json:"max_delay_seconds,omitempty" yaml:"max_delay_seconds,omitempty"`
+	MinDelaySeconds      int `json:"min_delay_seconds,omitempty" yaml:"min_delay_seconds,omitempty"`
+	UploadSizeLimitBytes int `json:"upload_size_limit_bytes,omitempty" yaml:"upload_size_limit_bytes,omitempty"`
+}
+
+// OPAConfigMap represents the structure of the OPA configuration file
+type OPAConfigMap struct {
 	Services     []service    `yaml:"services"`
 	Labels       labels       `yaml:"labels"`
 	Discovery    discovery    `yaml:"discovery"`
-	DecisionLogs decisionLogs `yaml:"decision_logs,omitempty"`
+	DecisionLogs DecisionLogs `yaml:"decision_logs,omitempty"`
 }
 
-type s3opaConfigMap struct {
-	Services             []s3service  `yaml:"services"`
-	Bundles              bundle       `yaml:"bundles,omitempty"`
-	DecisionLogs         decisionLogs `yaml:"decision_logs,omitempty"`
-	PersistenceDirectory string       `yaml:"persistence_directory,omitempty"`
-	Labels               labelsOCP    `yaml:"labels,omitempty"`
+// OcpOPAConfigMap represents the structure of the OPA configuration file for OCP
+type OcpOPAConfigMap struct {
+	Services             []*ocp.OPAServiceConfig `yaml:"services"`
+	Bundles              bundle                  `yaml:"bundles,omitempty"`
+	DecisionLogs         DecisionLogs            `yaml:"decision_logs,omitempty"`
+	PersistenceDirectory string                  `yaml:"persistence_directory,omitempty"`
+	Labels               labelsOCP               `yaml:"labels,omitempty"`
+	Server               Serverconfig            `yaml:"server,omitempty"`
+	Status               StatusConfig            `yaml:"status,omitempty"`
 }
 
-// OpaConfToK8sOPAConfigMapforOCP creates a ConfigMap for the OPA.
+// StatusConfig represents the status configuration for OPA
+type StatusConfig struct {
+	Prometheus bool `yaml:"prometheus,omitempty"`
+}
+
+// Serverconfig represents the server configuration for OPA
+type Serverconfig struct {
+	Metrics Metricsconfig `yaml:"metrics,omitempty"`
+}
+
+// Metricsconfig represents the metrics configuration for OPA
+type Metricsconfig struct {
+	Prometheus PrometheusMetricsConfig `yaml:"prom,omitempty"`
+}
+
+// PrometheusMetricsConfig represents the Prometheus metrics configuration for OPA
+type PrometheusMetricsConfig struct {
+	HTTP HTTPMetricsConfig `yaml:"http_request_duration_seconds,omitempty"`
+}
+
+// HTTPMetricsConfig represents the HTTP metrics configuration for OPA
+type HTTPMetricsConfig struct {
+	Buckets []float64 `yaml:"buckets,omitempty"`
+}
+
+// OPAConfToK8sOPAConfigMapforOCP creates a ConfigMap for the OPA.
 // It configures OPA to fetch bundle from MinIO.
-// OpaConfToK8sOPAConfigMapforOCP merges the information given as input into a ConfigMap for OPA
-func OpaConfToK8sOPAConfigMapforOCP(
+// OPAConfToK8sOPAConfigMapforOCP merges the information given as input into a ConfigMap for OPA
+func OPAConfToK8sOPAConfigMapforOCP(
 	opaconf ocp.OPAConfig,
 	opaDefaultConfig configv2alpha2.OPAConfig,
 	customConfig map[string]interface{},
+	_ logr.Logger,
 ) (corev1.ConfigMap, error) {
+	var services []*ocp.OPAServiceConfig
 
-	s3opaConfigMap := s3opaConfigMap{
+	if opaconf.BundleService != nil {
+		services = append(services, opaconf.BundleService)
+	}
+	if opaconf.LogService != nil {
+		services = append(services, opaconf.LogService)
+	}
+
+	ocpOPAConfigMap := OcpOPAConfigMap{
 		Bundles: bundle{
 			Authz: authz{
-				Service:  opaconf.BundleService,
+				Service:  opaconf.BundleService.Name,
 				Resource: opaconf.BundleResource,
 			},
 		},
-		Services: []s3service{{
-			Name: opaconf.ServiceName,
-			URL:  opaconf.ServiceURL,
-			S3Credentials: s3credentials{
-				S3Signing: s3signing{
-					S3EnvironmentCredentials: map[string]interface{}{},
-				},
-			},
-		}},
+		Services: services,
 		Labels: labelsOCP{
 			UniqueName: opaconf.UniqueName,
 			Namespace:  opaconf.Namespace,
 		},
+		DecisionLogs: DecisionLogs{
+			ServiceName:  opaconf.LogService.Name,
+			ResourcePath: "/logs",
+			Reporting: &DecisionLogReporting{
+				MaxDelaySeconds:      opaconf.DecisionLogReporting.MaxDelaySeconds,
+				MinDelaySeconds:      opaconf.DecisionLogReporting.MinDelaySeconds,
+				UploadSizeLimitBytes: opaconf.DecisionLogReporting.UploadSizeLimitBytes,
+			},
+		},
 	}
+
+	if opaDefaultConfig.Metrics.Prometheus.HTTP.Buckets != nil {
+		ocpOPAConfigMap.Server = Serverconfig{
+			Metrics: Metricsconfig{
+				Prometheus: PrometheusMetricsConfig{
+					HTTP: HTTPMetricsConfig{
+						Buckets: opaDefaultConfig.Metrics.Prometheus.HTTP.Buckets,
+					},
+				},
+			},
+		}
+		ocpOPAConfigMap.Status = StatusConfig{
+			Prometheus: true,
+		}
+	}
+
 	if opaDefaultConfig.PersistBundle {
-		s3opaConfigMap.Bundles.Authz.Persist = opaDefaultConfig.PersistBundle
-		s3opaConfigMap.PersistenceDirectory = opaDefaultConfig.PersistBundleDirectory
+		ocpOPAConfigMap.Bundles.Authz.Persist = opaDefaultConfig.PersistBundle
+		ocpOPAConfigMap.PersistenceDirectory = opaDefaultConfig.PersistBundleDirectory
 	}
 
 	if opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers != nil {
-		s3opaConfigMap.DecisionLogs = decisionLogs{
-			RequestContext: requestContext{
-				HTTP: http{
-					Headers: opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers,
-				},
+		ocpOPAConfigMap.DecisionLogs.RequestContext = requestContext{
+			HTTP: http{
+				Headers: opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers,
 			},
 		}
 	}
 
-	opaConfigMapMapStringInterface, err := opaConfigMapToMap(s3opaConfigMap)
+	opaConfigMapMapStringInterface, err := opaConfigMapToMap(ocpOPAConfigMap)
 	if err != nil {
 		return corev1.ConfigMap{}, err
 	}
@@ -176,17 +227,17 @@ func OpaConfToK8sOPAConfigMapforOCP(
 	return cm, nil
 }
 
-// OpaConfToK8sOPAConfigMap creates a corev1.ConfigMap for the OPA based on the
+// OPAConfToK8sOPAConfigMap creates a corev1.ConfigMap for the OPA based on the
 // configuration from Styra. The configmap configures the OPA to communicate to
 // an SLP.
-func OpaConfToK8sOPAConfigMap(
+func OPAConfToK8sOPAConfigMap(
 	opaconf styra.OPAConfig,
 	slpURL string,
 	opaDefaultConfig configv2alpha2.OPAConfig,
 	customConfig map[string]interface{},
 ) (corev1.ConfigMap, error) {
 
-	opaConfigMap := opaConfigMap{
+	opaConfigMap := OPAConfigMap{
 		Services: []service{{
 			Name: "styra",
 			URL:  slpURL,
@@ -202,7 +253,7 @@ func OpaConfToK8sOPAConfigMap(
 	}
 
 	if opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers != nil {
-		opaConfigMap.DecisionLogs = decisionLogs{
+		opaConfigMap.DecisionLogs = DecisionLogs{
 			RequestContext: requestContext{
 				HTTP: http{
 					Headers: opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers,
@@ -232,9 +283,9 @@ func OpaConfToK8sOPAConfigMap(
 	return cm, nil
 }
 
-// OpaConfToK8sSLPConfigMap creates a ConfigMap for the SLP based on the
+// OPAConfToK8sSLPConfigMap creates a ConfigMap for the SLP based on the
 // configuration from Styra.
-func OpaConfToK8sSLPConfigMap(opaconf styra.OPAConfig) (corev1.ConfigMap, error) {
+func OPAConfToK8sSLPConfigMap(opaconf styra.OPAConfig) (corev1.ConfigMap, error) {
 	type Bearer struct {
 		TokenPath string `yaml:"token_path"`
 	}
@@ -300,16 +351,16 @@ func OpaConfToK8sSLPConfigMap(opaconf styra.OPAConfig) (corev1.ConfigMap, error)
 	return cm, nil
 }
 
-// OpaConfToK8sOPAConfigMapNoSLP creates a ConfigMap for the OPA based on the
+// OPAConfToK8sOPAConfigMapNoSLP creates a ConfigMap for the OPA based on the
 // configuration from Styra. The ConfigMap configures the OPA to communicate
 // directly to Styra and not via an SLP.
-func OpaConfToK8sOPAConfigMapNoSLP(
+func OPAConfToK8sOPAConfigMapNoSLP(
 	opaconf styra.OPAConfig,
 	opaDefaultConfig configv2alpha2.OPAConfig,
 	customConfig map[string]interface{},
 ) (corev1.ConfigMap, error) {
 
-	opaConfigMap := opaConfigMap{
+	opaConfigMap := OPAConfigMap{
 		Services: []service{{
 			Name: "styra",
 			URL:  opaconf.HostURL,
@@ -341,7 +392,7 @@ func OpaConfToK8sOPAConfigMapNoSLP(
 	}
 
 	if opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers != nil {
-		opaConfigMap.DecisionLogs = decisionLogs{
+		opaConfigMap.DecisionLogs = DecisionLogs{
 			RequestContext: requestContext{
 				HTTP: http{
 					Headers: opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers,
@@ -389,6 +440,9 @@ func opaConfigMapToMap(cm interface{}) (map[string]interface{}, error) {
 
 // mergeMaps recursively merges two map[string]interface{} variables
 func mergeMaps(map1, map2 map[string]interface{}) map[string]interface{} {
+	// TODO: some times, yaml structs have a name as a key and the value under it
+	// but other times, it is a list, where 'name' is one of the fields.
+	// This function does not handle that case yet.
 	mergedMap := make(map[string]interface{})
 
 	// Copy all key-value pairs from map1 to mergedMap
