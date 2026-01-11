@@ -2823,7 +2823,7 @@ services:
     s3_signing:
       environment_credentials: {}
   name: s3
-  url: s3-url2/test-bucket
+  url: https://s3-url2/test-bucket
 - credentials:
     bearer:
       token_path: /run/secrets/kubernetes.io/serviceaccount/token
