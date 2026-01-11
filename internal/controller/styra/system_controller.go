@@ -524,10 +524,17 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 		}
 	}
 
+	bundleURL, err := url.JoinPath(r.Config.OPA.BundleServer.URL, r.Config.OPA.BundleServer.Path)
+	if err != nil {
+		return ctrl.Result{}, false, ctrlerr.Wrap(err, "Invalid OPA BundleServer URL or path").
+			WithEvent(v1beta1.EventErrorConvertOPAConf).
+			WithSystemCondition(v1beta1.ConditionTypeOPAConfigMapUpdated)
+	}
+
 	opaconf := ocp.OPAConfig{
 		BundleService: &ocp.OPAServiceConfig{
 			Name: "s3",
-			URL:  path.Join(r.Config.OPA.BundleServer.URL, r.Config.OPA.BundleServer.Path),
+			URL:  bundleURL,
 			Credentials: &ocp.ServiceCredentials{
 				S3: &ocp.S3Signing{
 					S3EnvironmentCredentials: map[string]ocp.EmptyStruct{},

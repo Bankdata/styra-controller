@@ -175,7 +175,7 @@ var _ = ginkgo.BeforeSuite(func() {
 			},
 			OPA: configv2alpha2.OPAConfig{
 				BundleServer: &configv2alpha2.OPABundleServer{
-					URL:  "s3-url2",
+					URL:  "https://s3-url2",
 					Path: "/test-bucket",
 				},
 			},
