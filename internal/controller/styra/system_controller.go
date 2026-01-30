@@ -854,8 +854,7 @@ func (r *SystemReconciler) reconcileSystemSource(
 	}
 	if system.Spec.SourceControl.Origin.Commit != "" {
 		gitConfig.Commit = system.Spec.SourceControl.Origin.Commit
-	}
-	if system.Spec.SourceControl.Origin.Reference != "" {
+	} else if system.Spec.SourceControl.Origin.Reference != "" {
 		gitConfig.Reference = system.Spec.SourceControl.Origin.Reference
 	}
 	if system.Spec.SourceControl.Origin.Path != "" {
