@@ -34,7 +34,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -77,7 +77,7 @@ type SystemReconciler struct {
 	Scheme        *runtime.Scheme
 	OCP           ocp.ClientInterface
 	WebhookClient webhook.Client
-	Recorder      record.EventRecorder
+	Recorder      events.EventRecorder
 	Metrics       *SystemReconcilerMetrics
 	Config        *configv2alpha2.ProjectConfig
 }
@@ -88,7 +88,7 @@ type SystemReconciler struct {
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;patch;
-//+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
+//+kubebuilder:rbac:groups=events.k8s.io,resources=events,verbs=create;patch
 
 // Reconcile implements renconcile.Renconciler and has responsibility of
 // ensuring that the current state of the System resource renconciled
@@ -207,7 +207,7 @@ func (r *SystemReconciler) recordErrorEvent(system *v1beta1.System, err error) {
 	var rerr *ctrlerr.ReconcilerErr
 	if errors.As(err, &rerr) {
 		if rerr.Event != "" {
-			r.Recorder.Event(system, corev1.EventTypeWarning, rerr.Event, rerr.Error())
+			r.Recorder.Eventf(system, nil, corev1.EventTypeWarning, rerr.Event, "Reconcile", rerr.Error())
 		}
 	}
 }
@@ -409,7 +409,7 @@ func (r *SystemReconciler) ocpReconcile(
 	}
 
 	msg := "OPA Control Plane reconciliation completed"
-	r.Recorder.Event(system, corev1.EventTypeNormal, "ReconciliationCompleted", msg)
+	r.Recorder.Eventf(system, nil, corev1.EventTypeNormal, "ReconciliationCompleted", "Reconcile", msg)
 	log.Info(msg)
 	return ctrl.Result{}, nil
 }

@@ -19,16 +19,13 @@ package v1beta1
 
 import (
 	"context"
-	"fmt"
 	"sort"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	styrav1beta1 "github.com/bankdata/styra-controller/api/styra/v1beta1"
@@ -40,7 +37,7 @@ var systemlog = logf.Log.WithName("system-resource")
 
 // SetupSystemWebhookWithManager registers the webhook for System in the manager.
 func SetupSystemWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&styrav1beta1.System{}).
+	return ctrl.NewWebhookManagedBy(mgr, &styrav1beta1.System{}).
 		WithValidator(&SystemCustomValidator{}).
 		WithDefaulter(&SystemCustomDefaulter{}).
 		Complete()
@@ -60,16 +57,11 @@ type SystemCustomDefaulter struct {
 	// TODO(user): Add more fields as needed for defaulting
 }
 
-var _ webhook.CustomDefaulter = &SystemCustomDefaulter{}
+var _ admission.Defaulter[*styrav1beta1.System] = &SystemCustomDefaulter{}
 
 // nolint:all
-// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind System.
-func (d *SystemCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
-	system, ok := obj.(*styrav1beta1.System)
-
-	if !ok {
-		return fmt.Errorf("expected an System object but got %T", obj)
-	}
+// Default implements admission.Defaulter so a webhook will be registered for the Kind System.
+func (d *SystemCustomDefaulter) Default(ctx context.Context, system *styrav1beta1.System) error {
 	systemlog.Info("Defaulting for System", "name", system.GetName())
 
 	if system.Spec.SourceControl != nil {
@@ -97,39 +89,27 @@ type SystemCustomValidator struct {
 	// TODO(user): Add more fields as needed for validation
 }
 
-var _ webhook.CustomValidator = &SystemCustomValidator{}
+var _ admission.Validator[*styrav1beta1.System] = &SystemCustomValidator{}
 
 // nolint:all
-// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type System.
-func (v *SystemCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	system, ok := obj.(*styrav1beta1.System)
-	if !ok {
-		return nil, fmt.Errorf("expected a System object but got %T", obj)
-	}
+// ValidateCreate implements admission.Validator so a webhook will be registered for the type System.
+func (v *SystemCustomValidator) ValidateCreate(ctx context.Context, system *styrav1beta1.System) (admission.Warnings, error) {
 	systemlog.Info("Validation for System upon creation", "name", system.GetName())
 
 	return validateSystem(system)
 }
 
 // nolint:all
-// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type System.
-func (v *SystemCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	system, ok := newObj.(*styrav1beta1.System)
-	if !ok {
-		return nil, fmt.Errorf("expected a System object for the newObj but got %T", newObj)
-	}
+// ValidateUpdate implements admission.Validator so a webhook will be registered for the type System.
+func (v *SystemCustomValidator) ValidateUpdate(ctx context.Context, oldObj, system *styrav1beta1.System) (admission.Warnings, error) {
 	systemlog.Info("Validation for System upon update", "name", system.GetName())
 
 	return validateSystem(system)
 }
 
 // nolint:all
-// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type System.
-func (v *SystemCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	system, ok := obj.(*styrav1beta1.System)
-	if !ok {
-		return nil, fmt.Errorf("expected a System object but got %T", obj)
-	}
+// ValidateDelete implements admission.Validator so a webhook will be registered for the type System.
+func (v *SystemCustomValidator) ValidateDelete(ctx context.Context, system *styrav1beta1.System) (admission.Warnings, error) {
 	systemlog.Info("Validation for System upon deletion", "name", system.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.

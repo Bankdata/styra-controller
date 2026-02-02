@@ -19,12 +19,9 @@ package v1alpha1
 
 import (
 	"context"
-	"fmt"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	styrav1alpha1 "github.com/bankdata/styra-controller/api/styra/v1alpha1"
@@ -36,7 +33,7 @@ var librarylog = logf.Log.WithName("library-resource")
 
 // SetupLibraryWebhookWithManager registers the webhook for Library in the manager.
 func SetupLibraryWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&styrav1alpha1.Library{}).
+	return ctrl.NewWebhookManagedBy(mgr, &styrav1alpha1.Library{}).
 		WithValidator(&LibraryCustomValidator{}).
 		WithDefaulter(&LibraryCustomDefaulter{}).
 		Complete()
@@ -56,16 +53,11 @@ type LibraryCustomDefaulter struct {
 	// TODO(user): Add more fields as needed for defaulting
 }
 
-var _ webhook.CustomDefaulter = &LibraryCustomDefaulter{}
+var _ admission.Defaulter[*styrav1alpha1.Library] = &LibraryCustomDefaulter{}
 
 // nolint:all
-// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Library.
-func (d *LibraryCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
-	library, ok := obj.(*styrav1alpha1.Library)
-
-	if !ok {
-		return fmt.Errorf("expected an Library object but got %T", obj)
-	}
+// Default implements admission.Defaulter so a webhook will be registered for the Kind Library.
+func (d *LibraryCustomDefaulter) Default(ctx context.Context, library *styrav1alpha1.Library) error {
 	librarylog.Info("Defaulting for Library", "name", library.GetName())
 
 	if library.Spec.SourceControl == nil || library.Spec.SourceControl.LibraryOrigin == nil {
@@ -95,15 +87,11 @@ type LibraryCustomValidator struct {
 	// TODO(user): Add more fields as needed for validation
 }
 
-var _ webhook.CustomValidator = &LibraryCustomValidator{}
+var _ admission.Validator[*styrav1alpha1.Library] = &LibraryCustomValidator{}
 
 // nolint:all
-// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Library.
-func (v *LibraryCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	library, ok := obj.(*styrav1alpha1.Library)
-	if !ok {
-		return nil, fmt.Errorf("expected a Library object but got %T", obj)
-	}
+// ValidateCreate implements admission.Validator so a webhook will be registered for the type Library.
+func (v *LibraryCustomValidator) ValidateCreate(ctx context.Context, library *styrav1alpha1.Library) (admission.Warnings, error) {
 	librarylog.Info("Validation for Library upon creation", "name", library.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
@@ -112,12 +100,8 @@ func (v *LibraryCustomValidator) ValidateCreate(ctx context.Context, obj runtime
 }
 
 // nolint:all
-// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Library.
-func (v *LibraryCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	library, ok := newObj.(*styrav1alpha1.Library)
-	if !ok {
-		return nil, fmt.Errorf("expected a Library object for the newObj but got %T", newObj)
-	}
+// ValidateUpdate implements admission.Validator so a webhook will be registered for the type Library.
+func (v *LibraryCustomValidator) ValidateUpdate(ctx context.Context, oldObj, library *styrav1alpha1.Library) (admission.Warnings, error) {
 	librarylog.Info("Validation for Library upon update", "name", library.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
@@ -126,12 +110,8 @@ func (v *LibraryCustomValidator) ValidateUpdate(ctx context.Context, oldObj, new
 }
 
 // nolint:all
-// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Library.
-func (v *LibraryCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	library, ok := obj.(*styrav1alpha1.Library)
-	if !ok {
-		return nil, fmt.Errorf("expected a Library object but got %T", obj)
-	}
+// ValidateDelete implements admission.Validator so a webhook will be registered for the type Library.
+func (v *LibraryCustomValidator) ValidateDelete(ctx context.Context, library *styrav1alpha1.Library) (admission.Warnings, error) {
 	librarylog.Info("Validation for Library upon deletion", "name", library.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.
