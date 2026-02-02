@@ -2537,6 +2537,7 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 		sourceControl := styrav1beta1.SourceControl{
 			Origin: styrav1beta1.GitRepo{
 				URL:       "https://github.com/test/repo.git",
+				Commit:    "0123456789abcdef",
 				Reference: "refs/heads/master",
 				Path:      "policy",
 			},
@@ -2595,7 +2596,7 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			Name: "default-ocp-system",
 			Git: &ocp.GitConfig{
 				Repo:          "https://github.com/test/repo.git",
-				Reference:     "refs/heads/master",
+				Commit:        "0123456789abcdef",
 				Path:          "policy",
 				CredentialID:  expectedGitCredentialsID,
 				IncludedFiles: []string{"*.rego"},
@@ -2653,7 +2654,7 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			Name: "default-ocp-system",
 			Git: &ocp.GitConfig{
 				Repo:          "https://github.com/test/repo.git",
-				Reference:     "refs/heads/master",
+				Commit:        "0123456789abcdef",
 				Path:          "policy",
 				CredentialID:  expectedGitCredentialsID,
 				IncludedFiles: []string{"*.rego"},
@@ -2705,7 +2706,7 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			Name: "default-ocp-system",
 			Git: &ocp.GitConfig{
 				Repo:          "https://github.com/test/repo.git",
-				Reference:     "refs/heads/master",
+				Commit:        "0123456789abcdef",
 				Path:          "policy",
 				CredentialID:  expectedGitCredentialsID,
 				IncludedFiles: []string{"*.rego"},
