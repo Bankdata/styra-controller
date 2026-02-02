@@ -115,6 +115,7 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	log = log.WithValues("systemID", system.Status.ID)
 	log = log.WithValues("controlPlane", system.Labels["styra-controller/control-plane"])
+	log = log.WithValues("uniqueName", system.OCPUniqueName(r.Config.SystemPrefix, r.Config.SystemSuffix))
 
 	if !labels.ControllerClassMatches(&system, r.Config.ControllerClass) {
 		log.Info("This is not a System we are managing. Skipping reconciliation.")
@@ -132,7 +133,7 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		if system.Labels[labels.LabelControlPlane] == labels.LabelValueControlPlaneOCP {
 			r.updateMetric(req, system.Status.ID, system.Status.Ready, system.Labels[labels.LabelControlPlane])
 		} else {
-			r.updateMetric(req, system.Status.ID, system.Status.Ready, "styra-das")
+			r.updateMetric(req, system.Status.ID, system.Status.Ready, labels.LabelValueControlPlaneStyra)
 		}
 
 	} else {
@@ -141,7 +142,7 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			if system.Labels[labels.LabelControlPlane] == labels.LabelValueControlPlaneOCP {
 				r.updateMetric(req, system.Status.ID, system.Status.Ready, system.Labels[labels.LabelControlPlane])
 			} else {
-				r.updateMetric(req, system.Status.ID, system.Status.Ready, "styra-das")
+				r.updateMetric(req, system.Status.ID, system.Status.Ready, labels.LabelValueControlPlaneStyra)
 			}
 		} else {
 			r.deleteMetrics(req)
@@ -188,6 +189,26 @@ func (r *SystemReconciler) updateMetric(req ctrl.Request, systemID string, ready
 		value = 1
 	}
 	r.Metrics.ControllerSystemStatusReady.WithLabelValues(req.Name, req.Namespace, systemID, controlPlane).Set(value)
+
+	// If system switched control plane, we need to delete the old metric with the other control plane label
+	var labelToDelete string
+	if controlPlane == labels.LabelValueControlPlaneOCP {
+		labelToDelete = labels.LabelValueControlPlaneStyra
+	}
+	if controlPlane == labels.LabelValueControlPlaneStyra {
+		labelToDelete = labels.LabelValueControlPlaneOCP
+	}
+
+	// We cannot know if the metric exists before deleting it.
+	// Therefore, we just delete and ignore the output of DeletePartialMatch.
+	r.Metrics.ControllerSystemStatusReady.DeletePartialMatch(
+		prometheus.Labels{
+			"system_name":   req.Name,
+			"namespace":     req.Namespace,
+			"system_id":     systemID,
+			"control_plane": labelToDelete,
+		},
+	)
 }
 
 func (r *SystemReconciler) deleteMetrics(req ctrl.Request) {
@@ -503,18 +524,39 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 		}
 	}
 
-	opaconf := ocp.OPAConfig{
-		BundleResource: fmt.Sprintf("bundles/%s/bundle.tar.gz", uniqueName),
-		BundleService:  "s3",
-		ServiceURL: fmt.Sprintf("%s/%s",
-			r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.URL,
-			r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3.Bucket),
-		ServiceName: "s3",
-		UniqueName:  uniqueName,
-		Namespace:   system.Namespace,
+	bundleURL, err := url.JoinPath(r.Config.OPA.BundleServer.URL, r.Config.OPA.BundleServer.Path)
+	if err != nil {
+		return ctrl.Result{}, false, ctrlerr.Wrap(err, "Invalid OPA BundleServer URL or path").
+			WithEvent(v1beta1.EventErrorConvertOPAConf).
+			WithSystemCondition(v1beta1.ConditionTypeOPAConfigMapUpdated)
 	}
 
-	expectedOPAConfigMap, err = k8sconv.OpaConfToK8sOPAConfigMapforOCP(opaconf, r.Config.OPA, customConfig)
+	opaconf := ocp.OPAConfig{
+		BundleService: &ocp.OPAServiceConfig{
+			Name: "s3",
+			URL:  bundleURL,
+			Credentials: &ocp.ServiceCredentials{
+				S3: &ocp.S3Signing{
+					S3EnvironmentCredentials: map[string]ocp.EmptyStruct{},
+				},
+			},
+		},
+		LogService: &ocp.OPAServiceConfig{
+			Name: "logs",
+			URL:  r.Config.OPAControlPlaneConfig.DecisionAPIConfig.ServiceURL,
+			Credentials: &ocp.ServiceCredentials{
+				Bearer: &ocp.Bearer{
+					TokenPath: "/run/secrets/kubernetes.io/serviceaccount/token",
+				},
+			},
+		},
+		DecisionLogReporting: r.Config.OPAControlPlaneConfig.DecisionAPIConfig.Reporting,
+		BundleResource:       fmt.Sprintf("bundles/%s/bundle.tar.gz", uniqueName),
+		UniqueName:           uniqueName,
+		Namespace:            system.Namespace,
+	}
+
+	expectedOPAConfigMap, err = k8sconv.OPAConfToK8sOPAConfigMapforOCP(opaconf, r.Config.OPA, customConfig, log)
 	if err != nil {
 		return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not convert OPA conf to ConfigMap").
 			WithEvent(v1beta1.EventErrorConvertOPAConf).
@@ -812,8 +854,7 @@ func (r *SystemReconciler) reconcileSystemSource(
 	}
 	if system.Spec.SourceControl.Origin.Commit != "" {
 		gitConfig.Commit = system.Spec.SourceControl.Origin.Commit
-	}
-	if system.Spec.SourceControl.Origin.Reference != "" {
+	} else if system.Spec.SourceControl.Origin.Reference != "" {
 		gitConfig.Reference = system.Spec.SourceControl.Origin.Reference
 	}
 	if system.Spec.SourceControl.Origin.Path != "" {
@@ -886,7 +927,6 @@ func (r *SystemReconciler) styraReconcile(
 
 	systemID := system.Status.ID
 	migrationID := system.ObjectMeta.Annotations["styra-controller/migration-id"]
-
 	if r.Config.EnableMigrations && systemID == "" && migrationID != "" {
 		log.Info(fmt.Sprintf("Use migrationId(%s) to fetch system from Styra DAS", migrationID))
 		getSystemStart := time.Now()
@@ -1835,10 +1875,10 @@ func (r *SystemReconciler) reconcileOPAConfigMap(
 
 	if system.Spec.LocalPlane == nil {
 		log.Info("No styra local plane defined for System")
-		expectedOPAConfigMap, err = k8sconv.OpaConfToK8sOPAConfigMapNoSLP(opaconf, r.Config.OPA, customConfig)
+		expectedOPAConfigMap, err = k8sconv.OPAConfToK8sOPAConfigMapNoSLP(opaconf, r.Config.OPA, customConfig)
 	} else {
 		slpURL := fmt.Sprintf("http://%s/v1", system.Spec.LocalPlane.Name)
-		expectedOPAConfigMap, err = k8sconv.OpaConfToK8sOPAConfigMap(opaconf, slpURL, r.Config.OPA, customConfig)
+		expectedOPAConfigMap, err = k8sconv.OPAConfToK8sOPAConfigMap(opaconf, slpURL, r.Config.OPA, customConfig)
 	}
 	if err != nil {
 		return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not convert OPA conf to ConfigMap").
@@ -1919,7 +1959,7 @@ func (r *SystemReconciler) reconcileSLPConfigMap(
 	configmapName := fmt.Sprintf("%s-slp", system.Name)
 	log = log.WithValues("configmapName", configmapName)
 
-	expectedSLPConfigMap, err := k8sconv.OpaConfToK8sSLPConfigMap(opaconf)
+	expectedSLPConfigMap, err := k8sconv.OPAConfToK8sSLPConfigMap(opaconf)
 	if err != nil {
 		return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not convert OPA Conf to SLP ConfigMap").
 			WithEvent(v1beta1.EventErrorConvertOPAConf).

@@ -2238,14 +2238,55 @@ distributed_tracing:
 	})
 })
 
-var _ = ginkgo.Describe("SystemReconciler.Reconcile1", ginkgo.Label("integration"), func() {
+var _ = ginkgo.Describe("SystemReconciler.WithPodRestart", ginkgo.Label("integration"), func() {
 	ginkgo.It("should reconcile", func() {
+
+		ctx := context.Background()
+
 		key := types.NamespacedName{
 			Name:      "test-pod-restart",
 			Namespace: "default",
 		}
 
-		ctx := context.Background()
+		systemToCreate := &styrav1beta1.System{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      key.Name,
+				Namespace: key.Namespace,
+				Labels: map[string]string{
+					"styra-controller/class": "styra-controller-pod-restart",
+				},
+			},
+			Spec: styrav1beta1.SystemSpec{
+				LocalPlane: &styrav1beta1.LocalPlane{
+					Name: fmt.Sprintf("%v-slp", key.Name),
+				},
+			},
+		}
+
+		sts := &appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("%v-slp", key.Name),
+				Namespace: key.Namespace,
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{"app": fmt.Sprintf("%v-slp", key.Name)},
+				},
+				ServiceName: fmt.Sprintf("%v-slp", key.Name),
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{"app": fmt.Sprintf("%v-slp", key.Name)},
+					},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{{
+							Name:    "busybox",
+							Image:   "busybox",
+							Command: []string{"sleep", "3600"},
+						}},
+					},
+				},
+			},
+		}
 
 		cfg := &styra.SystemConfig{
 			ID:       "system_id",
@@ -2253,30 +2294,14 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile1", ginkgo.Label("integration
 			ReadOnly: true,
 		}
 
-		ginkgo.By("Empty System already has ID but does not exist in Styra")
+		ginkgo.By("Create system and see SLP pods are restarted")
 
-		styraClientMock.On("GetSystem", mock.Anything, "system_id").Return(&styra.GetSystemResponse{
-			StatusCode:   http.StatusNotFound,
+		styraClientMock.On("GetSystemByName", mock.Anything, key.String()).Return(&styra.GetSystemResponse{
+			StatusCode:   http.StatusOK,
 			SystemConfig: nil,
-		}, &httperror.HTTPError{
-			StatusCode: http.StatusNotFound,
-			Body:       "nil",
-		}).Once()
+		}, nil).Once()
 
-		styraClientMock.On("PutSystem",
-			mock.Anything,
-			mock.MatchedBy(func(req *styra.PutSystemRequest) bool {
-				matchesDecisionmapping := len(req.SystemConfig.DecisionMappings) == 0
-				matchesDescription := req.SystemConfig.Description == cfg.Description
-				matchesSourceControl := req.SystemConfig.SourceControl == nil
-
-				return matchesDecisionmapping &&
-					matchesDescription &&
-					matchesSourceControl
-			}),
-			"system_id",
-			map[string]string{"If-None-Match": "*"},
-		).Return(&styra.PutSystemResponse{
+		styraClientMock.On("CreateSystem", mock.Anything, mock.Anything).Return(&styra.CreateSystemResponse{
 			StatusCode:   http.StatusOK,
 			SystemConfig: cfg,
 		}, nil).Once()
@@ -2424,11 +2449,16 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile1", ginkgo.Label("integration
 			SystemType: "custom",
 		}, nil).Once()
 
+		// Create StatefulSet representing SLP and deploy system
+		gomega.Expect(k8sClient.Create(ctx, sts)).To(gomega.Succeed())
+		gomega.Expect(k8sClient.Create(ctx, systemToCreate)).To(gomega.Succeed())
+
 		gomega.Eventually(func() bool {
 			fetched := &styrav1beta1.System{}
 			if err := k8sClient.Get(ctx, key, fetched); err != nil {
 				return false
 			}
+
 			return finalizer.IsSet(fetched) &&
 				fetched.Status.ID == "system_id" &&
 				fetched.Status.Phase == styrav1beta1.SystemPhaseCreated &&
@@ -2454,36 +2484,44 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile1", ginkgo.Label("integration
 
 		gomega.Eventually(func() bool {
 			var (
-				getSystem          int
-				putSystem          int
+				getSystemByName    int
+				createSystem       int
 				deletePolicy       int
+				updateSystem       int
+				getSystem          int
 				getUsers           int
 				rolebindingsListed int
 				getOPAConfig       int
 			)
 			for _, call := range styraClientMock.Calls {
 				switch call.Method {
-				case "GetSystem":
-					getSystem++
-				case "PutSystem":
-					putSystem++
+				case "GetSystemByName":
+					getSystemByName++
+				case "CreateSystem":
+					createSystem++
 				case "DeletePolicy":
 					deletePolicy++
-				case "GetUsers":
-					getUsers++
+				case "UpdateSystem":
+					updateSystem++
 				case "ListRoleBindingsV2":
 					rolebindingsListed++
+				case "GetSystem":
+					getSystem++
+				case "GetUsers":
+					getUsers++
 				case "GetOPAConfig":
 					getOPAConfig++
 				}
 			}
 
-			return getSystem == 4 &&
-				putSystem == 1 &&
+			return getSystemByName == 1 &&
+				createSystem == 1 &&
 				deletePolicy == 2 &&
+				updateSystem == 1 &&
 				getUsers == 4 &&
 				rolebindingsListed == 4 &&
-				getOPAConfig == 4
+				getOPAConfig == 4 &&
+				getSystem == 3
 		}, timeout, interval).Should(gomega.BeTrue())
 
 		resetMock(&styraClientMock.Mock)
@@ -2499,6 +2537,7 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 		sourceControl := styrav1beta1.SourceControl{
 			Origin: styrav1beta1.GitRepo{
 				URL:       "https://github.com/test/repo.git",
+				Commit:    "0123456789abcdef",
 				Reference: "refs/heads/master",
 				Path:      "policy",
 			},
@@ -2557,7 +2596,7 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			Name: "default-ocp-system",
 			Git: &ocp.GitConfig{
 				Repo:          "https://github.com/test/repo.git",
-				Reference:     "refs/heads/master",
+				Commit:        "0123456789abcdef",
 				Path:          "policy",
 				CredentialID:  expectedGitCredentialsID,
 				IncludedFiles: []string{"*.rego"},
@@ -2615,7 +2654,7 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			Name: "default-ocp-system",
 			Git: &ocp.GitConfig{
 				Repo:          "https://github.com/test/repo.git",
-				Reference:     "refs/heads/master",
+				Commit:        "0123456789abcdef",
 				Path:          "policy",
 				CredentialID:  expectedGitCredentialsID,
 				IncludedFiles: []string{"*.rego"},
@@ -2667,7 +2706,7 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			Name: "default-ocp-system",
 			Git: &ocp.GitConfig{
 				Repo:          "https://github.com/test/repo.git",
-				Reference:     "refs/heads/master",
+				Commit:        "0123456789abcdef",
 				Path:          "policy",
 				CredentialID:  expectedGitCredentialsID,
 				IncludedFiles: []string{"*.rego"},
@@ -2761,6 +2800,7 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 
 			key := types.NamespacedName{Name: fmt.Sprintf("%s-opa-config", key.Name), Namespace: key.Namespace}
 			if fetchSuceeded := k8sClient.Get(ctx, key, fetched) == nil; !fetchSuceeded {
+				fmt.Println("Failed to fetch ConfigMap")
 				return false
 			}
 
@@ -2769,6 +2809,13 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
   authz:
     resource: bundles/default-ocp-system/bundle.tar.gz
     service: s3
+decision_logs:
+  reporting:
+    max_delay_seconds: 60
+    min_delay_seconds: 5
+    upload_size_limit_bytes: 1024
+  resource_path: /logs
+  service: logs
 labels:
   namespace: default
   unique-name: default-ocp-system
@@ -2777,20 +2824,30 @@ services:
     s3_signing:
       environment_credentials: {}
   name: s3
-  url: s3-url/test-bucket
+  url: https://s3-url2/test-bucket
+- credentials:
+    bearer:
+      token_path: /run/secrets/kubernetes.io/serviceaccount/token
+  name: logs
+  url: log-api-url
 `
 
 			if err := yaml.Unmarshal([]byte(actualYAML), &actualMap); err != nil {
+				fmt.Println("Failed to unmarshal actual YAML:", err)
 				return false
 			}
 			if err := yaml.Unmarshal([]byte(expectedYAML), &expectedMap); err != nil {
+				fmt.Println("Failed to unmarshal expected YAML:", err)
 				return false
 			}
 
 			equal := reflect.DeepEqual(expectedMap, actualMap)
 			if !equal {
-				fmt.Println("Actual", string(actualYAML))
-				fmt.Println("Expected", string(expectedYAML))
+				fmt.Println("reconciliation failed")
+				fmt.Println("Actual: \n", string(actualYAML))
+				fmt.Println("Expected: \n", string(expectedYAML))
+				fmt.Println("Actual Map: \n", actualMap)
+				fmt.Println("Expected Map: \n", expectedMap)
 			}
 			return equal
 		}, timeout, interval).Should(gomega.BeTrue())
@@ -2885,6 +2942,6 @@ services:
 			return k8serrors.IsNotFound(err)
 		}, timeout, interval).Should(gomega.BeTrue())
 
-		resetMock(&styraClientMock.Mock)
+		resetMock(&ocpClientMock.Mock)
 	})
 })

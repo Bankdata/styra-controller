@@ -141,7 +141,7 @@ func (c *Client) DeleteBundle(ctx context.Context, name string) (err error) {
 		return errors.Wrap(err, "DeleteBundle: could not read body")
 	}
 
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode != http.StatusNotFound && res.StatusCode != http.StatusOK {
 		return httperror.NewHTTPError(res.StatusCode, string(body))
 	}
 	return nil
