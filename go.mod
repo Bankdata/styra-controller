@@ -524,7 +524,11 @@ require (
 	sigs.k8s.io/kustomize/cmd/config v0.21.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.21.1 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
+<<<<<<< HEAD
 	sigs.k8s.io/structured-merge-diff/v6 v6.4.0 // indirect
+=======
+	sigs.k8s.io/structured-merge-diff/v6 v6.3.2-0.20260122202528-d9cc6641c482 // indirect
+>>>>>>> 50dab82 (:arrow_up: Bump sigs.k8s.io/controller-runtime from 0.22.4 to 0.23.0)
 	software.sslmate.com/src/go-pkcs12 v0.4.0 // indirect
 )
 
