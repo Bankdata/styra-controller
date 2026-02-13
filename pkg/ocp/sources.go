@@ -78,9 +78,9 @@ type SourceConfig struct {
 // GitConfig represents the git source control configuration for a source.
 type GitConfig struct {
 	Repo          string   `json:"repo"`
-	Reference     string   `json:"reference"`
+	Reference     string   `json:"reference,omitempty"`
 	Commit        string   `json:"commit,omitempty"`
-	Path          string   `json:"path"`
+	Path          string   `json:"path,omitempty"`
 	IncludedFiles []string `json:"included_files,omitempty"`
 	ExcludedFiles []string `json:"excluded_files,omitempty"`
 	CredentialID  string   `json:"credentials,omitempty"`
@@ -89,7 +89,7 @@ type GitConfig struct {
 // Datasource represents a datasource for a source.
 type Datasource struct {
 	Name           string                 `json:"name" yaml:"name"`
-	Path           string                 `json:"path" yaml:"path"`
+	Path           string                 `json:"path,omitempty" yaml:"path,omitempty"`
 	Type           string                 `json:"type" yaml:"type"`
 	TransformQuery string                 `json:"transform_query,omitempty" yaml:"transform_query,omitempty"`
 	Config         map[string]interface{} `json:"config,omitempty" yaml:"config,omitempty"`
