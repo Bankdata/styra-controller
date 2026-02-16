@@ -18,7 +18,7 @@ IMG ?= controller:latest
 BUILDER_IMAGE ?= ""
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.26.0
+ENVTEST_K8S_VERSION = 1.29.0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -77,7 +77,7 @@ lint: golangci-lint ## Run linters
 .PHONY: test
 test: ginkgo manifests generate lint envtest generate-mocks ## Run all tests.
 	go test ./pkg/...
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r --output-interceptor-mode=none
+	KUBEBUILDER_ASSETS="$$($(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r --output-interceptor-mode=none
 
 .PHONY: test-unit
 test-unit: ginkgo manifests generate lint generate-mocks ## Run unit tests.
@@ -86,7 +86,7 @@ test-unit: ginkgo manifests generate lint generate-mocks ## Run unit tests.
 
 .PHONY: test-integration ## Run integration tests.
 test-integration: ginkgo manifests generate lint envtest generate-mocks ## Run integration tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r --label-filter "integration" --output-interceptor-mode=none
+	KUBEBUILDER_ASSETS="$$($(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r --label-filter "integration" --output-interceptor-mode=none
 
 .PHONY: kind-create
 kind-create: kind ## Create kind cluster
@@ -214,11 +214,10 @@ gopls:
 	# $(shell go version)
 	GOBIN=$(LOCALBIN) go install golang.org/x/tools/gopls@latest
 
-
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download setup-envtest locally if necessary.
 $(ENVTEST): $(LOCALBIN)
-	test -s $(ENVTEST) || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest
+	test -s $(ENVTEST) || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
 .PHONY: golangci-lint
 golangci-lint: ## Download golangci-lint locally if necessary.
