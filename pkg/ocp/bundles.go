@@ -36,6 +36,7 @@ type BundleConfig struct {
 	Labels        map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
 	ObjectStorage ObjectStorage     `json:"object_storage,omitempty" yaml:"object_storage,omitempty"`
 	Requirements  []Requirement     `json:"requirements,omitempty" yaml:"requirements,omitempty"`
+	Revision	  string            `json:"revision,omitempty" yaml:"revision,omitempty"`
 	ExcludedFiles []string          `json:"excluded_files,omitempty" yaml:"excluded_files,omitempty"`
 }
 
