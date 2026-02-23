@@ -18,6 +18,7 @@ package styra
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -420,7 +421,7 @@ func (r *SystemReconciler) ocpReconcile(
 	system.SetCondition(v1beta1.ConditionTypeSystemSourceUpdated, metav1.ConditionTrue)
 
 	reconcileSystemBundleStart := time.Now()
-	result, err = r.reconcileSystemBundle(ctx, uniqueName, requirements)
+	result, err = r.reconcileSystemBundle(ctx, system, uniqueName, requirements)
 	r.Metrics.ReconcileSegmentTime.
 		WithLabelValues("reconcileSystemBundleOcp").
 		Observe(time.Since(reconcileSystemBundleStart).Seconds())
@@ -801,6 +802,7 @@ func (r *SystemReconciler) reconcileS3Credentials(
 
 func (r *SystemReconciler) reconcileSystemBundle(
 	ctx context.Context,
+	system *v1beta1.System,
 	uniqueName string,
 	requirements []ocp.Requirement) (ctrl.Result, error) {
 	if r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3 == nil {
@@ -821,6 +823,7 @@ func (r *SystemReconciler) reconcileSystemBundle(
 		Name:          uniqueName,
 		ObjectStorage: objectStorage,
 		Requirements:  requirements,
+		Revision:      bundleRevision(system, requirements),
 	}
 	err := r.OCP.PutBundle(ctx, bundle)
 
@@ -828,6 +831,20 @@ func (r *SystemReconciler) reconcileSystemBundle(
 		return ctrl.Result{}, ctrlerr.Wrap(err, "ocpReconcile: could not create or update bundle in OCP")
 	}
 	return ctrl.Result{}, nil
+}
+
+func bundleRevision(system *v1beta1.System, requirements []ocp.Requirement) string {
+	if system.Spec.SourceControl == nil || system.Spec.SourceControl.Origin.Commit == "" {
+		return ""
+	}
+
+	requirementsJSON, err := json.Marshal(requirements)
+	if err != nil {
+		return fmt.Sprintf(`git:{"commit":"%s"}`, system.Spec.SourceControl.Origin.Commit)
+	}
+
+	dataHash := sha256.Sum256(requirementsJSON)
+	return fmt.Sprintf(`git:{"commit":"%s"},data:%x`, system.Spec.SourceControl.Origin.Commit, dataHash)
 }
 
 func (r *SystemReconciler) reconcileSystemSource(

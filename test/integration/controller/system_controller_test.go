@@ -18,6 +18,7 @@ package styra
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -43,6 +44,15 @@ import (
 	"github.com/bankdata/styra-controller/pkg/s3"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
+
+func expectedBundleRevision(commit string, requirements []ocp.Requirement) string {
+	requirementsJSON, err := json.Marshal(requirements)
+	if err != nil {
+		return fmt.Sprintf(`git:{\"commit\":\"%s\"}`, commit)
+	}
+	dataHash := sha256.Sum256(requirementsJSON)
+	return fmt.Sprintf(`git:{\"commit\":\"%s\"},data:%x`, commit, dataHash)
+}
 
 var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"), func() {
 	ginkgo.It("should reconcile", func() {
@@ -2628,6 +2638,17 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 					Source: "default-ocp-system",
 				},
 			},
+			Revision: expectedBundleRevision("0123456789abcdef", []ocp.Requirement{
+				{
+					Source: "library1",
+				},
+				{
+					Source: "path-to-datasource",
+				},
+				{
+					Source: "default-ocp-system",
+				},
+			}),
 		}).Return(nil).Once()
 
 		// Called in reconcileS3Credentials
@@ -2686,6 +2707,17 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 					Source: "default-ocp-system",
 				},
 			},
+			Revision: expectedBundleRevision("0123456789abcdef", []ocp.Requirement{
+				{
+					Source: "library1",
+				},
+				{
+					Source: "path-to-datasource",
+				},
+				{
+					Source: "default-ocp-system",
+				},
+			}),
 		}).Return(nil).Once()
 
 		// Called in reconcileS3Credentials
@@ -2738,6 +2770,17 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 					Source: "default-ocp-system",
 				},
 			},
+			Revision: expectedBundleRevision("0123456789abcdef", []ocp.Requirement{
+				{
+					Source: "library1",
+				},
+				{
+					Source: "path-to-datasource",
+				},
+				{
+					Source: "default-ocp-system",
+				},
+			}),
 		}).Return(nil).Once()
 
 		// Called in reconcileS3Credentials
