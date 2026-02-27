@@ -18,7 +18,6 @@ package styra
 
 import (
 	"context"
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -799,7 +798,7 @@ func (r *SystemReconciler) reconcileS3Credentials(
 
 	return s3Credentials, ctrl.Result{}, nil
 }
-
+	
 func (r *SystemReconciler) reconcileSystemBundle(
 	ctx context.Context,
 	system *v1beta1.System,
@@ -834,17 +833,42 @@ func (r *SystemReconciler) reconcileSystemBundle(
 }
 
 func bundleRevision(system *v1beta1.System, requirements []ocp.Requirement) string {
-	if system.Spec.SourceControl == nil || system.Spec.SourceControl.Origin.Commit == "" {
+	if system.Spec.SourceControl == nil {
+		return ""
+	}
+	if len(requirements) == 0 {
 		return ""
 	}
 
-	requirementsJSON, err := json.Marshal(requirements)
-	if err != nil {
-		return fmt.Sprintf(`git:{"commit":"%s"}`, system.Spec.SourceControl.Origin.Commit)
+	parts := make([]string, 0, len(requirements)+1)
+	systemRequirement := requirements[len(requirements)-1]
+	parts = append(parts,
+		fmt.Sprintf(`git:{input.sources["%s"].%s}`, systemRequirement.Source, requirementRevisionField(systemRequirement)),
+	)
+
+	for _, requirement := range requirements[:len(requirements)-1] {
+		parts = append(parts,
+			fmt.Sprintf(`%s:{input.sources["%s"].%s}`,
+				requirement.Source,
+				requirement.Source,
+				requirementRevisionField(requirement),
+			),
+		)
 	}
 
-	dataHash := sha256.Sum256(requirementsJSON)
-	return fmt.Sprintf(`git:{"commit":"%s"},data:%x`, system.Spec.SourceControl.Origin.Commit, dataHash)
+	return fmt.Sprintf(`$"%s"`, strings.Join(parts, ","))
+}
+
+func requirementRevisionField(requirement ocp.Requirement) string {
+	if requirement.Revision_hash {
+		return "sql.hash"
+	}
+
+	if requirement.Revision_commit {
+		return "git"
+	}
+
+	return "git"
 }
 
 func (r *SystemReconciler) reconcileSystemSource(

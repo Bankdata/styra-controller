@@ -109,8 +109,10 @@ type Secret struct {
 
 // Requirement represents a requirement for a bundle and a source.
 type Requirement struct {
-	Source string         `json:"source,omitempty" yaml:"source,omitempty"`
-	Git    GitRequirement `json:"git,omitempty" yaml:"git,omitempty"`
+	Source          string         `json:"source,omitempty" yaml:"source,omitempty"`
+	Git             GitRequirement `json:"git,omitempty" yaml:"git,omitempty"`
+	Revision_hash   bool           `json:"revision_hash,omitempty" yaml:"revision_hash,omitempty"`
+	Revision_commit bool           `json:"revision_commit,omitempty" yaml:"revision_commit,omitempty"`
 }
 
 // GitRequirement represents Git requirement.

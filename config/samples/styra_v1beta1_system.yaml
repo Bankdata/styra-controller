@@ -20,12 +20,12 @@ spec:
       reason:
         path: result.reasons
   datasources:
-    - path: "test"
+    - path: "example"
   sourceControl:
     origin:
       path: policy
       reference: refs/heads/master
-      url: 'https://github.com/bd-b0100/pol-library-stress-tester'
+      url: 'https://github.com/something/some-repo.git'
   
 
 

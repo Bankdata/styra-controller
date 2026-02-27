@@ -18,11 +18,11 @@ package styra
 
 import (
 	"context"
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
+	"strings"
 	"time"
 
 	ginkgo "github.com/onsi/ginkgo/v2"
@@ -45,13 +45,40 @@ import (
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
-func expectedBundleRevision(commit string, requirements []ocp.Requirement) string {
-	requirementsJSON, err := json.Marshal(requirements)
-	if err != nil {
-		return fmt.Sprintf(`git:{\"commit\":\"%s\"}`, commit)
+func expectedBundleRevision(_ string, requirements []ocp.Requirement) string {
+	if len(requirements) == 0 {
+		return ""
 	}
-	dataHash := sha256.Sum256(requirementsJSON)
-	return fmt.Sprintf(`git:{\"commit\":\"%s\"},data:%x`, commit, dataHash)
+
+	parts := make([]string, 0, len(requirements)+1)
+	systemRequirement := requirements[len(requirements)-1]
+	parts = append(parts,
+		fmt.Sprintf(`git:{input.sources["%s"].%s}`, systemRequirement.Source, expectedRequirementRevisionField(systemRequirement)),
+	)
+
+	for _, requirement := range requirements[:len(requirements)-1] {
+		parts = append(parts,
+			fmt.Sprintf(`%s:{input.sources["%s"].%s}`,
+				requirement.Source,
+				requirement.Source,
+				expectedRequirementRevisionField(requirement),
+			),
+		)
+	}
+
+	return fmt.Sprintf(`$"%s"`, strings.Join(parts, ","))
+}
+
+func expectedRequirementRevisionField(requirement ocp.Requirement) string {
+	if requirement.Revision_hash {
+		return "sql.hash"
+	}
+
+	if requirement.Revision_commit {
+		return "git"
+	}
+
+	return "git"
 }
 
 var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"), func() {
