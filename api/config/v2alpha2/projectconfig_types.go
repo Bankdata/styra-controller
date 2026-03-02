@@ -216,7 +216,7 @@ type OPAControlPlaneConfig struct {
 	// DefaultRequirements is a list of requirements that will be added to all
 	// systems/bundles created by the controller in the OCP, in addition to any requirements/datasources
 	// specified on the System resource.
-	DefaultRequirements []string `json:"defaultRequirements,omitempty"`
+	DefaultRequirements []DefaultRequirement `json:"defaultRequirements,omitempty"`
 
 	// SystemDatasourceChanged is the URL to be called when a system datasource has changed.
 	SystemDatasourceChanged string `json:"systemDatasourceChanged,omitempty"`
@@ -225,6 +225,12 @@ type OPAControlPlaneConfig struct {
 
 	// DecisionAPIConfig contains configuration for which api OPAs should use to and how
 	DecisionAPIConfig *DecisionAPIConfig `json:"decisionAPIConfig,omitempty"`
+}
+
+type DefaultRequirement struct {
+	Name       string `json:"name"`
+	GitSource  bool   `json:"gitSource,omitempty"`
+	DataSource bool   `json:"dataSource,omitempty"`
 }
 
 // UserCredentialHandler defines the structure of possible user credential handlers

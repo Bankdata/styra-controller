@@ -23,6 +23,7 @@ import (
 	"io"
 	"net/http"
 
+	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
 	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/pkg/errors"
 )
@@ -109,10 +110,10 @@ type Secret struct {
 
 // Requirement represents a requirement for a bundle and a source.
 type Requirement struct {
-	Source          string         `json:"source,omitempty" yaml:"source,omitempty"`
-	Git             GitRequirement `json:"git,omitempty" yaml:"git,omitempty"`
-	Revision_hash   bool           `json:"revision_hash,omitempty" yaml:"revision_hash,omitempty"`
-	Revision_commit bool           `json:"revision_commit,omitempty" yaml:"revision_commit,omitempty"`
+	Source         string         `json:"source,omitempty" yaml:"source,omitempty"`
+	Git            GitRequirement `json:"git,omitempty" yaml:"git,omitempty"`
+	RevisionHash   bool           `json:"revision_hash,omitempty" yaml:"revision_hash,omitempty"`
+	RevisionCommit bool           `json:"revision_commit,omitempty" yaml:"revision_commit,omitempty"`
 }
 
 // GitRequirement represents Git requirement.
@@ -121,17 +122,32 @@ type GitRequirement struct {
 }
 
 // NewRequirement creates a new Requirement for a bundle.
-func NewRequirement(source string) Requirement {
-	return Requirement{
+func NewRequirement(source string, sourceType string) Requirement {
+	requirement := Requirement{
 		Source: source,
 	}
+
+	if sourceType == "git" {
+		requirement.RevisionCommit = true
+	} else if sourceType == "data" {
+		requirement.RevisionHash = true
+	}
+
+	return requirement
 }
 
-// ToRequirements converts a list of sources to a list of Requirements.
-func ToRequirements(sources []string) []Requirement {
+// ToRequirements converts the default requirements to a list of bundle Requirements.
+func ToRequirements(sources []configv2alpha2.DefaultRequirement) []Requirement {
 	requirements := make([]Requirement, len(sources))
 	for i, source := range sources {
-		requirements[i] = NewRequirement(source)
+		requirement := NewRequirement(source.Name, "")
+		if source.GitSource {
+			requirement.RevisionCommit = true
+		}
+		if source.DataSource {
+			requirement.RevisionHash = true
+		}
+		requirements[i] = requirement
 	}
 	return requirements
 }

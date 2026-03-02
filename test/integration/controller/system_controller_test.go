@@ -53,15 +53,14 @@ func expectedBundleRevision(_ string, requirements []ocp.Requirement) string {
 	parts := make([]string, 0, len(requirements)+1)
 	systemRequirement := requirements[len(requirements)-1]
 	parts = append(parts,
-		fmt.Sprintf(`git:{input.sources["%s"].%s}`, systemRequirement.Source, expectedRequirementRevisionField(systemRequirement)),
+		fmt.Sprintf(`git:%s`, expectedRequirementRevisionExpression(systemRequirement)),
 	)
 
 	for _, requirement := range requirements[:len(requirements)-1] {
 		parts = append(parts,
-			fmt.Sprintf(`%s:{input.sources["%s"].%s}`,
+			fmt.Sprintf(`%s:%s`,
 				requirement.Source,
-				requirement.Source,
-				expectedRequirementRevisionField(requirement),
+				expectedRequirementRevisionExpression(requirement),
 			),
 		)
 	}
@@ -69,16 +68,26 @@ func expectedBundleRevision(_ string, requirements []ocp.Requirement) string {
 	return fmt.Sprintf(`$"%s"`, strings.Join(parts, ","))
 }
 
-func expectedRequirementRevisionField(requirement ocp.Requirement) string {
-	if requirement.Revision_hash {
-		return "sql.hash"
+func expectedRequirementRevisionExpression(requirement ocp.Requirement) string {
+	if requirement.RevisionHash && requirement.RevisionCommit {
+		return fmt.Sprintf(
+			`{object.get(object.get(object.get(input.sources, "%s", {}), "git", {}), "commit", "")}-{object.get(object.get(object.get(input.sources, "%s", {}), "sql", {}), "hash", "")}`,
+			requirement.Source,
+			requirement.Source,
+		)
 	}
 
-	if requirement.Revision_commit {
-		return "git"
+	if requirement.RevisionHash {
+		return fmt.Sprintf(
+			`{object.get(object.get(object.get(input.sources, "%s", {}), "sql", {}), "hash", "")}`,
+			requirement.Source,
+		)
 	}
 
-	return "git"
+	return fmt.Sprintf(
+		`{object.get(object.get(object.get(input.sources, "%s", {}), "git", {}), "commit", "")}`,
+		requirement.Source,
+	)
 }
 
 var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"), func() {

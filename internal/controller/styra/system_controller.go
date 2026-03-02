@@ -400,7 +400,7 @@ func (r *SystemReconciler) ocpReconcile(
 			}
 		}
 
-		requirements = append(requirements, ocp.NewRequirement(datasource.Path))
+		requirements = append(requirements, ocp.NewRequirement(datasource.Path, "data"))
 	}
 	system.SetCondition(v1beta1.ConditionTypeRequirementsUpdated, metav1.ConditionTrue)
 
@@ -416,7 +416,7 @@ func (r *SystemReconciler) ocpReconcile(
 			WithEvent(v1beta1.EventErrorUpdateSource).
 			WithSystemCondition(v1beta1.ConditionTypeSystemSourceUpdated)
 	}
-	requirements = append(requirements, ocp.NewRequirement(uniqueName))
+	requirements = append(requirements, ocp.NewRequirement(uniqueName, "git"))
 	system.SetCondition(v1beta1.ConditionTypeSystemSourceUpdated, metav1.ConditionTrue)
 
 	reconcileSystemBundleStart := time.Now()
@@ -798,7 +798,7 @@ func (r *SystemReconciler) reconcileS3Credentials(
 
 	return s3Credentials, ctrl.Result{}, nil
 }
-	
+
 func (r *SystemReconciler) reconcileSystemBundle(
 	ctx context.Context,
 	system *v1beta1.System,
@@ -841,17 +841,12 @@ func bundleRevision(system *v1beta1.System, requirements []ocp.Requirement) stri
 	}
 
 	parts := make([]string, 0, len(requirements)+1)
-	systemRequirement := requirements[len(requirements)-1]
-	parts = append(parts,
-		fmt.Sprintf(`git:{input.sources["%s"].%s}`, systemRequirement.Source, requirementRevisionField(systemRequirement)),
-	)
 
-	for _, requirement := range requirements[:len(requirements)-1] {
+	for _, requirement := range requirements {
 		parts = append(parts,
-			fmt.Sprintf(`%s:{input.sources["%s"].%s}`,
+			fmt.Sprintf(`%s:%s`,
 				requirement.Source,
-				requirement.Source,
-				requirementRevisionField(requirement),
+				requirementRevisionExpression(requirement),
 			),
 		)
 	}
@@ -859,16 +854,26 @@ func bundleRevision(system *v1beta1.System, requirements []ocp.Requirement) stri
 	return fmt.Sprintf(`$"%s"`, strings.Join(parts, ","))
 }
 
-func requirementRevisionField(requirement ocp.Requirement) string {
-	if requirement.Revision_hash {
-		return "sql.hash"
+func requirementRevisionExpression(requirement ocp.Requirement) string {
+	if requirement.RevisionHash && requirement.RevisionCommit {
+		return fmt.Sprintf(
+			`{input.sources["%s"].git}-{input.sources["%s"].sql}`,
+			requirement.Source,
+			requirement.Source,
+		)
 	}
 
-	if requirement.Revision_commit {
-		return "git"
+	if requirement.RevisionHash {
+		return fmt.Sprintf(
+			`{input.sources["%s"].sql}`,
+			requirement.Source,
+		)
 	}
 
-	return "git"
+	return fmt.Sprintf(
+		`{input.sources["%s"].git}`,
+		requirement.Source,
+	)
 }
 
 func (r *SystemReconciler) reconcileSystemSource(
@@ -2267,7 +2272,7 @@ func (r *SystemReconciler) CreateDefaultRequirements(ctx context.Context, log lo
 	if r.Config.EnableOPAControlPlaneReconciliation || r.Config.EnableOPAControlPlaneReconciliationTestData {
 		log.Info("Creating ocp default requirements")
 		for _, defaultRequirement := range r.Config.OPAControlPlaneConfig.DefaultRequirements {
-			_, err := r.createSourceIfNotExists(ctx, log, v1beta1.Datasource{Path: defaultRequirement})
+			_, err := r.createSourceIfNotExists(ctx, log, v1beta1.Datasource{Path: defaultRequirement.Name})
 			if err != nil {
 				return err
 			}
