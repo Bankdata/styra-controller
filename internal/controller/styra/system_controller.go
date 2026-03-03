@@ -851,6 +851,7 @@ func (r *SystemReconciler) reconcileSystemSource(
 	gitConfig := &ocp.GitConfig{
 		Repo:          system.Spec.SourceControl.Origin.URL,
 		IncludedFiles: []string{"*.rego"},
+		ExcludedFiles: []string{"*_test.rego"},
 	}
 	if system.Spec.SourceControl.Origin.Commit != "" {
 		gitConfig.Commit = system.Spec.SourceControl.Origin.Commit

@@ -2600,6 +2600,7 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 				Path:          "policy",
 				CredentialID:  expectedGitCredentialsID,
 				IncludedFiles: []string{"*.rego"},
+				ExcludedFiles: []string{"*_test.rego"},
 			},
 		}).Return(&ocp.PutSourceResponse{
 			StatusCode: http.StatusOK,
@@ -2658,6 +2659,7 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 				Path:          "policy",
 				CredentialID:  expectedGitCredentialsID,
 				IncludedFiles: []string{"*.rego"},
+				ExcludedFiles: []string{"*_test.rego"},
 			},
 		}).Return(&ocp.PutSourceResponse{
 			StatusCode: http.StatusOK,
@@ -2710,6 +2712,7 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 				Path:          "policy",
 				CredentialID:  expectedGitCredentialsID,
 				IncludedFiles: []string{"*.rego"},
+				ExcludedFiles: []string{"*_test.rego"},
 			},
 		}).Return(&ocp.PutSourceResponse{
 			StatusCode: http.StatusOK,
