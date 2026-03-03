@@ -22,6 +22,7 @@ import (
 
 	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
 	styrav1beta1 "github.com/bankdata/styra-controller/api/styra/v1beta1"
+	"github.com/bankdata/styra-controller/pkg/ocp"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
@@ -130,4 +131,19 @@ var _ = ginkgo.DescribeTable("isURLValid",
 	ginkgo.Entry("invalid url", "www.google.com", false),
 	ginkgo.Entry("invalid url", "google.com", false),
 	ginkgo.Entry("invalid url", "google", false),
+)
+
+var _ = ginkgo.DescribeTable("requirementRevisionExpression",
+	func(requirement ocp.Requirement, expected string) {
+		gomega.Ω(requirementRevisionExpression(requirement)).To(gomega.Equal(expected))
+	},
+	ginkgo.Entry("git revision", ocp.Requirement{Source: "git", RevisionCommit: true},
+		`{object.get(object.get(object.get(input.sources, "git", {}), "git", {}), "commit", "")}`,
+	),
+	ginkgo.Entry("data revision", ocp.Requirement{Source: "data", RevisionHash: true},
+		`{object.get(object.get(object.get(input.sources, "data", {}), "sql", {}), "hash", object.get(object.get(object.get(input.sources, "data", {}), "data", {}), "hash", ""))}`,
+	),
+	ginkgo.Entry("git and data revision", ocp.Requirement{Source: "policy", RevisionCommit: true, RevisionHash: true},
+		`{object.get(object.get(object.get(input.sources, "policy", {}), "git", {}), "commit", "")}-{object.get(object.get(object.get(input.sources, "policy", {}), "sql", {}), "hash", object.get(object.get(object.get(input.sources, "policy", {}), "data", {}), "hash", ""))}`,
+	),
 )

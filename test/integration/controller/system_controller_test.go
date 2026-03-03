@@ -71,7 +71,8 @@ func expectedBundleRevision(_ string, requirements []ocp.Requirement) string {
 func expectedRequirementRevisionExpression(requirement ocp.Requirement) string {
 	if requirement.RevisionHash && requirement.RevisionCommit {
 		return fmt.Sprintf(
-			`{object.get(object.get(object.get(input.sources, "%s", {}), "git", {}), "commit", "")}-{object.get(object.get(object.get(input.sources, "%s", {}), "sql", {}), "hash", "")}`,
+			`{object.get(object.get(object.get(input.sources, "%s", {}), "git", {}), "commit", "")}-{object.get(object.get(object.get(input.sources, "%s", {}), "sql", {}), "hash", object.get(object.get(object.get(input.sources, "%s", {}), "data", {}), "hash", ""))}`,
+			requirement.Source,
 			requirement.Source,
 			requirement.Source,
 		)
@@ -79,7 +80,8 @@ func expectedRequirementRevisionExpression(requirement ocp.Requirement) string {
 
 	if requirement.RevisionHash {
 		return fmt.Sprintf(
-			`{object.get(object.get(object.get(input.sources, "%s", {}), "sql", {}), "hash", "")}`,
+			`{object.get(object.get(object.get(input.sources, "%s", {}), "sql", {}), "hash", object.get(object.get(object.get(input.sources, "%s", {}), "data", {}), "hash", ""))}`,
+			requirement.Source,
 			requirement.Source,
 		)
 	}
