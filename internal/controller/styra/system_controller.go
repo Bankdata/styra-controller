@@ -857,7 +857,7 @@ func bundleRevision(system *v1beta1.System, requirements []ocp.Requirement) stri
 func requirementRevisionExpression(requirement ocp.Requirement) string {
 	if requirement.RevisionHash && requirement.RevisionCommit {
 		return fmt.Sprintf(
-			`{input.sources[\"%s\"].git.commit}-{input.sources[\"%s\"].sql.hash}`,
+			"commit:{input.sources[\"%s\"].git.commit}-data:{input.sources[\"%s\"].sql.hash}",
 			requirement.Source,
 			requirement.Source,
 		)
@@ -865,13 +865,13 @@ func requirementRevisionExpression(requirement ocp.Requirement) string {
 
 	if requirement.RevisionHash {
 		return fmt.Sprintf(
-			`{input.sources[\"%s\"].sql.hash}`,
+			"data:{input.sources[\"%s\"].sql.hash}",
 			requirement.Source,
 		)
 	}
 
 	return fmt.Sprintf(
-		`{input.sources[\"%s\"].git.commit}`,
+		"commit:{input.sources[\"%s\"].git.commit}",
 		requirement.Source,
 	)
 }
