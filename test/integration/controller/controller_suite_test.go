@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
+	configv2alpha3 "github.com/bankdata/styra-controller/api/config/v2alpha3"
 	styrav1alpha1 "github.com/bankdata/styra-controller/api/styra/v1alpha1"
 	styrav1beta1 "github.com/bankdata/styra-controller/api/styra/v1beta1"
 	styractrls "github.com/bankdata/styra-controller/internal/controller/styra"
@@ -128,9 +128,9 @@ var _ = ginkgo.BeforeSuite(func() {
 		S3:            s3ClientMock,
 		WebhookClient: webhookMock,
 		Recorder:      k8sManager.GetEventRecorderFor("system-controller"),
-		Config: &configv2alpha2.ProjectConfig{
+		Config: &configv2alpha3.ProjectConfig{
 			SystemUserRoles: []string{string(styra.RoleSystemViewer)},
-			SSO: &configv2alpha2.SSOConfig{
+			SSO: &configv2alpha3.SSOConfig{
 				IdentityProvider: "AzureAD Bankdata",
 				JWTGroupsClaim:   "groups",
 			},
@@ -139,33 +139,33 @@ var _ = ginkgo.BeforeSuite(func() {
 			EnableDeltaBundlesDefault:           ptr.Bool(false),
 			EnableStyraReconciliation:           true,
 			EnableOPAControlPlaneReconciliation: true,
-			OPAControlPlaneConfig: &configv2alpha2.OPAControlPlaneConfig{
+			OPAControlPlaneConfig: &configv2alpha3.OPAControlPlaneConfig{
 				Address: "ocp-url",
 				Token:   "ocp-token",
-				GitCredentials: []*configv2alpha2.GitCredentials{&configv2alpha2.GitCredentials{
+				GitCredentials: []*configv2alpha3.GitCredentials{&configv2alpha3.GitCredentials{
 					ID:         "github-credentials",
 					RepoPrefix: "https://github",
 				}},
 				DefaultRequirements: []string{"library1"},
-				BundleObjectStorage: &configv2alpha2.BundleObjectStorage{
-					S3: &configv2alpha2.S3ObjectStorage{
+				BundleObjectStorage: &configv2alpha3.BundleObjectStorage{
+					S3: &configv2alpha3.S3ObjectStorage{
 						Bucket:              "test-bucket",
 						Region:              "eu-west-1",
 						URL:                 "s3-url",
 						OCPConfigSecretName: "s3-credentials",
 					},
 				},
-				DecisionAPIConfig: &configv2alpha2.DecisionAPIConfig{
+				DecisionAPIConfig: &configv2alpha3.DecisionAPIConfig{
 					ServiceURL: "log-api-url",
-					Reporting: configv2alpha2.DecisionLogReporting{
+					Reporting: configv2alpha3.DecisionLogReporting{
 						MaxDelaySeconds:      60,
 						MinDelaySeconds:      5,
 						UploadSizeLimitBytes: 1024,
 					},
 				},
 			},
-			UserCredentialHandler: &configv2alpha2.UserCredentialHandler{
-				S3: &configv2alpha2.S3Handler{
+			UserCredentialHandler: &configv2alpha3.UserCredentialHandler{
+				S3: &configv2alpha3.S3Handler{
 					Bucket:          "test-bucket",
 					Region:          "eu-west-1",
 					URL:             "s3-url",
@@ -173,8 +173,8 @@ var _ = ginkgo.BeforeSuite(func() {
 					SecretAccessKey: "secret-access-key",
 				},
 			},
-			OPA: configv2alpha2.OPAConfig{
-				BundleServer: &configv2alpha2.OPABundleServer{
+			OPA: configv2alpha3.OPAConfig{
+				BundleServer: &configv2alpha3.OPABundleServer{
 					URL:  "https://s3-url2",
 					Path: "/test-bucket",
 				},
@@ -210,13 +210,13 @@ var _ = ginkgo.BeforeSuite(func() {
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	libraryReconciler := &styractrls.LibraryReconciler{
-		Config: &configv2alpha2.ProjectConfig{
-			SSO: &configv2alpha2.SSOConfig{
+		Config: &configv2alpha3.ProjectConfig{
+			SSO: &configv2alpha3.SSOConfig{
 				IdentityProvider: "AzureAD Bankdata",
 				JWTGroupsClaim:   "groups",
 			},
 			DatasourceIgnorePatterns: []string{"^.*/ignore$"},
-			GitCredentials: []*configv2alpha2.GitCredential{
+			GitCredentials: []*configv2alpha3.GitCredential{
 				{User: "test-user", Password: "test-secret"},
 			},
 			EnableStyraReconciliation: true,
@@ -257,18 +257,18 @@ var _ = ginkgo.BeforeSuite(func() {
 		OCP:           ocpClientMock,
 		WebhookClient: webhookMock,
 		Recorder:      k8sManagerPodRestart.GetEventRecorderFor("system-controller"),
-		Config: &configv2alpha2.ProjectConfig{
+		Config: &configv2alpha3.ProjectConfig{
 			ControllerClass: "styra-controller-pod-restart",
 			SystemUserRoles: []string{string(styra.RoleSystemViewer)},
-			SSO: &configv2alpha2.SSOConfig{
+			SSO: &configv2alpha3.SSOConfig{
 				IdentityProvider: "AzureAD Bankdata",
 				JWTGroupsClaim:   "groups",
 			},
 			DatasourceIgnorePatterns:  []string{"^.*/ignore$"},
 			ReadOnly:                  true,
 			EnableDeltaBundlesDefault: ptr.Bool(false),
-			PodRestart: &configv2alpha2.PodRestartConfig{
-				SLPRestart: &configv2alpha2.SLPRestartConfig{
+			PodRestart: &configv2alpha3.PodRestartConfig{
+				SLPRestart: &configv2alpha3.SLPRestartConfig{
 					Enabled:        true,
 					DeploymentType: "statefulset",
 				},

@@ -48,7 +48,7 @@ import (
 	ctrlpred "sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
+	configv2alpha3 "github.com/bankdata/styra-controller/api/config/v2alpha3"
 	"github.com/bankdata/styra-controller/api/styra/v1beta1"
 	"github.com/bankdata/styra-controller/internal/config"
 	ctrlerr "github.com/bankdata/styra-controller/internal/errors"
@@ -83,7 +83,7 @@ type SystemReconciler struct {
 	WebhookClient webhook.Client
 	Recorder      record.EventRecorder
 	Metrics       *SystemReconcilerMetrics
-	Config        *configv2alpha2.ProjectConfig
+	Config        *configv2alpha3.ProjectConfig
 }
 
 //+kubebuilder:rbac:groups=styra.bankdata.dk,resources=systems,verbs=get;list;watch;create;update;patch;delete
@@ -1648,7 +1648,7 @@ func (r *SystemReconciler) reconcileSubjects(
 
 func createRolebindingSubjects(
 	subjects []v1beta1.Subject,
-	sso *configv2alpha2.SSOConfig,
+	sso *configv2alpha3.SSOConfig,
 ) []*styra.Subject {
 	styraSubjectsByUserID := map[string]struct{}{}
 	styraSubjectsByClaimValue := map[string]struct{}{}

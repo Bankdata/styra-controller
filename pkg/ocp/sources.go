@@ -23,7 +23,7 @@ import (
 	"io"
 	"net/http"
 
-	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
+	configv2alpha3 "github.com/bankdata/styra-controller/api/config/v2alpha3"
 	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/pkg/errors"
 )
@@ -137,7 +137,7 @@ func NewRequirement(source string, sourceType string) Requirement {
 }
 
 // ToRequirements converts the default requirements to a list of bundle Requirements.
-func ToRequirements(sources []configv2alpha2.DefaultRequirement) []Requirement {
+func ToRequirements(sources []configv2alpha3.DefaultRequirement) []Requirement {
 	requirements := make([]Requirement, len(sources))
 	for i, source := range sources {
 		requirement := NewRequirement(source.Name, "")

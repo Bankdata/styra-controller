@@ -20,7 +20,7 @@ import (
 	ginkgo "github.com/onsi/ginkgo/v2"
 	gomega "github.com/onsi/gomega"
 
-	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
+	configv2alpha3 "github.com/bankdata/styra-controller/api/config/v2alpha3"
 	styrav1beta1 "github.com/bankdata/styra-controller/api/styra/v1beta1"
 	"github.com/bankdata/styra-controller/pkg/ocp"
 	"github.com/bankdata/styra-controller/pkg/styra"
@@ -28,7 +28,7 @@ import (
 
 var _ = ginkgo.DescribeTable("createRolebindingSubjects",
 	func(subjects []styrav1beta1.Subject, expectedSubject []*styra.Subject) {
-		gomega.Ω(createRolebindingSubjects(subjects, &configv2alpha2.SSOConfig{
+		gomega.Ω(createRolebindingSubjects(subjects, &configv2alpha3.SSOConfig{
 			IdentityProvider: "BDAD",
 			JWTGroupsClaim:   "groups",
 		})).To(gomega.Equal(expectedSubject))

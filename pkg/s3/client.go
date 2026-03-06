@@ -4,11 +4,11 @@ package s3
 import (
 	"strings"
 
-	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
+	configv2alpha3 "github.com/bankdata/styra-controller/api/config/v2alpha3"
 )
 
 // NewClient creates a new S3Client for MinIO
-func NewClient(s3Handler configv2alpha2.S3Handler) (Client, error) {
+func NewClient(s3Handler configv2alpha3.S3Handler) (Client, error) {
 	config := Config{
 		AccessKeyID:     s3Handler.AccessKeyID,
 		SecretAccessKey: s3Handler.SecretAccessKey,
