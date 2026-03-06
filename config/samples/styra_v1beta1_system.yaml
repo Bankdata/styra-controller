@@ -8,6 +8,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: styra-controller
     styra-controller/control-plane: opa-control-plane
+    styra-controller/class: dev
   name: system-sample
 spec:
   decisionMappings:
@@ -19,6 +20,13 @@ spec:
       reason:
         path: result.reasons
   datasources:
-    - path: "test"
-  # TODO(user): Add fields here
+    - path: "example"
+  sourceControl:
+    origin:
+      path: policy
+      reference: refs/heads/master
+      url: 'https://github.com/something/some-repo.git'
+  
+
+
   

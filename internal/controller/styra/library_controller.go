@@ -41,7 +41,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
+	configv2alpha3 "github.com/bankdata/styra-controller/api/config/v2alpha3"
 	styrav1alpha1 "github.com/bankdata/styra-controller/api/styra/v1alpha1"
 	"github.com/bankdata/styra-controller/pkg/ocp"
 )
@@ -52,7 +52,7 @@ type LibraryReconciler struct {
 	Scheme        *runtime.Scheme
 	Styra         styra.ClientInterface
 	OCP           ocp.ClientInterface
-	Config        *configv2alpha2.ProjectConfig
+	Config        *configv2alpha3.ProjectConfig
 	WebhookClient webhook.Client
 }
 
@@ -543,7 +543,7 @@ func (r *LibraryReconciler) updateRoleBindingSubjects(
 
 func createLibraryRolebindingSubjects(
 	subjects []styrav1alpha1.LibrarySubject,
-	sso *configv2alpha2.SSOConfig,
+	sso *configv2alpha3.SSOConfig,
 ) []*styra.Subject {
 	styraSubjectsByUserID := map[string]struct{}{}
 	styraSubjectsByClaimValue := map[string]struct{}{}

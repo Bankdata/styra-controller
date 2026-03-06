@@ -48,7 +48,7 @@ import (
 	ctrlpred "sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
+	configv2alpha3 "github.com/bankdata/styra-controller/api/config/v2alpha3"
 	"github.com/bankdata/styra-controller/api/styra/v1beta1"
 	"github.com/bankdata/styra-controller/internal/config"
 	ctrlerr "github.com/bankdata/styra-controller/internal/errors"
@@ -83,7 +83,7 @@ type SystemReconciler struct {
 	WebhookClient webhook.Client
 	Recorder      record.EventRecorder
 	Metrics       *SystemReconcilerMetrics
-	Config        *configv2alpha2.ProjectConfig
+	Config        *configv2alpha3.ProjectConfig
 }
 
 //+kubebuilder:rbac:groups=styra.bankdata.dk,resources=systems,verbs=get;list;watch;create;update;patch;delete
@@ -400,7 +400,7 @@ func (r *SystemReconciler) ocpReconcile(
 			}
 		}
 
-		requirements = append(requirements, ocp.NewRequirement(datasource.Path))
+		requirements = append(requirements, ocp.NewRequirement(datasource.Path, ocp.RequirementTypeData))
 	}
 	system.SetCondition(v1beta1.ConditionTypeRequirementsUpdated, metav1.ConditionTrue)
 
@@ -416,11 +416,11 @@ func (r *SystemReconciler) ocpReconcile(
 			WithEvent(v1beta1.EventErrorUpdateSource).
 			WithSystemCondition(v1beta1.ConditionTypeSystemSourceUpdated)
 	}
-	requirements = append(requirements, ocp.NewRequirement(uniqueName))
+	requirements = append(requirements, ocp.NewRequirement(uniqueName, ocp.RequirementTypeGit))
 	system.SetCondition(v1beta1.ConditionTypeSystemSourceUpdated, metav1.ConditionTrue)
 
 	reconcileSystemBundleStart := time.Now()
-	result, err = r.reconcileSystemBundle(ctx, uniqueName, requirements)
+	result, err = r.reconcileSystemBundle(ctx, system, uniqueName, requirements)
 	r.Metrics.ReconcileSegmentTime.
 		WithLabelValues("reconcileSystemBundleOcp").
 		Observe(time.Since(reconcileSystemBundleStart).Seconds())
@@ -801,6 +801,7 @@ func (r *SystemReconciler) reconcileS3Credentials(
 
 func (r *SystemReconciler) reconcileSystemBundle(
 	ctx context.Context,
+	system *v1beta1.System,
 	uniqueName string,
 	requirements []ocp.Requirement) (ctrl.Result, error) {
 	if r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3 == nil {
@@ -821,6 +822,7 @@ func (r *SystemReconciler) reconcileSystemBundle(
 		Name:          uniqueName,
 		ObjectStorage: objectStorage,
 		Requirements:  requirements,
+		Revision:      bundleRevision(system, requirements),
 	}
 	err := r.OCP.PutBundle(ctx, bundle)
 
@@ -828,6 +830,54 @@ func (r *SystemReconciler) reconcileSystemBundle(
 		return ctrl.Result{}, ctrlerr.Wrap(err, "ocpReconcile: could not create or update bundle in OCP")
 	}
 	return ctrl.Result{}, nil
+}
+
+func bundleRevision(system *v1beta1.System, requirements []ocp.Requirement) string {
+	if system.Spec.SourceControl == nil {
+		return ""
+	}
+	if len(requirements) == 0 {
+		return ""
+	}
+
+	parts := make([]string, 0, len(requirements)+1)
+
+	for _, requirement := range requirements {
+		parts = append(parts,
+			fmt.Sprintf(`%s:%s`,
+				requirement.Source,
+				requirementRevisionExpression(requirement),
+			),
+		)
+	}
+
+	return fmt.Sprintf(`$"%s"`, strings.Join(parts, ","))
+}
+
+func requirementRevisionExpression(requirement ocp.Requirement) string {
+	if requirement.RequirementType == ocp.RequirementTypeGitAndData {
+		return fmt.Sprintf(
+			"commit:{input.sources[\"%s\"].git.commit}-data:{input.sources[\"%s\"].sql.hash}",
+			requirement.Source,
+			requirement.Source,
+		)
+	}
+
+	if requirement.RequirementType == ocp.RequirementTypeData {
+		return fmt.Sprintf(
+			"data:{input.sources[\"%s\"].sql.hash}",
+			requirement.Source,
+		)
+	}
+
+	if requirement.RequirementType == ocp.RequirementTypeGit {
+		return fmt.Sprintf(
+			"commit:{input.sources[\"%s\"].git.commit}",
+			requirement.Source,
+		)
+	}
+
+	return ""
 }
 
 func (r *SystemReconciler) reconcileSystemSource(
@@ -1603,7 +1653,7 @@ func (r *SystemReconciler) reconcileSubjects(
 
 func createRolebindingSubjects(
 	subjects []v1beta1.Subject,
-	sso *configv2alpha2.SSOConfig,
+	sso *configv2alpha3.SSOConfig,
 ) []*styra.Subject {
 	styraSubjectsByUserID := map[string]struct{}{}
 	styraSubjectsByClaimValue := map[string]struct{}{}
@@ -2227,7 +2277,7 @@ func (r *SystemReconciler) CreateDefaultRequirements(ctx context.Context, log lo
 	if r.Config.EnableOPAControlPlaneReconciliation || r.Config.EnableOPAControlPlaneReconciliationTestData {
 		log.Info("Creating ocp default requirements")
 		for _, defaultRequirement := range r.Config.OPAControlPlaneConfig.DefaultRequirements {
-			_, err := r.createSourceIfNotExists(ctx, log, v1beta1.Datasource{Path: defaultRequirement})
+			_, err := r.createSourceIfNotExists(ctx, log, v1beta1.Datasource{Path: defaultRequirement.Name})
 			if err != nil {
 				return err
 			}

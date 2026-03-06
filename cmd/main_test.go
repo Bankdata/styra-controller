@@ -19,7 +19,7 @@ package main
 import (
 	"encoding/json"
 
-	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
+	configv2alpha3 "github.com/bankdata/styra-controller/api/config/v2alpha3"
 	"github.com/bankdata/styra-controller/pkg/styra"
 	styraclientmock "github.com/bankdata/styra-controller/pkg/styra/mocks"
 	ginkgo "github.com/onsi/ginkgo/v2"
@@ -41,11 +41,11 @@ var _ = ginkgo.Describe("ConfigureDecisionsExporter", func() {
 	// Test cases for ConfigureExporter for Decisions
 	ginkgo.DescribeTable("ConfigureDecisionsExporter", func(test test) {
 		// Arrange
-		ctrlConfig := &configv2alpha2.ProjectConfig{
-			DecisionsExporter: &configv2alpha2.ExporterConfig{
+		ctrlConfig := &configv2alpha3.ProjectConfig{
+			DecisionsExporter: &configv2alpha3.ExporterConfig{
 				Enabled: test.enabled,
-				Kafka: &configv2alpha2.KafkaConfig{
-					TLS: &configv2alpha2.TLSConfig{
+				Kafka: &configv2alpha3.KafkaConfig{
+					TLS: &configv2alpha3.TLSConfig{
 						ClientCertificateName: "test-cert-name",
 						ClientCertificate:     "test-cert",
 						ClientKey:             "test-key",
@@ -168,11 +168,11 @@ var _ = ginkgo.Describe("ConfigureActivityExporter", func() {
 	// Test cases for ConfigureExporter for Activity
 	ginkgo.DescribeTable("ConfigureActivityExporter", func(test test) {
 		// Arrange
-		ctrlConfig := &configv2alpha2.ProjectConfig{
-			ActivityExporter: &configv2alpha2.ExporterConfig{
+		ctrlConfig := &configv2alpha3.ProjectConfig{
+			ActivityExporter: &configv2alpha3.ExporterConfig{
 				Enabled: test.enabled,
-				Kafka: &configv2alpha2.KafkaConfig{
-					TLS: &configv2alpha2.TLSConfig{
+				Kafka: &configv2alpha3.KafkaConfig{
+					TLS: &configv2alpha3.TLSConfig{
 						ClientCertificateName: "test-cert-name",
 						ClientCertificate:     "test-cert",
 						ClientKey:             "test-key",
