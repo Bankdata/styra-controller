@@ -646,7 +646,6 @@ func (c *ProjectConfig) ToV2Alpha3() *v2alpha3.ProjectConfig {
 			[]v2alpha3.DefaultRequirement,
 			len(c.OPAControlPlaneConfig.DefaultRequirements),
 		)
-
 		for i, requirement := range c.OPAControlPlaneConfig.DefaultRequirements {
 			v2cfg3.OPAControlPlaneConfig.DefaultRequirements[i] = v2alpha3.DefaultRequirement{
 				Name:       requirement,
@@ -678,8 +677,6 @@ func (c *ProjectConfig) ToV2Alpha3() *v2alpha3.ProjectConfig {
 			},
 		}
 	}
-
-	v2cfg3.DecisionsExporter = &v2alpha3.ExporterConfig{}
 
 	return v2cfg3
 }
