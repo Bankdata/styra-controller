@@ -14,13 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v2alpha2
+package v2alpha3
 
 import (
 	"sort"
 	"strings"
 
-	"github.com/bankdata/styra-controller/api/config/v2alpha3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -217,7 +216,7 @@ type OPAControlPlaneConfig struct {
 	// DefaultRequirements is a list of requirements that will be added to all
 	// systems/bundles created by the controller in the OCP, in addition to any requirements/datasources
 	// specified on the System resource.
-	DefaultRequirements []string `json:"defaultRequirements,omitempty"`
+	DefaultRequirements []DefaultRequirement `json:"defaultRequirements,omitempty"`
 
 	// SystemDatasourceChanged is the URL to be called when a system datasource has changed.
 	SystemDatasourceChanged string `json:"systemDatasourceChanged,omitempty"`
@@ -226,6 +225,12 @@ type OPAControlPlaneConfig struct {
 
 	// DecisionAPIConfig contains configuration for which api OPAs should use to and how
 	DecisionAPIConfig *DecisionAPIConfig `json:"decisionAPIConfig,omitempty"`
+}
+
+type DefaultRequirement struct {
+	Name       string `json:"name"`
+	GitSource  bool   `json:"gitSource,omitempty"`
+	DataSource bool   `json:"dataSource,omitempty"`
 }
 
 // UserCredentialHandler defines the structure of possible user credential handlers
@@ -448,31 +453,6 @@ func (c *ProjectConfig) OPARestartEnabled() bool {
 		return false
 	}
 	return c.PodRestart.OPARestart.Enabled
-}
-
-// ToV2Alpha2 returns this ProjectConfig converted to a v2alpha2.ProjectConfig
-func (c *ProjectConfig) ToV2Alpha2() *v2alpha3.ProjectConfig {
-	v2cfg := &v2alpha3.ProjectConfig{
-		ControllerClass:           c.ControllerClass,
-		DeletionProtectionDefault: c.DeletionProtectionDefault,
-		DisableCRDWebhooks:        c.DisableCRDWebhooks,
-		EnableMigrations:          c.EnableMigrations,
-		LogLevel:                  c.LogLevel,
-		Styra: v2alpha3.StyraConfig{
-			Token:   c.Styra.Token,
-			Address: c.Styra.Address,
-		},
-		SystemPrefix:    c.SystemPrefix,
-		SystemSuffix:    c.SystemSuffix,
-		SystemUserRoles: c.SystemUserRoles,
-	}
-
-	for _, field in {c.OPAControlPlaneConfig.DefaultRequirements{
-		
-	}
-	v2cfg.OPAControlPlaneConfig.DefaultRequirements = 
-
-	return v2cfg
 }
 
 func init() {

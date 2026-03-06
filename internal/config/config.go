@@ -22,6 +22,7 @@ import (
 	"regexp"
 
 	"github.com/bankdata/styra-controller/api/config/v2alpha2"
+	"github.com/bankdata/styra-controller/api/config/v2alpha3"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -105,6 +106,12 @@ func deserialize(data []byte, scheme *runtime.Scheme) (*v2alpha2.ProjectConfig, 
 	cfg := &v2alpha2.ProjectConfig{}
 
 	switch gvk.Version {
+	case v2alpha3.GroupVersion.Version:
+		var v2cfg v2alpha3.ProjectConfig
+		if _, _, err := decoder.Decode(data, nil, &v2cfg); err != nil {
+			return nil, errors.Wrap(err, "could not decode into kind")
+		}
+		cfg = v2cfg.ToV2Alpha3()
 	case v2alpha2.GroupVersion.Version:
 		if _, _, err := decoder.Decode(data, nil, cfg); err != nil {
 			return nil, errors.Wrap(err, "could not decode into kind")
@@ -115,6 +122,48 @@ func deserialize(data []byte, scheme *runtime.Scheme) (*v2alpha2.ProjectConfig, 
 
 	return cfg, nil
 }
+	
+/*func deserialize(data []byte, scheme *runtime.Scheme) (*v2alpha2.ProjectConfig, error) {
+	decoder := serializer.NewCodecFactory(scheme).UniversalDeserializer()
+	_, gvk, err := decoder.Decode(data, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not decode config")
+	}
+
+	if gvk.Group != v2alpha2.GroupVersion.Group {
+		return nil, errors.New("unsupported api group")
+	}
+
+	if gvk.Kind != "ProjectConfig" {
+		return nil, errors.New("unsupported api kind")
+	}
+
+	cfg := &v2alpha2.ProjectConfig{}
+
+	switch gvk.Version {
+	case v2alpha2.GroupVersion.Version:
+		if _, _, err := decoder.Decode(data, nil, cfg); err != nil {
+			return nil, errors.Wrap(err, "could not decode into kind")
+		}
+	case v2alpha1.GroupVersion.Version:
+		var v2cfg v2alpha1.ProjectConfig
+		if _, _, err := decoder.Decode(data, nil, &v2cfg); err != nil {
+			return nil, errors.Wrap(err, "could not decode into kind")
+		}
+		cfg = v2cfg.ToV2Alpha2()
+	case v1.GroupVersion.Version:
+		var v1cfg v1.ProjectConfig
+		if _, _, err := decoder.Decode(data, nil, &v1cfg); err != nil {
+			return nil, errors.Wrap(err, "could not decode into kind")
+		}
+		cfg = v1cfg.ToV2Alpha1().ToV2Alpha2()
+	default:
+		return nil, errors.New("unsupported api version")
+	}
+
+	return cfg, nil
+}
+*/
 
 // MatchesIgnorePattern matches a specified ignore pattern, and excludes matches from being deleted
 func MatchesIgnorePattern(ignorePatterns []string, id string) (bool, error) {
