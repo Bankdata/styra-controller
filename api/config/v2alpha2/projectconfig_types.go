@@ -462,8 +462,9 @@ func (c *ProjectConfig) ToV2Alpha3() *v2alpha3.ProjectConfig {
 		DatasourceIgnorePatterns:  c.DatasourceIgnorePatterns,
 		LogLevel:                  c.LogLevel,
 		Styra: v2alpha3.StyraConfig{
-			Token:   c.Styra.Token,
-			Address: c.Styra.Address,
+			Token:           c.Styra.Token,
+			Address:         c.Styra.Address,
+			TokenSecretPath: c.Styra.TokenSecretPath,
 		},
 		SystemPrefix:                                c.SystemPrefix,
 		SystemSuffix:                                c.SystemSuffix,
