@@ -146,7 +146,12 @@ var _ = ginkgo.BeforeSuite(func() {
 					ID:         "github-credentials",
 					RepoPrefix: "https://github",
 				}},
-				DefaultRequirements: []string{"library1"},
+				DefaultRequirements: []configv2alpha3.DefaultRequirement{
+					{
+						Name:      "library1",
+						GitSource: true,
+					},
+				},
 				BundleObjectStorage: &configv2alpha3.BundleObjectStorage{
 					S3: &configv2alpha3.S3ObjectStorage{
 						Bucket:              "test-bucket",

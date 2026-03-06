@@ -110,15 +110,9 @@ type Secret struct {
 
 // Requirement represents a requirement for a bundle and a source.
 type Requirement struct {
-	Source         string         `json:"source,omitempty" yaml:"source,omitempty"`
-	Git            GitRequirement `json:"git,omitempty" yaml:"git,omitempty"`
-	RevisionHash   bool           `json:"revision_hash,omitempty" yaml:"revision_hash,omitempty"`
-	RevisionCommit bool           `json:"revision_commit,omitempty" yaml:"revision_commit,omitempty"`
-}
-
-// GitRequirement represents Git requirement.
-type GitRequirement struct {
-	Commit *string `json:"commit,omitempty" yaml:"commit,omitempty"`
+	Source         string `json:"source,omitempty" yaml:"source,omitempty"`
+	RevisionHash   bool   `json:"revision_hash,omitempty" yaml:"revision_hash,omitempty"`
+	RevisionCommit bool   `json:"revision_commit,omitempty" yaml:"revision_commit,omitempty"`
 }
 
 // NewRequirement creates a new Requirement for a bundle.
@@ -127,9 +121,10 @@ func NewRequirement(source string, sourceType string) Requirement {
 		Source: source,
 	}
 
-	if sourceType == "git" {
+	switch sourceType {
+	case "git":
 		requirement.RevisionCommit = true
-	} else if sourceType == "data" {
+	case "data":
 		requirement.RevisionHash = true
 	}
 

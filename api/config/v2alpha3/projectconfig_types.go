@@ -227,6 +227,7 @@ type OPAControlPlaneConfig struct {
 	DecisionAPIConfig *DecisionAPIConfig `json:"decisionAPIConfig,omitempty"`
 }
 
+// DefaultRequirement defines a requirement/source that is included in all bundles
 type DefaultRequirement struct {
 	Name       string `json:"name"`
 	GitSource  bool   `json:"gitSource,omitempty"`

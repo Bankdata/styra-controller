@@ -618,7 +618,10 @@ func (c *ProjectConfig) ToV2Alpha3() *v2alpha3.ProjectConfig {
 		}
 
 		if c.OPAControlPlaneConfig.GitCredentials != nil {
-			v2cfg3.OPAControlPlaneConfig.GitCredentials = make([]*v2alpha3.GitCredentials, len(c.OPAControlPlaneConfig.GitCredentials))
+			v2cfg3.OPAControlPlaneConfig.GitCredentials = make(
+				[]*v2alpha3.GitCredentials,
+				len(c.OPAControlPlaneConfig.GitCredentials),
+			)
 			for i, c := range c.OPAControlPlaneConfig.GitCredentials {
 				v2cfg3.OPAControlPlaneConfig.GitCredentials[i] = &v2alpha3.GitCredentials{
 					ID:         c.ID,
@@ -638,7 +641,10 @@ func (c *ProjectConfig) ToV2Alpha3() *v2alpha3.ProjectConfig {
 			}
 		}
 
-		v2cfg3.OPAControlPlaneConfig.DefaultRequirements = make([]v2alpha3.DefaultRequirement, len(c.OPAControlPlaneConfig.DefaultRequirements))
+		v2cfg3.OPAControlPlaneConfig.DefaultRequirements = make(
+			[]v2alpha3.DefaultRequirement,
+			len(c.OPAControlPlaneConfig.DefaultRequirements),
+		)
 
 		for i, requirement := range c.OPAControlPlaneConfig.DefaultRequirements {
 			v2cfg3.OPAControlPlaneConfig.DefaultRequirements[i] = v2alpha3.DefaultRequirement{

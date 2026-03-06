@@ -870,10 +870,14 @@ func requirementRevisionExpression(requirement ocp.Requirement) string {
 		)
 	}
 
-	return fmt.Sprintf(
-		"commit:{input.sources[\"%s\"].git.commit}",
-		requirement.Source,
-	)
+	if requirement.RevisionCommit {
+		return fmt.Sprintf(
+			"commit:{input.sources[\"%s\"].git.commit}",
+			requirement.Source,
+		)
+	}
+
+	return ""
 }
 
 func (r *SystemReconciler) reconcileSystemSource(

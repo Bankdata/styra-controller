@@ -67,7 +67,7 @@ func expectedBundleRevision(_ string, requirements []ocp.Requirement) string {
 func expectedRequirementRevisionExpression(requirement ocp.Requirement) string {
 	if requirement.RevisionHash && requirement.RevisionCommit {
 		return fmt.Sprintf(
-			`commit:{input.sources["%s"].git.commit}-data:{input.sources["%s"].sql.hash}`,
+			"commit:{input.sources[\"%s\"].git.commit}-data:{input.sources[\"%s\"].sql.hash}",
 			requirement.Source,
 			requirement.Source,
 		)
@@ -75,15 +75,19 @@ func expectedRequirementRevisionExpression(requirement ocp.Requirement) string {
 
 	if requirement.RevisionHash {
 		return fmt.Sprintf(
-			`data:{input.sources["%s"].sql.hash}`,
+			"data:{input.sources[\"%s\"].sql.hash}",
 			requirement.Source,
 		)
 	}
 
-	return fmt.Sprintf(
-		`commit:{input.sources["%s"].git.commit}`,
-		requirement.Source,
-	)
+	if requirement.RevisionCommit {
+		return fmt.Sprintf(
+			"commit:{input.sources[\"%s\"].git.commit}",
+			requirement.Source,
+		)
+	}
+
+	return ""
 }
 
 var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"), func() {
@@ -2661,24 +2665,36 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			},
 			Requirements: []ocp.Requirement{
 				{
-					Source: "library1",
+					Source:         "library1",
+					RevisionHash:   false,
+					RevisionCommit: true,
 				},
 				{
-					Source: "path-to-datasource",
+					Source:         "path-to-datasource",
+					RevisionHash:   true,
+					RevisionCommit: false,
 				},
 				{
-					Source: "default-ocp-system",
+					Source:         "default-ocp-system",
+					RevisionHash:   false,
+					RevisionCommit: true,
 				},
 			},
 			Revision: expectedBundleRevision("0123456789abcdef", []ocp.Requirement{
 				{
-					Source: "library1",
+					Source:         "library1",
+					RevisionHash:   false,
+					RevisionCommit: true,
 				},
 				{
-					Source: "path-to-datasource",
+					Source:         "path-to-datasource",
+					RevisionHash:   true,
+					RevisionCommit: false,
 				},
 				{
-					Source: "default-ocp-system",
+					Source:         "default-ocp-system",
+					RevisionHash:   false,
+					RevisionCommit: true,
 				},
 			}),
 		}).Return(nil).Once()
@@ -2730,24 +2746,36 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			},
 			Requirements: []ocp.Requirement{
 				{
-					Source: "library1",
+					Source:         "library1",
+					RevisionHash:   false,
+					RevisionCommit: true,
 				},
 				{
-					Source: "path-to-datasource",
+					Source:         "path-to-datasource",
+					RevisionHash:   true,
+					RevisionCommit: false,
 				},
 				{
-					Source: "default-ocp-system",
+					Source:         "default-ocp-system",
+					RevisionHash:   false,
+					RevisionCommit: true,
 				},
 			},
 			Revision: expectedBundleRevision("0123456789abcdef", []ocp.Requirement{
 				{
-					Source: "library1",
+					Source:         "library1",
+					RevisionHash:   false,
+					RevisionCommit: true,
 				},
 				{
-					Source: "path-to-datasource",
+					Source:         "path-to-datasource",
+					RevisionHash:   true,
+					RevisionCommit: false,
 				},
 				{
-					Source: "default-ocp-system",
+					Source:         "default-ocp-system",
+					RevisionHash:   false,
+					RevisionCommit: true,
 				},
 			}),
 		}).Return(nil).Once()
@@ -2793,24 +2821,36 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			},
 			Requirements: []ocp.Requirement{
 				{
-					Source: "library1",
+					Source:         "library1",
+					RevisionHash:   false,
+					RevisionCommit: true,
 				},
 				{
-					Source: "path-to-datasource",
+					Source:         "path-to-datasource",
+					RevisionHash:   true,
+					RevisionCommit: false,
 				},
 				{
-					Source: "default-ocp-system",
+					Source:         "default-ocp-system",
+					RevisionHash:   false,
+					RevisionCommit: true,
 				},
 			},
 			Revision: expectedBundleRevision("0123456789abcdef", []ocp.Requirement{
 				{
-					Source: "library1",
+					Source:         "library1",
+					RevisionHash:   false,
+					RevisionCommit: true,
 				},
 				{
-					Source: "path-to-datasource",
+					Source:         "path-to-datasource",
+					RevisionHash:   true,
+					RevisionCommit: false,
 				},
 				{
-					Source: "default-ocp-system",
+					Source:         "default-ocp-system",
+					RevisionHash:   false,
+					RevisionCommit: true,
 				},
 			}),
 		}).Return(nil).Once()
