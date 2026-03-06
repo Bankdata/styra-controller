@@ -400,7 +400,7 @@ func (r *SystemReconciler) ocpReconcile(
 			}
 		}
 
-		requirements = append(requirements, ocp.NewRequirement(datasource.Path, "data"))
+		requirements = append(requirements, ocp.NewRequirement(datasource.Path, ocp.RequirementTypeData))
 	}
 	system.SetCondition(v1beta1.ConditionTypeRequirementsUpdated, metav1.ConditionTrue)
 
@@ -416,7 +416,7 @@ func (r *SystemReconciler) ocpReconcile(
 			WithEvent(v1beta1.EventErrorUpdateSource).
 			WithSystemCondition(v1beta1.ConditionTypeSystemSourceUpdated)
 	}
-	requirements = append(requirements, ocp.NewRequirement(uniqueName, "git"))
+	requirements = append(requirements, ocp.NewRequirement(uniqueName, ocp.RequirementTypeGit))
 	system.SetCondition(v1beta1.ConditionTypeSystemSourceUpdated, metav1.ConditionTrue)
 
 	reconcileSystemBundleStart := time.Now()
@@ -855,7 +855,7 @@ func bundleRevision(system *v1beta1.System, requirements []ocp.Requirement) stri
 }
 
 func requirementRevisionExpression(requirement ocp.Requirement) string {
-	if requirement.RevisionHash && requirement.RevisionCommit {
+	if requirement.RequirementType == ocp.RequirementTypeGitAndData {
 		return fmt.Sprintf(
 			"commit:{input.sources[\"%s\"].git.commit}-data:{input.sources[\"%s\"].sql.hash}",
 			requirement.Source,
@@ -863,14 +863,14 @@ func requirementRevisionExpression(requirement ocp.Requirement) string {
 		)
 	}
 
-	if requirement.RevisionHash {
+	if requirement.RequirementType == ocp.RequirementTypeData {
 		return fmt.Sprintf(
 			"data:{input.sources[\"%s\"].sql.hash}",
 			requirement.Source,
 		)
 	}
 
-	if requirement.RevisionCommit {
+	if requirement.RequirementType == ocp.RequirementTypeGit {
 		return fmt.Sprintf(
 			"commit:{input.sources[\"%s\"].git.commit}",
 			requirement.Source,

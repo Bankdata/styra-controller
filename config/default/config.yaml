@@ -35,10 +35,8 @@ opaControlPlaneConfig:
       url: https://minio-host
       ocpConfigSecretName: minio # Name of secret in ocp config
   defaultRequirements:
-    - library1
-  defaultRequirementsWithRevision:
     - name: library2
-      gitSource: true
+      type: git
 
 # used by controller to create users and policies
 userCredentialHandler:

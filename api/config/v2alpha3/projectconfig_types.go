@@ -229,10 +229,26 @@ type OPAControlPlaneConfig struct {
 
 // DefaultRequirement defines a requirement/source that is included in all bundles
 type DefaultRequirement struct {
-	Name       string `json:"name"`
-	GitSource  bool   `json:"gitSource,omitempty"`
-	DataSource bool   `json:"dataSource,omitempty"`
+	Name            string          `json:"name"`
+	RequirementType RequirementType `json:"requirementType,omitempty"`
 }
+
+// RequirementType defines the different types of requirements
+type RequirementType string
+
+const (
+	// RequirementTypeGit means that the requirement is a git source
+	RequirementTypeGit RequirementType = "git"
+
+	// RequirementTypeData means that the requirement is a data source
+	RequirementTypeData RequirementType = "data"
+
+	// RequirementTypeGitAndData means that the requirement is both a git and a data source
+	RequirementTypeGitAndData RequirementType = "git_and_data"
+
+	// RequirementTypeUnknown means that the requirement type is unknown
+	RequirementTypeUnknown RequirementType = "unknown"
+)
 
 // UserCredentialHandler defines the structure of possible user credential handlers
 type UserCredentialHandler struct {

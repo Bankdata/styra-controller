@@ -648,9 +648,8 @@ func (c *ProjectConfig) ToV2Alpha3() *v2alpha3.ProjectConfig {
 		)
 		for i, requirement := range c.OPAControlPlaneConfig.DefaultRequirements {
 			v2cfg3.OPAControlPlaneConfig.DefaultRequirements[i] = v2alpha3.DefaultRequirement{
-				Name:       requirement,
-				GitSource:  false,
-				DataSource: false,
+				Name:            requirement,
+				RequirementType: v2alpha3.RequirementTypeUnknown,
 			}
 		}
 

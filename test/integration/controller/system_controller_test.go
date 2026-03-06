@@ -45,7 +45,7 @@ import (
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
-func expectedBundleRevision(_ string, requirements []ocp.Requirement) string {
+func expectedBundleRevision(requirements []ocp.Requirement) string {
 	if len(requirements) == 0 {
 		return ""
 	}
@@ -65,7 +65,7 @@ func expectedBundleRevision(_ string, requirements []ocp.Requirement) string {
 }
 
 func expectedRequirementRevisionExpression(requirement ocp.Requirement) string {
-	if requirement.RevisionHash && requirement.RevisionCommit {
+	if requirement.RequirementType == ocp.RequirementTypeGitAndData {
 		return fmt.Sprintf(
 			"commit:{input.sources[\"%s\"].git.commit}-data:{input.sources[\"%s\"].sql.hash}",
 			requirement.Source,
@@ -73,14 +73,14 @@ func expectedRequirementRevisionExpression(requirement ocp.Requirement) string {
 		)
 	}
 
-	if requirement.RevisionHash {
+	if requirement.RequirementType == ocp.RequirementTypeData {
 		return fmt.Sprintf(
 			"data:{input.sources[\"%s\"].sql.hash}",
 			requirement.Source,
 		)
 	}
 
-	if requirement.RevisionCommit {
+	if requirement.RequirementType == ocp.RequirementTypeGit {
 		return fmt.Sprintf(
 			"commit:{input.sources[\"%s\"].git.commit}",
 			requirement.Source,
@@ -2665,36 +2665,30 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			},
 			Requirements: []ocp.Requirement{
 				{
-					Source:         "library1",
-					RevisionHash:   false,
-					RevisionCommit: true,
+					Source:          "library1",
+					RequirementType: ocp.RequirementTypeGitAndData,
 				},
 				{
-					Source:         "path-to-datasource",
-					RevisionHash:   true,
-					RevisionCommit: false,
+					Source:          "path-to-datasource",
+					RequirementType: ocp.RequirementTypeData,
 				},
 				{
-					Source:         "default-ocp-system",
-					RevisionHash:   false,
-					RevisionCommit: true,
+					Source:          "default-ocp-system",
+					RequirementType: ocp.RequirementTypeGit,
 				},
 			},
-			Revision: expectedBundleRevision("0123456789abcdef", []ocp.Requirement{
+			Revision: expectedBundleRevision([]ocp.Requirement{
 				{
-					Source:         "library1",
-					RevisionHash:   false,
-					RevisionCommit: true,
+					Source:          "library1",
+					RequirementType: ocp.RequirementTypeGitAndData,
 				},
 				{
-					Source:         "path-to-datasource",
-					RevisionHash:   true,
-					RevisionCommit: false,
+					Source:          "path-to-datasource",
+					RequirementType: ocp.RequirementTypeData,
 				},
 				{
-					Source:         "default-ocp-system",
-					RevisionHash:   false,
-					RevisionCommit: true,
+					Source:          "default-ocp-system",
+					RequirementType: ocp.RequirementTypeGit,
 				},
 			}),
 		}).Return(nil).Once()
@@ -2746,36 +2740,30 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			},
 			Requirements: []ocp.Requirement{
 				{
-					Source:         "library1",
-					RevisionHash:   false,
-					RevisionCommit: true,
+					Source:          "library1",
+					RequirementType: ocp.RequirementTypeGitAndData,
 				},
 				{
-					Source:         "path-to-datasource",
-					RevisionHash:   true,
-					RevisionCommit: false,
+					Source:          "path-to-datasource",
+					RequirementType: ocp.RequirementTypeData,
 				},
 				{
-					Source:         "default-ocp-system",
-					RevisionHash:   false,
-					RevisionCommit: true,
+					Source:          "default-ocp-system",
+					RequirementType: ocp.RequirementTypeGit,
 				},
 			},
-			Revision: expectedBundleRevision("0123456789abcdef", []ocp.Requirement{
+			Revision: expectedBundleRevision([]ocp.Requirement{
 				{
-					Source:         "library1",
-					RevisionHash:   false,
-					RevisionCommit: true,
+					Source:          "library1",
+					RequirementType: ocp.RequirementTypeGitAndData,
 				},
 				{
-					Source:         "path-to-datasource",
-					RevisionHash:   true,
-					RevisionCommit: false,
+					Source:          "path-to-datasource",
+					RequirementType: ocp.RequirementTypeData,
 				},
 				{
-					Source:         "default-ocp-system",
-					RevisionHash:   false,
-					RevisionCommit: true,
+					Source:          "default-ocp-system",
+					RequirementType: ocp.RequirementTypeGit,
 				},
 			}),
 		}).Return(nil).Once()
@@ -2821,36 +2809,30 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			},
 			Requirements: []ocp.Requirement{
 				{
-					Source:         "library1",
-					RevisionHash:   false,
-					RevisionCommit: true,
+					Source:          "library1",
+					RequirementType: ocp.RequirementTypeGitAndData,
 				},
 				{
-					Source:         "path-to-datasource",
-					RevisionHash:   true,
-					RevisionCommit: false,
+					Source:          "path-to-datasource",
+					RequirementType: ocp.RequirementTypeData,
 				},
 				{
-					Source:         "default-ocp-system",
-					RevisionHash:   false,
-					RevisionCommit: true,
+					Source:          "default-ocp-system",
+					RequirementType: ocp.RequirementTypeGit,
 				},
 			},
-			Revision: expectedBundleRevision("0123456789abcdef", []ocp.Requirement{
+			Revision: expectedBundleRevision([]ocp.Requirement{
 				{
-					Source:         "library1",
-					RevisionHash:   false,
-					RevisionCommit: true,
+					Source:          "library1",
+					RequirementType: ocp.RequirementTypeGitAndData,
 				},
 				{
-					Source:         "path-to-datasource",
-					RevisionHash:   true,
-					RevisionCommit: false,
+					Source:          "path-to-datasource",
+					RequirementType: ocp.RequirementTypeData,
 				},
 				{
-					Source:         "default-ocp-system",
-					RevisionHash:   false,
-					RevisionCommit: true,
+					Source:          "default-ocp-system",
+					RequirementType: ocp.RequirementTypeGit,
 				},
 			}),
 		}).Return(nil).Once()

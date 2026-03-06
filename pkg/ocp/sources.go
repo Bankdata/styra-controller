@@ -110,38 +110,40 @@ type Secret struct {
 
 // Requirement represents a requirement for a bundle and a source.
 type Requirement struct {
-	Source         string `json:"source,omitempty" yaml:"source,omitempty"`
-	RevisionHash   bool   `json:"revision_hash,omitempty" yaml:"revision_hash,omitempty"`
-	RevisionCommit bool   `json:"revision_commit,omitempty" yaml:"revision_commit,omitempty"`
+	Source          string
+	RequirementType RequirementType
 }
 
+// RequirementType defines the different types of requirements
+type RequirementType string
+
+const (
+	// RequirementTypeGit means that the requirement is a git source
+	RequirementTypeGit RequirementType = "git"
+
+	// RequirementTypeData means that the requirement is a data source
+	RequirementTypeData RequirementType = "data"
+
+	// RequirementTypeGitAndData means that the requirement is both a git and a data source
+	RequirementTypeGitAndData RequirementType = "git_and_data"
+
+	// RequirementTypeUnknown means that the requirement type is unknown
+	RequirementTypeUnknown RequirementType = "unknown"
+)
+
 // NewRequirement creates a new Requirement for a bundle.
-func NewRequirement(source string, sourceType string) Requirement {
-	requirement := Requirement{
-		Source: source,
+func NewRequirement(source string, sourceType RequirementType) Requirement {
+	return Requirement{
+		Source:          source,
+		RequirementType: sourceType,
 	}
-
-	switch sourceType {
-	case "git":
-		requirement.RevisionCommit = true
-	case "data":
-		requirement.RevisionHash = true
-	}
-
-	return requirement
 }
 
 // ToRequirements converts the default requirements to a list of bundle Requirements.
 func ToRequirements(sources []configv2alpha3.DefaultRequirement) []Requirement {
 	requirements := make([]Requirement, len(sources))
 	for i, source := range sources {
-		requirement := NewRequirement(source.Name, "")
-		if source.GitSource {
-			requirement.RevisionCommit = true
-		}
-		if source.DataSource {
-			requirement.RevisionHash = true
-		}
+		requirement := NewRequirement(source.Name, RequirementType(source.RequirementType))
 		requirements[i] = requirement
 	}
 	return requirements

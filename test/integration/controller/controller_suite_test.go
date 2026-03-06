@@ -148,8 +148,8 @@ var _ = ginkgo.BeforeSuite(func() {
 				}},
 				DefaultRequirements: []configv2alpha3.DefaultRequirement{
 					{
-						Name:      "library1",
-						GitSource: true,
+						Name:            "library1",
+						RequirementType: configv2alpha3.RequirementTypeGitAndData,
 					},
 				},
 				BundleObjectStorage: &configv2alpha3.BundleObjectStorage{

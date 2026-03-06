@@ -137,13 +137,22 @@ var _ = ginkgo.DescribeTable("requirementRevisionExpression",
 	func(requirement ocp.Requirement, expected string) {
 		gomega.Ω(requirementRevisionExpression(requirement)).To(gomega.Equal(expected))
 	},
-	ginkgo.Entry("git revision", ocp.Requirement{Source: "git", RevisionCommit: true},
+	ginkgo.Entry("git revision", ocp.Requirement{
+		Source:          "git",
+		RequirementType: ocp.RequirementTypeGit,
+	},
 		`commit:{input.sources["git"].git.commit}`,
 	),
-	ginkgo.Entry("data revision", ocp.Requirement{Source: "data", RevisionHash: true},
+	ginkgo.Entry("data revision", ocp.Requirement{
+		Source:          "data",
+		RequirementType: ocp.RequirementTypeData,
+	},
 		`data:{input.sources["data"].sql.hash}`,
 	),
-	ginkgo.Entry("git and data revision", ocp.Requirement{Source: "policy", RevisionCommit: true, RevisionHash: true},
+	ginkgo.Entry("git and data revision", ocp.Requirement{
+		Source:          "policy",
+		RequirementType: ocp.RequirementTypeGitAndData,
+	},
 		`commit:{input.sources["policy"].git.commit}-data:{input.sources["policy"].sql.hash}`,
 	),
 )
