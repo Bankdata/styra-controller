@@ -155,4 +155,10 @@ var _ = ginkgo.DescribeTable("requirementRevisionExpression",
 	},
 		`commit:{input.sources["policy"].git.commit}-data:{input.sources["policy"].sql.hash}`,
 	),
+	ginkgo.Entry("unknown revision", ocp.Requirement{
+		Source:          "unknown",
+		RequirementType: ocp.RequirementTypeUnknown,
+	},
+		"no-requirement-type",
+	),
 )
