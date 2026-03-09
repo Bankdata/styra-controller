@@ -134,6 +134,7 @@ func (r *LibraryReconciler) reconcileLibrarySource(
 	gitConfig := &ocp.GitConfig{
 		Repo:          k8sLib.Spec.SourceControl.LibraryOrigin.URL,
 		IncludedFiles: []string{"*.rego"},
+		ExcludedFiles: []string{"*_test.rego"},
 		Path:          ".",
 	}
 	if k8sLib.Spec.SourceControl.LibraryOrigin.Path != "" {
