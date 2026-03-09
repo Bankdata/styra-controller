@@ -877,7 +877,7 @@ func requirementRevisionExpression(requirement ocp.Requirement) string {
 		)
 	}
 
-	return ""
+	return "no-requirement-type"
 }
 
 func (r *SystemReconciler) reconcileSystemSource(
