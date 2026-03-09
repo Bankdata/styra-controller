@@ -306,7 +306,7 @@ func (r *SystemReconciler) reconcileDeletion(
 			}
 
 			for _, datasource := range system.Spec.Datasources {
-				datasourceID := strings.ReplaceAll(datasource.Path, "/", "-")
+				datasourceID := strings.ToLower(strings.ReplaceAll(datasource.Path, "/", "-"))
 				if err := r.OCP.DeleteSource(ctx, datasourceID); err != nil {
 					var httpErr *httperror.HTTPError
 					if errors.As(err, &httpErr) {
@@ -379,7 +379,7 @@ func (r *SystemReconciler) ocpReconcile(
 	requirements := ocp.ToRequirements(r.Config.OPAControlPlaneConfig.DefaultRequirements)
 
 	for _, datasource := range system.Spec.Datasources {
-		datasource.Path = strings.ReplaceAll(datasource.Path, "/", "-")
+		datasource.Path = strings.ToLower(strings.ReplaceAll(datasource.Path, "/", "-"))
 
 		created, err := r.createSourceIfNotExists(ctx, log, datasource)
 		if err != nil {
@@ -901,6 +901,7 @@ func (r *SystemReconciler) reconcileSystemSource(
 	gitConfig := &ocp.GitConfig{
 		Repo:          system.Spec.SourceControl.Origin.URL,
 		IncludedFiles: []string{"*.rego"},
+		ExcludedFiles: []string{"*_test.rego"},
 	}
 	if system.Spec.SourceControl.Origin.Commit != "" {
 		gitConfig.Commit = system.Spec.SourceControl.Origin.Commit
