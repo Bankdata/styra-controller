@@ -98,7 +98,7 @@ readOnly: true
 #         headers:
 #         - "Accept"
 #   bundleServer:
-#     url: https://minio-host
+#     url: https://s3-url
 #     path: /bundles
 #   metrics:
 #     prometheus:
