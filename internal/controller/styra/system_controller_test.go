@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2026 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,14 +20,15 @@ import (
 	ginkgo "github.com/onsi/ginkgo/v2"
 	gomega "github.com/onsi/gomega"
 
-	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
+	configv2alpha3 "github.com/bankdata/styra-controller/api/config/v2alpha3"
 	styrav1beta1 "github.com/bankdata/styra-controller/api/styra/v1beta1"
+	"github.com/bankdata/styra-controller/pkg/ocp"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
 
 var _ = ginkgo.DescribeTable("createRolebindingSubjects",
 	func(subjects []styrav1beta1.Subject, expectedSubject []*styra.Subject) {
-		gomega.Ω(createRolebindingSubjects(subjects, &configv2alpha2.SSOConfig{
+		gomega.Ω(createRolebindingSubjects(subjects, &configv2alpha3.SSOConfig{
 			IdentityProvider: "BDAD",
 			JWTGroupsClaim:   "groups",
 		})).To(gomega.Equal(expectedSubject))
@@ -130,4 +131,34 @@ var _ = ginkgo.DescribeTable("isURLValid",
 	ginkgo.Entry("invalid url", "www.google.com", false),
 	ginkgo.Entry("invalid url", "google.com", false),
 	ginkgo.Entry("invalid url", "google", false),
+)
+
+var _ = ginkgo.DescribeTable("requirementRevisionExpression",
+	func(requirement ocp.Requirement, expected string) {
+		gomega.Ω(requirementRevisionExpression(requirement)).To(gomega.Equal(expected))
+	},
+	ginkgo.Entry("git revision", ocp.Requirement{
+		Source:          "git",
+		RequirementType: ocp.RequirementTypeGit,
+	},
+		`commit:{input.sources["git"].git.commit}`,
+	),
+	ginkgo.Entry("data revision", ocp.Requirement{
+		Source:          "data",
+		RequirementType: ocp.RequirementTypeData,
+	},
+		`data:{input.sources["data"].sql.hash}`,
+	),
+	ginkgo.Entry("git and data revision", ocp.Requirement{
+		Source:          "policy",
+		RequirementType: ocp.RequirementTypeGitAndData,
+	},
+		`commit:{input.sources["policy"].git.commit}-data:{input.sources["policy"].sql.hash}`,
+	),
+	ginkgo.Entry("unknown revision", ocp.Requirement{
+		Source:          "unknown",
+		RequirementType: ocp.RequirementTypeUnknown,
+	},
+		"no-requirement-type",
+	),
 )

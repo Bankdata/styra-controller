@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2026 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ limitations under the License.
 package ocp
 
 import (
-	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
+	configv2alpha3 "github.com/bankdata/styra-controller/api/config/v2alpha3"
 )
 
 // OPAConfig stores the information going into the ConfigMap for the OPA
@@ -27,7 +27,7 @@ type OPAConfig struct {
 	UniqueName           string
 	Namespace            string
 	BundleResource       string
-	DecisionLogReporting configv2alpha2.DecisionLogReporting
+	DecisionLogReporting configv2alpha3.DecisionLogReporting
 }
 
 // OPAServiceConfig defines a services added to the OPAs' config files.

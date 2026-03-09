@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2026 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import (
 	"regexp"
 
 	"github.com/bankdata/styra-controller/api/config/v2alpha2"
+	"github.com/bankdata/styra-controller/api/config/v2alpha3"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -39,7 +40,7 @@ const (
 
 // Load loads controller configuration from the given file using the types
 // registered in the scheme.
-func Load(file string, scheme *runtime.Scheme) (*v2alpha2.ProjectConfig, error) {
+func Load(file string, scheme *runtime.Scheme) (*v2alpha3.ProjectConfig, error) {
 	bs, err := os.ReadFile(file)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not read config file")
@@ -48,7 +49,7 @@ func Load(file string, scheme *runtime.Scheme) (*v2alpha2.ProjectConfig, error) 
 }
 
 // OptionsFromConfig creates a manager.Options based on a configuration file
-func OptionsFromConfig(cfg *v2alpha2.ProjectConfig, scheme *runtime.Scheme) manager.Options {
+func OptionsFromConfig(cfg *v2alpha3.ProjectConfig, scheme *runtime.Scheme) manager.Options {
 	o := manager.Options{
 		Scheme:                 scheme,
 		HealthProbeBindAddress: healthProbeBindAddress,
@@ -71,7 +72,7 @@ func OptionsFromConfig(cfg *v2alpha2.ProjectConfig, scheme *runtime.Scheme) mana
 
 // TokenFromConfig returns the Styra DAS api token directly from "styra.token"
 // in the config or using the "styra.tokenSecretPath" to retrieve it fra a secret
-func TokenFromConfig(cfg *v2alpha2.ProjectConfig) (string, error) {
+func TokenFromConfig(cfg *v2alpha3.ProjectConfig) (string, error) {
 	if cfg.Styra.Token != "" {
 		return cfg.Styra.Token, nil
 	}
@@ -87,7 +88,7 @@ func TokenFromConfig(cfg *v2alpha2.ProjectConfig) (string, error) {
 	return "", errors.New("No token or tokenSecretPath defined in the config")
 }
 
-func deserialize(data []byte, scheme *runtime.Scheme) (*v2alpha2.ProjectConfig, error) {
+func deserialize(data []byte, scheme *runtime.Scheme) (*v2alpha3.ProjectConfig, error) {
 	decoder := serializer.NewCodecFactory(scheme).UniversalDeserializer()
 	_, gvk, err := decoder.Decode(data, nil, nil)
 	if err != nil {
@@ -102,13 +103,19 @@ func deserialize(data []byte, scheme *runtime.Scheme) (*v2alpha2.ProjectConfig, 
 		return nil, errors.New("unsupported api kind")
 	}
 
-	cfg := &v2alpha2.ProjectConfig{}
+	cfg := &v2alpha3.ProjectConfig{}
 
 	switch gvk.Version {
-	case v2alpha2.GroupVersion.Version:
+	case v2alpha3.GroupVersion.Version:
 		if _, _, err := decoder.Decode(data, nil, cfg); err != nil {
 			return nil, errors.Wrap(err, "could not decode into kind")
 		}
+	case v2alpha2.GroupVersion.Version:
+		var v2cfg v2alpha2.ProjectConfig
+		if _, _, err := decoder.Decode(data, nil, &v2cfg); err != nil {
+			return nil, errors.Wrap(err, "could not decode into kind")
+		}
+		cfg = v2cfg.ToV2Alpha3()
 	default:
 		return nil, errors.New("unsupported api version")
 	}

@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2026 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 
 	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
+	configv2alpha3 "github.com/bankdata/styra-controller/api/config/v2alpha3"
 	styrav1alpha1 "github.com/bankdata/styra-controller/api/styra/v1alpha1"
 	styrav1beta1 "github.com/bankdata/styra-controller/api/styra/v1beta1"
 	"github.com/bankdata/styra-controller/internal/config"
@@ -75,6 +76,7 @@ func init() {
 	utilruntime.Must(styrav1alpha1.AddToScheme(scheme))
 	utilruntime.Must(styrav1beta1.AddToScheme(scheme))
 	utilruntime.Must(configv2alpha2.AddToScheme(scheme))
+	utilruntime.Must(configv2alpha3.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -194,13 +196,13 @@ func main() {
 		styraClient = styra.New(styraHostURL, styraToken)
 
 		if err := configureExporter(
-			styraClient, ctrlConfig.DecisionsExporter, configv2alpha2.ExporterConfigTypeDecisions); err != nil {
-			log.Error(err, fmt.Sprintf("unable to configure %s", configv2alpha2.ExporterConfigTypeDecisions))
+			styraClient, ctrlConfig.DecisionsExporter, configv2alpha3.ExporterConfigTypeDecisions); err != nil {
+			log.Error(err, fmt.Sprintf("unable to configure %s", configv2alpha3.ExporterConfigTypeDecisions))
 		}
 
 		if err := configureExporter(
-			styraClient, ctrlConfig.ActivityExporter, configv2alpha2.ExporterConfigTypeActivity); err != nil {
-			log.Error(err, fmt.Sprintf("unable to configure %s", configv2alpha2.ExporterConfigTypeActivity))
+			styraClient, ctrlConfig.ActivityExporter, configv2alpha3.ExporterConfigTypeActivity); err != nil {
+			log.Error(err, fmt.Sprintf("unable to configure %s", configv2alpha3.ExporterConfigTypeActivity))
 		}
 	}
 
@@ -354,8 +356,8 @@ func exit(err error) {
 
 func configureExporter(
 	styraClient styra.ClientInterface,
-	exporterConfig *configv2alpha2.ExporterConfig,
-	exporterType configv2alpha2.ExporterConfigType) error {
+	exporterConfig *configv2alpha3.ExporterConfig,
+	exporterType configv2alpha3.ExporterConfigType) error {
 	if exporterConfig == nil {
 		ctrl.Log.Info(fmt.Sprintf("no exporter configuration found for %s", exporterType))
 		return nil
@@ -371,10 +373,10 @@ func configureExporter(
 			return err
 		}
 
-		if exporterType == configv2alpha2.ExporterConfigTypeActivity {
+		if exporterType == configv2alpha3.ExporterConfigTypeActivity {
 			rawJSON := json.RawMessage("{\"activity_exporter\": null}")
 			_, err = styraClient.UpdateWorkspaceRaw(context.Background(), rawJSON)
-		} else if exporterType == configv2alpha2.ExporterConfigTypeDecisions {
+		} else if exporterType == configv2alpha3.ExporterConfigTypeDecisions {
 			rawJSON := json.RawMessage("{\"decisions_exporter\": null}")
 			_, err = styraClient.UpdateWorkspaceRaw(context.Background(), rawJSON)
 		}

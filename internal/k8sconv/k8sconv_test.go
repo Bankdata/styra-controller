@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2026 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import (
 	ginkgo "github.com/onsi/ginkgo/v2"
 	gomega "github.com/onsi/gomega"
 
-	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
+	configv2alpha3 "github.com/bankdata/styra-controller/api/config/v2alpha3"
 	"github.com/bankdata/styra-controller/internal/k8sconv"
 	"github.com/bankdata/styra-controller/pkg/ocp"
 	"github.com/bankdata/styra-controller/pkg/styra"
@@ -33,7 +33,7 @@ import (
 var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMap", func() {
 
 	type test struct {
-		opaDefaultConfig  configv2alpha2.OPAConfig
+		opaDefaultConfig  configv2alpha3.OPAConfig
 		opaconf           styra.OPAConfig
 		slpURL            string
 		expectedCMContent string
@@ -58,10 +58,10 @@ var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMap", func() {
 	},
 
 		ginkgo.Entry("success", test{
-			opaDefaultConfig: configv2alpha2.OPAConfig{
-				DecisionLogs: configv2alpha2.DecisionLog{
-					RequestContext: configv2alpha2.RequestContext{
-						HTTP: configv2alpha2.HTTP{
+			opaDefaultConfig: configv2alpha3.OPAConfig{
+				DecisionLogs: configv2alpha3.DecisionLog{
+					RequestContext: configv2alpha3.RequestContext{
+						HTTP: configv2alpha3.HTTP{
 							Headers: strings.Split("header1,header2", ","),
 						},
 					},
@@ -148,7 +148,7 @@ discovery:
 var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMapNoSLP", func() {
 
 	type test struct {
-		opaDefaultConfig  configv2alpha2.OPAConfig
+		opaDefaultConfig  configv2alpha3.OPAConfig
 		opaconf           styra.OPAConfig
 		expectedCMContent string
 	}
@@ -173,10 +173,10 @@ var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMapNoSLP", func() {
 	},
 
 		ginkgo.Entry("success", test{
-			opaDefaultConfig: configv2alpha2.OPAConfig{
-				DecisionLogs: configv2alpha2.DecisionLog{
-					RequestContext: configv2alpha2.RequestContext{
-						HTTP: configv2alpha2.HTTP{
+			opaDefaultConfig: configv2alpha3.OPAConfig{
+				DecisionLogs: configv2alpha3.DecisionLog{
+					RequestContext: configv2alpha3.RequestContext{
+						HTTP: configv2alpha3.HTTP{
 							Headers: strings.Split("header1,header2", ","),
 						},
 					},
@@ -221,7 +221,7 @@ decision_logs:
 var _ = ginkgo.Describe("OPACustomConfToK8sWithSLP", func() {
 
 	type test struct {
-		opaDefaultConfig  configv2alpha2.OPAConfig
+		opaDefaultConfig  configv2alpha3.OPAConfig
 		opaconf           styra.OPAConfig
 		customConfig      map[string]interface{}
 		slpURL            string
@@ -247,10 +247,10 @@ var _ = ginkgo.Describe("OPACustomConfToK8sWithSLP", func() {
 	},
 
 		ginkgo.Entry("success", test{
-			opaDefaultConfig: configv2alpha2.OPAConfig{
-				DecisionLogs: configv2alpha2.DecisionLog{
-					RequestContext: configv2alpha2.RequestContext{
-						HTTP: configv2alpha2.HTTP{
+			opaDefaultConfig: configv2alpha3.OPAConfig{
+				DecisionLogs: configv2alpha3.DecisionLog{
+					RequestContext: configv2alpha3.RequestContext{
+						HTTP: configv2alpha3.HTTP{
 							Headers: strings.Split("header1,header2", ","),
 						},
 					},
@@ -296,7 +296,7 @@ distributed_tracing:
 var _ = ginkgo.Describe("OPACustomConfToK8sNoSLP", func() {
 
 	type test struct {
-		opaDefaultConfig  configv2alpha2.OPAConfig
+		opaDefaultConfig  configv2alpha3.OPAConfig
 		opaconf           styra.OPAConfig
 		customConfig      map[string]interface{}
 		expectedCMContent string
@@ -321,10 +321,10 @@ var _ = ginkgo.Describe("OPACustomConfToK8sNoSLP", func() {
 	},
 
 		ginkgo.Entry("success", test{
-			opaDefaultConfig: configv2alpha2.OPAConfig{
-				DecisionLogs: configv2alpha2.DecisionLog{
-					RequestContext: configv2alpha2.RequestContext{
-						HTTP: configv2alpha2.HTTP{
+			opaDefaultConfig: configv2alpha3.OPAConfig{
+				DecisionLogs: configv2alpha3.DecisionLog{
+					RequestContext: configv2alpha3.RequestContext{
+						HTTP: configv2alpha3.HTTP{
 							Headers: strings.Split("header1,header2", ","),
 						},
 					},
@@ -379,7 +379,7 @@ distributed_tracing:
 var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMapforOCP", func() {
 
 	type test struct {
-		opaDefaultConfig  configv2alpha2.OPAConfig
+		opaDefaultConfig  configv2alpha3.OPAConfig
 		opaconf           ocp.OPAConfig
 		customConfig      map[string]interface{}
 		expectedCMContent string
@@ -407,10 +407,10 @@ var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMapforOCP", func() {
 		gomega.Expect(actualMap).To(gomega.Equal(expectedMap))
 	},
 		ginkgo.Entry("success", test{
-			opaDefaultConfig: configv2alpha2.OPAConfig{
-				DecisionLogs: configv2alpha2.DecisionLog{
-					RequestContext: configv2alpha2.RequestContext{
-						HTTP: configv2alpha2.HTTP{
+			opaDefaultConfig: configv2alpha3.OPAConfig{
+				DecisionLogs: configv2alpha3.DecisionLog{
+					RequestContext: configv2alpha3.RequestContext{
+						HTTP: configv2alpha3.HTTP{
 							Headers: strings.Split("header1,header2", ","),
 						},
 					},
@@ -438,7 +438,7 @@ var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMapforOCP", func() {
 						},
 					},
 				},
-				DecisionLogReporting: configv2alpha2.DecisionLogReporting{
+				DecisionLogReporting: configv2alpha3.DecisionLogReporting{
 					UploadSizeLimitBytes: 1,
 					MinDelaySeconds:      2,
 					MaxDelaySeconds:      3,
@@ -498,7 +498,7 @@ distributed_tracing:
 var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMapforOCP", func() {
 
 	type test struct {
-		opaDefaultConfig  configv2alpha2.OPAConfig
+		opaDefaultConfig  configv2alpha3.OPAConfig
 		opaconf           ocp.OPAConfig
 		customConfig      map[string]interface{}
 		expectedCMContent string
@@ -527,10 +527,10 @@ var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMapforOCP", func() {
 	},
 
 		ginkgo.Entry("success", test{
-			opaDefaultConfig: configv2alpha2.OPAConfig{
-				DecisionLogs: configv2alpha2.DecisionLog{
-					RequestContext: configv2alpha2.RequestContext{
-						HTTP: configv2alpha2.HTTP{
+			opaDefaultConfig: configv2alpha3.OPAConfig{
+				DecisionLogs: configv2alpha3.DecisionLog{
+					RequestContext: configv2alpha3.RequestContext{
+						HTTP: configv2alpha3.HTTP{
 							Headers: strings.Split("header1,header2", ","),
 						},
 					},
@@ -557,7 +557,7 @@ var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMapforOCP", func() {
 						},
 					},
 				},
-				DecisionLogReporting: configv2alpha2.DecisionLogReporting{
+				DecisionLogReporting: configv2alpha3.DecisionLogReporting{
 					UploadSizeLimitBytes: 1048576,
 					MinDelaySeconds:      1,
 					MaxDelaySeconds:      30,

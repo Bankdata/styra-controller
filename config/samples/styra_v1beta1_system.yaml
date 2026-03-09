@@ -19,6 +19,9 @@ spec:
       reason:
         path: result.reasons
   datasources:
-    - path: "test"
-  # TODO(user): Add fields here
-  
+    - path: "example"
+  sourceControl:
+    origin:
+      path: policy
+      reference: refs/heads/master
+      url: 'https://github.com/org/repo.git'

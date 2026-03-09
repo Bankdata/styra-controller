@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2026 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import (
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 
-	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
+	configv2alpha3 "github.com/bankdata/styra-controller/api/config/v2alpha3"
 	"github.com/bankdata/styra-controller/pkg/ocp"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
@@ -143,7 +143,7 @@ type HTTPMetricsConfig struct {
 // OPAConfToK8sOPAConfigMapforOCP merges the information given as input into a ConfigMap for OPA
 func OPAConfToK8sOPAConfigMapforOCP(
 	opaconf ocp.OPAConfig,
-	opaDefaultConfig configv2alpha2.OPAConfig,
+	opaDefaultConfig configv2alpha3.OPAConfig,
 	customConfig map[string]interface{},
 	_ logr.Logger,
 ) (corev1.ConfigMap, error) {
@@ -233,7 +233,7 @@ func OPAConfToK8sOPAConfigMapforOCP(
 func OPAConfToK8sOPAConfigMap(
 	opaconf styra.OPAConfig,
 	slpURL string,
-	opaDefaultConfig configv2alpha2.OPAConfig,
+	opaDefaultConfig configv2alpha3.OPAConfig,
 	customConfig map[string]interface{},
 ) (corev1.ConfigMap, error) {
 
@@ -356,7 +356,7 @@ func OPAConfToK8sSLPConfigMap(opaconf styra.OPAConfig) (corev1.ConfigMap, error)
 // directly to Styra and not via an SLP.
 func OPAConfToK8sOPAConfigMapNoSLP(
 	opaconf styra.OPAConfig,
-	opaDefaultConfig configv2alpha2.OPAConfig,
+	opaDefaultConfig configv2alpha3.OPAConfig,
 	customConfig map[string]interface{},
 ) (corev1.ConfigMap, error) {
 

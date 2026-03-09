@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2026 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,12 +23,15 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/bankdata/styra-controller/api/config/v2alpha2"
+	"github.com/bankdata/styra-controller/api/config/v2alpha3"
 )
 
 var _ = ginkgo.DescribeTable("deserialize",
-	func(data []byte, expected *v2alpha2.ProjectConfig, shouldErr bool) {
+	func(data []byte, expected *v2alpha3.ProjectConfig, shouldErr bool) {
 		scheme := runtime.NewScheme()
-		err := v2alpha2.AddToScheme(scheme)
+		err := v2alpha3.AddToScheme(scheme)
+		gomega.Ω(err).ShouldNot(gomega.HaveOccurred())
+		err = v2alpha2.AddToScheme(scheme)
 		gomega.Ω(err).ShouldNot(gomega.HaveOccurred())
 		actual, err := deserialize(data, scheme)
 		if shouldErr {
@@ -50,19 +53,19 @@ styra:
 		true,
 	),
 
-	ginkgo.Entry("can deserialize v2alpha2",
+	ginkgo.Entry("can deserialize v2alpha3",
 		[]byte(`
-apiVersion: config.bankdata.dk/v2alpha2
+apiVersion: config.bankdata.dk/v2alpha3
 kind: ProjectConfig
 styra:
   token: my-token
 `),
-		&v2alpha2.ProjectConfig{
+		&v2alpha3.ProjectConfig{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "ProjectConfig",
-				APIVersion: v2alpha2.GroupVersion.Identifier(),
+				APIVersion: v2alpha3.GroupVersion.Identifier(),
 			},
-			Styra: v2alpha2.StyraConfig{
+			Styra: v2alpha3.StyraConfig{
 				Token: "my-token",
 			},
 		},

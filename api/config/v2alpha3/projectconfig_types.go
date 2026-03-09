@@ -14,13 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v2alpha2
+package v2alpha3
 
 import (
 	"sort"
 	"strings"
 
-	"github.com/bankdata/styra-controller/api/config/v2alpha3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -217,7 +216,7 @@ type OPAControlPlaneConfig struct {
 	// DefaultRequirements is a list of requirements that will be added to all
 	// systems/bundles created by the controller in the OCP, in addition to any requirements/datasources
 	// specified on the System resource.
-	DefaultRequirements []string `json:"defaultRequirements,omitempty"`
+	DefaultRequirements []DefaultRequirement `json:"defaultRequirements,omitempty"`
 
 	// SystemDatasourceChanged is the URL to be called when a system datasource has changed.
 	SystemDatasourceChanged string `json:"systemDatasourceChanged,omitempty"`
@@ -227,6 +226,29 @@ type OPAControlPlaneConfig struct {
 	// DecisionAPIConfig contains configuration for which api OPAs should use to and how
 	DecisionAPIConfig *DecisionAPIConfig `json:"decisionAPIConfig,omitempty"`
 }
+
+// DefaultRequirement defines a requirement/source that is included in all bundles
+type DefaultRequirement struct {
+	Name            string          `json:"name"`
+	RequirementType RequirementType `json:"requirementType,omitempty"`
+}
+
+// RequirementType defines the different types of requirements
+type RequirementType string
+
+const (
+	// RequirementTypeGit means that the requirement is a git source
+	RequirementTypeGit RequirementType = "git"
+
+	// RequirementTypeData means that the requirement is a data source
+	RequirementTypeData RequirementType = "data"
+
+	// RequirementTypeGitAndData means that the requirement is both a git and a data source
+	RequirementTypeGitAndData RequirementType = "git_and_data"
+
+	// RequirementTypeUnknown means that the requirement type is unknown
+	RequirementTypeUnknown RequirementType = "unknown"
+)
 
 // UserCredentialHandler defines the structure of possible user credential handlers
 type UserCredentialHandler struct {
@@ -448,236 +470,6 @@ func (c *ProjectConfig) OPARestartEnabled() bool {
 		return false
 	}
 	return c.PodRestart.OPARestart.Enabled
-}
-
-// ToV2Alpha3 returns this ProjectConfig converted to a v2alpha3.ProjectConfig
-func (c *ProjectConfig) ToV2Alpha3() *v2alpha3.ProjectConfig {
-	v2cfg3 := &v2alpha3.ProjectConfig{
-		ControllerClass:           c.ControllerClass,
-		DeletionProtectionDefault: c.DeletionProtectionDefault,
-		ReadOnly:                  c.ReadOnly,
-		EnableDeltaBundlesDefault: c.EnableDeltaBundlesDefault,
-		DisableCRDWebhooks:        c.DisableCRDWebhooks,
-		EnableMigrations:          c.EnableMigrations,
-		DatasourceIgnorePatterns:  c.DatasourceIgnorePatterns,
-		LogLevel:                  c.LogLevel,
-		Styra: v2alpha3.StyraConfig{
-			Token:           c.Styra.Token,
-			Address:         c.Styra.Address,
-			TokenSecretPath: c.Styra.TokenSecretPath,
-		},
-		SystemPrefix:                                c.SystemPrefix,
-		SystemSuffix:                                c.SystemSuffix,
-		SystemUserRoles:                             c.SystemUserRoles,
-		EnableStyraReconciliation:                   c.EnableStyraReconciliation,
-		EnableOPAControlPlaneReconciliation:         c.EnableOPAControlPlaneReconciliation,
-		EnableOPAControlPlaneReconciliationTestData: c.EnableOPAControlPlaneReconciliationTestData,
-	}
-
-	if c.GitCredentials != nil {
-		v2cfg3.GitCredentials = make([]*v2alpha3.GitCredential, len(c.GitCredentials))
-		for i, c := range c.GitCredentials {
-			v2cfg3.GitCredentials[i] = &v2alpha3.GitCredential{
-				User:       c.User,
-				Password:   c.Password,
-				RepoPrefix: c.RepoPrefix,
-			}
-		}
-	}
-
-	if c.LeaderElection != nil {
-		v2cfg3.LeaderElection = &v2alpha3.LeaderElectionConfig{
-			LeaseDuration: c.LeaderElection.LeaseDuration,
-			RenewDeadline: c.LeaderElection.RenewDeadline,
-			RetryPeriod:   c.LeaderElection.RetryPeriod,
-		}
-	}
-
-	if c.NotificationWebhooks != nil {
-		v2cfg3.NotificationWebhooks = &v2alpha3.NotificationWebhooksConfig{
-			SystemDatasourceChanged:  c.NotificationWebhooks.SystemDatasourceChanged,
-			LibraryDatasourceChanged: c.NotificationWebhooks.LibraryDatasourceChanged,
-		}
-	}
-
-	if c.Sentry != nil {
-		v2cfg3.Sentry = &v2alpha3.SentryConfig{
-			DSN:         c.Sentry.DSN,
-			Debug:       c.Sentry.Debug,
-			Environment: c.Sentry.Environment,
-			HTTPSProxy:  c.Sentry.HTTPSProxy,
-		}
-	}
-
-	if c.SSO != nil {
-		v2cfg3.SSO = &v2alpha3.SSOConfig{
-			IdentityProvider: c.SSO.IdentityProvider,
-			JWTGroupsClaim:   c.SSO.JWTGroupsClaim,
-		}
-	}
-
-	v2cfg3.OPA = v2alpha3.OPAConfig{
-		DecisionLogs: v2alpha3.DecisionLog{
-			RequestContext: v2alpha3.RequestContext{
-				HTTP: v2alpha3.HTTP{
-					Headers: c.OPA.DecisionLogs.RequestContext.HTTP.Headers,
-				},
-			},
-		},
-		Metrics: v2alpha3.MetricsConfig{
-			Prometheus: v2alpha3.PrometheusMetricsConfig{
-				HTTP: v2alpha3.HTTPMetricsConfig{
-					Buckets: c.OPA.Metrics.Prometheus.HTTP.Buckets,
-				},
-			},
-		},
-		PersistBundle:          c.OPA.PersistBundle,
-		PersistBundleDirectory: c.OPA.PersistBundleDirectory,
-	}
-
-	if c.OPA.BundleServer != nil {
-		v2cfg3.OPA.BundleServer = &v2alpha3.OPABundleServer{
-			URL:  c.OPA.BundleServer.URL,
-			Path: c.OPA.BundleServer.Path,
-		}
-	}
-
-	if c.DecisionsExporter != nil {
-		v2cfg3.DecisionsExporter = &v2alpha3.ExporterConfig{
-			Enabled:  c.DecisionsExporter.Enabled,
-			Interval: c.DecisionsExporter.Interval,
-		}
-
-		if c.DecisionsExporter.Kafka != nil {
-			v2cfg3.DecisionsExporter.Kafka = &v2alpha3.KafkaConfig{
-				Brokers:      c.DecisionsExporter.Kafka.Brokers,
-				Topic:        c.DecisionsExporter.Kafka.Topic,
-				RequiredAcks: c.DecisionsExporter.Kafka.RequiredAcks,
-			}
-
-			if c.DecisionsExporter.Kafka.TLS != nil {
-				v2cfg3.DecisionsExporter.Kafka.TLS = &v2alpha3.TLSConfig{
-					ClientCertificateName: c.DecisionsExporter.Kafka.TLS.ClientCertificateName,
-					ClientCertificate:     c.DecisionsExporter.Kafka.TLS.ClientCertificate,
-					ClientKey:             c.DecisionsExporter.Kafka.TLS.ClientKey,
-					RootCA:                c.DecisionsExporter.Kafka.TLS.RootCA,
-					InsecureSkipVerify:    c.DecisionsExporter.Kafka.TLS.InsecureSkipVerify,
-				}
-			}
-		}
-	}
-
-	if c.ActivityExporter != nil {
-		v2cfg3.ActivityExporter = &v2alpha3.ExporterConfig{
-			Enabled:  c.ActivityExporter.Enabled,
-			Interval: c.ActivityExporter.Interval,
-		}
-
-		if c.ActivityExporter.Kafka != nil {
-			v2cfg3.ActivityExporter.Kafka = &v2alpha3.KafkaConfig{
-				Brokers:      c.ActivityExporter.Kafka.Brokers,
-				Topic:        c.ActivityExporter.Kafka.Topic,
-				RequiredAcks: c.ActivityExporter.Kafka.RequiredAcks,
-			}
-
-			if c.ActivityExporter.Kafka.TLS != nil {
-				v2cfg3.ActivityExporter.Kafka.TLS = &v2alpha3.TLSConfig{
-					ClientCertificateName: c.ActivityExporter.Kafka.TLS.ClientCertificateName,
-					ClientCertificate:     c.ActivityExporter.Kafka.TLS.ClientCertificate,
-					ClientKey:             c.ActivityExporter.Kafka.TLS.ClientKey,
-					RootCA:                c.ActivityExporter.Kafka.TLS.RootCA,
-					InsecureSkipVerify:    c.ActivityExporter.Kafka.TLS.InsecureSkipVerify,
-				}
-			}
-		}
-	}
-
-	if c.PodRestart != nil {
-		v2cfg3.PodRestart = &v2alpha3.PodRestartConfig{}
-
-		if c.PodRestart.SLPRestart != nil {
-			v2cfg3.PodRestart.SLPRestart = &v2alpha3.SLPRestartConfig{
-				Enabled:        c.PodRestart.SLPRestart.Enabled,
-				DeploymentType: c.PodRestart.SLPRestart.DeploymentType,
-			}
-		}
-
-		if c.PodRestart.OPARestart != nil {
-			v2cfg3.PodRestart.OPARestart = &v2alpha3.OPARestartConfig{
-				Enabled:        c.PodRestart.OPARestart.Enabled,
-				DeploymentType: c.PodRestart.OPARestart.DeploymentType,
-			}
-		}
-	}
-
-	if c.OPAControlPlaneConfig != nil {
-		v2cfg3.OPAControlPlaneConfig = &v2alpha3.OPAControlPlaneConfig{
-			Address:                  c.OPAControlPlaneConfig.Address,
-			Token:                    c.OPAControlPlaneConfig.Token,
-			SystemDatasourceChanged:  c.OPAControlPlaneConfig.SystemDatasourceChanged,
-			LibraryDatasourceChanged: c.OPAControlPlaneConfig.LibraryDatasourceChanged,
-		}
-
-		if c.OPAControlPlaneConfig.GitCredentials != nil {
-			v2cfg3.OPAControlPlaneConfig.GitCredentials = make(
-				[]*v2alpha3.GitCredentials,
-				len(c.OPAControlPlaneConfig.GitCredentials),
-			)
-			for i, c := range c.OPAControlPlaneConfig.GitCredentials {
-				v2cfg3.OPAControlPlaneConfig.GitCredentials[i] = &v2alpha3.GitCredentials{
-					ID:         c.ID,
-					RepoPrefix: c.RepoPrefix,
-				}
-			}
-		}
-
-		if c.OPAControlPlaneConfig.BundleObjectStorage != nil && c.OPAControlPlaneConfig.BundleObjectStorage.S3 != nil {
-			v2cfg3.OPAControlPlaneConfig.BundleObjectStorage = &v2alpha3.BundleObjectStorage{
-				S3: &v2alpha3.S3ObjectStorage{
-					Bucket:              c.OPAControlPlaneConfig.BundleObjectStorage.S3.Bucket,
-					URL:                 c.OPAControlPlaneConfig.BundleObjectStorage.S3.URL,
-					Region:              c.OPAControlPlaneConfig.BundleObjectStorage.S3.Region,
-					OCPConfigSecretName: c.OPAControlPlaneConfig.BundleObjectStorage.S3.OCPConfigSecretName,
-				},
-			}
-		}
-
-		v2cfg3.OPAControlPlaneConfig.DefaultRequirements = make(
-			[]v2alpha3.DefaultRequirement,
-			len(c.OPAControlPlaneConfig.DefaultRequirements),
-		)
-		for i, requirement := range c.OPAControlPlaneConfig.DefaultRequirements {
-			v2cfg3.OPAControlPlaneConfig.DefaultRequirements[i] = v2alpha3.DefaultRequirement{
-				Name:            requirement,
-				RequirementType: v2alpha3.RequirementTypeUnknown,
-			}
-		}
-
-		if c.OPAControlPlaneConfig.DecisionAPIConfig != nil {
-			v2cfg3.OPAControlPlaneConfig.DecisionAPIConfig = &v2alpha3.DecisionAPIConfig{
-				ServiceURL: c.OPAControlPlaneConfig.DecisionAPIConfig.ServiceURL,
-				Reporting: v2alpha3.DecisionLogReporting{
-					MaxDelaySeconds:      c.OPAControlPlaneConfig.DecisionAPIConfig.Reporting.MaxDelaySeconds,
-					MinDelaySeconds:      c.OPAControlPlaneConfig.DecisionAPIConfig.Reporting.MinDelaySeconds,
-					UploadSizeLimitBytes: c.OPAControlPlaneConfig.DecisionAPIConfig.Reporting.UploadSizeLimitBytes,
-				},
-			}
-		}
-	}
-
-	if c.UserCredentialHandler != nil && c.UserCredentialHandler.S3 != nil {
-		v2cfg3.UserCredentialHandler = &v2alpha3.UserCredentialHandler{
-			S3: &v2alpha3.S3Handler{
-				Bucket:          c.UserCredentialHandler.S3.Bucket,
-				URL:             c.UserCredentialHandler.S3.URL,
-				Region:          c.UserCredentialHandler.S3.Region,
-				AccessKeyID:     c.UserCredentialHandler.S3.AccessKeyID,
-				SecretAccessKey: c.UserCredentialHandler.S3.SecretAccessKey,
-			},
-		}
-	}
-
-	return v2cfg3
 }
 
 func init() {

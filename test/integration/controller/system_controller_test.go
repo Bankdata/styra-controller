@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2026 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -2620,15 +2620,22 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			},
 			Requirements: []ocp.Requirement{
 				{
-					Source: "library1",
+					Source:          "library1",
+					RequirementType: ocp.RequirementTypeGitAndData,
 				},
 				{
-					Source: "path-to-datasource",
+					Source:          "path-to-datasource",
+					RequirementType: ocp.RequirementTypeData,
 				},
 				{
-					Source: "default-ocp-system",
+					Source:          "default-ocp-system",
+					RequirementType: ocp.RequirementTypeGit,
 				},
 			},
+			Revision: "$\"library1:commit:{input.sources[\"library1\"].git.commit}" +
+				"-data:{input.sources[\"library1\"].sql.hash}" +
+				",path-to-datasource:data:{input.sources[\"path-to-datasource\"].sql.hash}" +
+				",default-ocp-system:commit:{input.sources[\"default-ocp-system\"].git.commit}\"",
 		}).Return(nil).Once()
 
 		// Called in reconcileS3Credentials
@@ -2679,15 +2686,22 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			},
 			Requirements: []ocp.Requirement{
 				{
-					Source: "library1",
+					Source:          "library1",
+					RequirementType: ocp.RequirementTypeGitAndData,
 				},
 				{
-					Source: "path-to-datasource",
+					Source:          "path-to-datasource",
+					RequirementType: ocp.RequirementTypeData,
 				},
 				{
-					Source: "default-ocp-system",
+					Source:          "default-ocp-system",
+					RequirementType: ocp.RequirementTypeGit,
 				},
 			},
+			Revision: "$\"library1:commit:{input.sources[\"library1\"].git.commit}" +
+				"-data:{input.sources[\"library1\"].sql.hash}" +
+				",path-to-datasource:data:{input.sources[\"path-to-datasource\"].sql.hash}" +
+				",default-ocp-system:commit:{input.sources[\"default-ocp-system\"].git.commit}\"",
 		}).Return(nil).Once()
 
 		// Called in reconcileS3Credentials
@@ -2732,15 +2746,22 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			},
 			Requirements: []ocp.Requirement{
 				{
-					Source: "library1",
+					Source:          "library1",
+					RequirementType: ocp.RequirementTypeGitAndData,
 				},
 				{
-					Source: "path-to-datasource",
+					Source:          "path-to-datasource",
+					RequirementType: ocp.RequirementTypeData,
 				},
 				{
-					Source: "default-ocp-system",
+					Source:          "default-ocp-system",
+					RequirementType: ocp.RequirementTypeGit,
 				},
 			},
+			Revision: "$\"library1:commit:{input.sources[\"library1\"].git.commit}" +
+				"-data:{input.sources[\"library1\"].sql.hash}" +
+				",path-to-datasource:data:{input.sources[\"path-to-datasource\"].sql.hash}" +
+				",default-ocp-system:commit:{input.sources[\"default-ocp-system\"].git.commit}\"",
 		}).Return(nil).Once()
 
 		// Called in reconcileS3Credentials

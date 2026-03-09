@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2026 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import (
 	"io"
 	"net/http"
 
+	configv2alpha3 "github.com/bankdata/styra-controller/api/config/v2alpha3"
 	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/pkg/errors"
 )
@@ -109,27 +110,40 @@ type Secret struct {
 
 // Requirement represents a requirement for a bundle and a source.
 type Requirement struct {
-	Source string         `json:"source,omitempty" yaml:"source,omitempty"`
-	Git    GitRequirement `json:"git,omitempty" yaml:"git,omitempty"`
+	Source          string
+	RequirementType RequirementType
 }
 
-// GitRequirement represents Git requirement.
-type GitRequirement struct {
-	Commit *string `json:"commit,omitempty" yaml:"commit,omitempty"`
-}
+// RequirementType defines the different types of requirements
+type RequirementType string
+
+const (
+	// RequirementTypeGit means that the requirement is a git source
+	RequirementTypeGit RequirementType = "git"
+
+	// RequirementTypeData means that the requirement is a data source
+	RequirementTypeData RequirementType = "data"
+
+	// RequirementTypeGitAndData means that the requirement is both a git and a data source
+	RequirementTypeGitAndData RequirementType = "git_and_data"
+
+	// RequirementTypeUnknown means that the requirement type is unknown
+	RequirementTypeUnknown RequirementType = "unknown"
+)
 
 // NewRequirement creates a new Requirement for a bundle.
-func NewRequirement(source string) Requirement {
+func NewRequirement(source string, sourceType RequirementType) Requirement {
 	return Requirement{
-		Source: source,
+		Source:          source,
+		RequirementType: sourceType,
 	}
 }
 
-// ToRequirements converts a list of sources to a list of Requirements.
-func ToRequirements(sources []string) []Requirement {
+// ToRequirements converts the default requirements to a list of bundle Requirements.
+func ToRequirements(sources []configv2alpha3.DefaultRequirement) []Requirement {
 	requirements := make([]Requirement, len(sources))
 	for i, source := range sources {
-		requirements[i] = NewRequirement(source)
+		requirements[i] = NewRequirement(source.Name, RequirementType(source.RequirementType))
 	}
 	return requirements
 }

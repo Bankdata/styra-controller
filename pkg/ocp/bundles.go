@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2025 Bankdata (bankdata@bankdata.dk)
+Copyright (C) 2026 Bankdata (bankdata@bankdata.dk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -29,15 +29,6 @@ import (
 const (
 	endpointV1Bundles = "/v1/bundles"
 )
-
-// BundleConfig represents the configuration of a bundle in the OCP APIs.
-type BundleConfig struct {
-	Name          string            `json:"-" yaml:"-"`
-	Labels        map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
-	ObjectStorage ObjectStorage     `json:"object_storage,omitempty" yaml:"object_storage,omitempty"`
-	Requirements  []Requirement     `json:"requirements,omitempty" yaml:"requirements,omitempty"`
-	ExcludedFiles []string          `json:"excluded_files,omitempty" yaml:"excluded_files,omitempty"`
-}
 
 // ObjectStorage represents the object storage configuration for a bundle.
 type ObjectStorage struct {
@@ -84,6 +75,7 @@ type PutBundleRequest struct {
 	Labels        map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
 	ObjectStorage ObjectStorage     `json:"object_storage,omitempty" yaml:"object_storage,omitempty"`
 	Requirements  []Requirement     `json:"requirements,omitempty" yaml:"requirements,omitempty"`
+	Revision      string            `json:"revision,omitempty" yaml:"revision,omitempty"`
 	ExcludedFiles []string          `json:"excluded_files,omitempty" yaml:"excluded_files,omitempty"`
 }
 
