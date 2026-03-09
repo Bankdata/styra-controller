@@ -143,8 +143,7 @@ func NewRequirement(source string, sourceType RequirementType) Requirement {
 func ToRequirements(sources []configv2alpha3.DefaultRequirement) []Requirement {
 	requirements := make([]Requirement, len(sources))
 	for i, source := range sources {
-		requirement := NewRequirement(source.Name, RequirementType(source.RequirementType))
-		requirements[i] = requirement
+		requirements[i] = NewRequirement(source.Name, RequirementType(source.RequirementType))
 	}
 	return requirements
 }

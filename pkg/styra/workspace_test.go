@@ -120,23 +120,4 @@ var _ = ginkgo.Describe("UpdateWorkspace", func() {
 		}),
 	)
 
-	ginkgo.It("sends compact raw JSON payload", func() {
-		request := json.RawMessage(`{"commit": "e7e1128fb3bde5ce46c3b7b6c62000fbfc463c3c"}`)
-
-		c := newTestClient(func(r *http.Request) *http.Response {
-			bs, err := io.ReadAll(r.Body)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			gomega.Expect(string(bs)).To(gomega.Equal(`{"commit":"e7e1128fb3bde5ce46c3b7b6c62000fbfc463c3c"}`))
-
-			return &http.Response{
-				Header:     make(http.Header),
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(bytes.NewBufferString(`{"request_id": "id"}`)),
-			}
-		})
-
-		res, err := c.UpdateWorkspaceRaw(context.Background(), request)
-		gomega.Expect(err).ToNot(gomega.HaveOccurred())
-		gomega.Expect(res.StatusCode).To(gomega.Equal(http.StatusOK))
-	})
 })

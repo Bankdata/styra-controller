@@ -128,21 +128,8 @@ func (c *Client) newRequest(
 
 	var b bytes.Buffer
 	if body != nil {
-		switch payload := body.(type) {
-		case json.RawMessage:
-			if err := json.Compact(&b, payload); err != nil {
-				return nil, errors.Wrap(err, "could not compact raw JSON body")
-			}
-		case *json.RawMessage:
-			if payload != nil {
-				if err := json.Compact(&b, *payload); err != nil {
-					return nil, errors.Wrap(err, "could not compact raw JSON body")
-				}
-			}
-		default:
-			if err := json.NewEncoder(&b).Encode(body); err != nil {
-				return nil, errors.Wrap(err, "could not encode body")
-			}
+		if err := json.NewEncoder(&b).Encode(body); err != nil {
+			return nil, errors.Wrap(err, "could not encode body")
 		}
 	}
 

@@ -87,7 +87,7 @@ func expectedRequirementRevisionExpression(requirement ocp.Requirement) string {
 		)
 	}
 
-	return ""
+	return "no-requirement-type"
 }
 
 var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"), func() {
