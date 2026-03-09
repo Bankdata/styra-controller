@@ -1,4 +1,4 @@
-apiVersion: config.bankdata.dk/v2alpha2
+apiVersion: config.bankdata.dk/v2alpha3
 kind: ProjectConfig
 
 # controllerClass sets a controller class for this controller. This allows the
@@ -113,7 +113,7 @@ readOnly: true
 #         - 10
 
 # opaControlPlaneConfig contains configuration relevant for OCP, e.g. config for creating bundles and sources.
-# Also contains configuration for where OPAs should send decisions to.
+# also contains configuration for where OPAs should send decisions to.
 # opaControlPlaneConfig: 
 #   address: ocp-url
 #   bundleObjectStorage:
