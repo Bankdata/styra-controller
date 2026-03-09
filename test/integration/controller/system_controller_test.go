@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
-	"strings"
 	"time"
 
 	ginkgo "github.com/onsi/ginkgo/v2"
@@ -44,51 +43,6 @@ import (
 	"github.com/bankdata/styra-controller/pkg/s3"
 	"github.com/bankdata/styra-controller/pkg/styra"
 )
-
-func expectedBundleRevision(requirements []ocp.Requirement) string {
-	if len(requirements) == 0 {
-		return ""
-	}
-
-	parts := make([]string, 0, len(requirements)+1)
-
-	for _, requirement := range requirements {
-		parts = append(parts,
-			fmt.Sprintf(`%s:%s`,
-				requirement.Source,
-				expectedRequirementRevisionExpression(requirement),
-			),
-		)
-	}
-
-	return fmt.Sprintf(`$"%s"`, strings.Join(parts, ","))
-}
-
-func expectedRequirementRevisionExpression(requirement ocp.Requirement) string {
-	if requirement.RequirementType == ocp.RequirementTypeGitAndData {
-		return fmt.Sprintf(
-			"commit:{input.sources[\"%s\"].git.commit}-data:{input.sources[\"%s\"].sql.hash}",
-			requirement.Source,
-			requirement.Source,
-		)
-	}
-
-	if requirement.RequirementType == ocp.RequirementTypeData {
-		return fmt.Sprintf(
-			"data:{input.sources[\"%s\"].sql.hash}",
-			requirement.Source,
-		)
-	}
-
-	if requirement.RequirementType == ocp.RequirementTypeGit {
-		return fmt.Sprintf(
-			"commit:{input.sources[\"%s\"].git.commit}",
-			requirement.Source,
-		)
-	}
-
-	return "no-requirement-type"
-}
 
 var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"), func() {
 	ginkgo.It("should reconcile", func() {
@@ -2677,20 +2631,10 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 					RequirementType: ocp.RequirementTypeGit,
 				},
 			},
-			Revision: expectedBundleRevision([]ocp.Requirement{
-				{
-					Source:          "library1",
-					RequirementType: ocp.RequirementTypeGitAndData,
-				},
-				{
-					Source:          "path-to-datasource",
-					RequirementType: ocp.RequirementTypeData,
-				},
-				{
-					Source:          "default-ocp-system",
-					RequirementType: ocp.RequirementTypeGit,
-				},
-			}),
+			Revision: "$\"library1:commit:{input.sources[\"library1\"].git.commit}" +
+				"-data:{input.sources[\"library1\"].sql.hash}" +
+				",path-to-datasource:data:{input.sources[\"path-to-datasource\"].sql.hash}" +
+				",default-ocp-system:commit:{input.sources[\"default-ocp-system\"].git.commit}\"",
 		}).Return(nil).Once()
 
 		// Called in reconcileS3Credentials
@@ -2752,20 +2696,10 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 					RequirementType: ocp.RequirementTypeGit,
 				},
 			},
-			Revision: expectedBundleRevision([]ocp.Requirement{
-				{
-					Source:          "library1",
-					RequirementType: ocp.RequirementTypeGitAndData,
-				},
-				{
-					Source:          "path-to-datasource",
-					RequirementType: ocp.RequirementTypeData,
-				},
-				{
-					Source:          "default-ocp-system",
-					RequirementType: ocp.RequirementTypeGit,
-				},
-			}),
+			Revision: "$\"library1:commit:{input.sources[\"library1\"].git.commit}" +
+				"-data:{input.sources[\"library1\"].sql.hash}" +
+				",path-to-datasource:data:{input.sources[\"path-to-datasource\"].sql.hash}" +
+				",default-ocp-system:commit:{input.sources[\"default-ocp-system\"].git.commit}\"",
 		}).Return(nil).Once()
 
 		// Called in reconcileS3Credentials
@@ -2821,20 +2755,10 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 					RequirementType: ocp.RequirementTypeGit,
 				},
 			},
-			Revision: expectedBundleRevision([]ocp.Requirement{
-				{
-					Source:          "library1",
-					RequirementType: ocp.RequirementTypeGitAndData,
-				},
-				{
-					Source:          "path-to-datasource",
-					RequirementType: ocp.RequirementTypeData,
-				},
-				{
-					Source:          "default-ocp-system",
-					RequirementType: ocp.RequirementTypeGit,
-				},
-			}),
+			Revision: "$\"library1:commit:{input.sources[\"library1\"].git.commit}" +
+				"-data:{input.sources[\"library1\"].sql.hash}" +
+				",path-to-datasource:data:{input.sources[\"path-to-datasource\"].sql.hash}" +
+				",default-ocp-system:commit:{input.sources[\"default-ocp-system\"].git.commit}\"",
 		}).Return(nil).Once()
 
 		// Called in reconcileS3Credentials
