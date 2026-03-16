@@ -833,10 +833,10 @@ func (r *SystemReconciler) reconcileSystemBundle(
 
 // bundleRevision produces a string containing the commit sha for each git requirement
 // and the sha256 hash of the concatenated hashes of all datasources,
-// for example "gitsource1:commitsha1,requirement1:commitsha2,data:sha256"
+// for example "data:sha256,gitsource1:commitsha1,requirement1:commitsha2"
 func bundleRevision() string {
-	return `$"{concat(",", {sprintf("%s:%s", [y, x]) | some y; x := input.sources[y].git.commit})},` +
-		`data:{crypto.sha256(concat("", {x | x := input.sources[_].sql.hash}))}"`
+	return `$"data:{crypto.sha256(concat("", {x | x := input.sources[_].sql.hash}))},` +
+		`{concat(",", {sprintf("%s:%s", [y, x]) | some y; x := input.sources[y].git.commit})}"`
 }
 
 func (r *SystemReconciler) reconcileSystemSource(
