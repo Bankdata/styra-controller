@@ -2629,6 +2629,8 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 					Source: "default-ocp-system",
 				},
 			},
+			Revision: `$"data:{crypto.sha256(concat("", {x | x := input.sources[_].sql.hash}))},` +
+				`{concat(",", {sprintf("%s:%s", [y, x]) | some y; x := input.sources[y].git.commit})}"`,
 		}).Return(nil).Once()
 
 		// Called in reconcileS3Credentials
@@ -2688,6 +2690,8 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 					Source: "default-ocp-system",
 				},
 			},
+			Revision: `$"data:{crypto.sha256(concat("", {x | x := input.sources[_].sql.hash}))},` +
+				`{concat(",", {sprintf("%s:%s", [y, x]) | some y; x := input.sources[y].git.commit})}"`,
 		}).Return(nil).Once()
 
 		// Called in reconcileS3Credentials
@@ -2741,6 +2745,8 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 					Source: "default-ocp-system",
 				},
 			},
+			Revision: `$"data:{crypto.sha256(concat("", {x | x := input.sources[_].sql.hash}))},` +
+				`{concat(",", {sprintf("%s:%s", [y, x]) | some y; x := input.sources[y].git.commit})}"`,
 		}).Return(nil).Once()
 
 		// Called in reconcileS3Credentials
