@@ -136,7 +136,14 @@ func ToRequirements(sources []string) []Requirement {
 
 // GetSource calls the GET /v1/sources/{id} endpoint in the OCP API.
 func (c *Client) GetSource(ctx context.Context, path string) (resp *GetSourceResponse, err error) {
-	res, err := c.request(ctx, http.MethodGet, fmt.Sprintf("%s/%s", endpointV1Sources, path), nil, nil)
+	var headers map[string]string
+	if c.token != "" {
+		headers = map[string]string{
+			"Authorization": fmt.Sprintf("Bearer %s", c.token),
+		}
+	}
+
+	res, err := c.request(ctx, http.MethodGet, fmt.Sprintf("%s/%s", endpointV1Sources, path), headers, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get source from OCP")
 	}
@@ -177,7 +184,14 @@ func (c *Client) PutSource(
 	id string,
 	request *PutSourceRequest,
 ) (resp *PutSourceResponse, err error) {
-	res, err := c.request(ctx, http.MethodPut, fmt.Sprintf("%s/%s", endpointV1Sources, id), request, nil)
+	var headers map[string]string
+	if c.token != "" {
+		headers = map[string]string{
+			"Authorization": fmt.Sprintf("Bearer %s", c.token),
+		}
+	}
+
+	res, err := c.request(ctx, http.MethodPut, fmt.Sprintf("%s/%s", endpointV1Sources, id), request, headers)
 	if err != nil {
 		return nil, errors.Wrap(err, "PutSource: could not call OCP")
 	}
@@ -208,7 +222,14 @@ func (c *Client) PutSource(
 
 // DeleteSource calls the DELETE /v1/sources/{name} endpoint in the OCP API.
 func (c *Client) DeleteSource(ctx context.Context, id string) (err error) {
-	res, err := c.request(ctx, http.MethodDelete, fmt.Sprintf("%s/%s", endpointV1Sources, id), nil, nil)
+	var headers map[string]string
+	if c.token != "" {
+		headers = map[string]string{
+			"Authorization": fmt.Sprintf("Bearer %s", c.token),
+		}
+	}
+
+	res, err := c.request(ctx, http.MethodDelete, fmt.Sprintf("%s/%s", endpointV1Sources, id), nil, headers)
 	if err != nil {
 		return err
 	}

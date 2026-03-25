@@ -18,6 +18,7 @@ package ocp
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"path"
@@ -89,7 +90,14 @@ type PutBundleResponse struct {
 
 // PutBundle calls the PUT /v1/bundles/{name} endpoint in the OCP API.
 func (c *Client) PutBundle(ctx context.Context, bundle *PutBundleRequest) (err error) {
-	res, err := c.request(ctx, http.MethodPut, path.Join(endpointV1Bundles, bundle.Name), bundle, nil)
+	var headers map[string]string
+	if c.token != "" {
+		headers = map[string]string{
+			"Authorization": fmt.Sprintf("Bearer %s", c.token),
+		}
+	}
+
+	res, err := c.request(ctx, http.MethodPut, path.Join(endpointV1Bundles, bundle.Name), bundle, headers)
 	if err != nil {
 		return err
 	}
@@ -115,7 +123,14 @@ func (c *Client) PutBundle(ctx context.Context, bundle *PutBundleRequest) (err e
 
 // DeleteBundle calls the DELETE /v1/bundles/{name} endpoint in the OCP API.
 func (c *Client) DeleteBundle(ctx context.Context, name string) (err error) {
-	res, err := c.request(ctx, http.MethodDelete, path.Join(endpointV1Bundles, name), nil, nil)
+	var headers map[string]string
+	if c.token != "" {
+		headers = map[string]string{
+			"Authorization": fmt.Sprintf("Bearer %s", c.token),
+		}
+	}
+
+	res, err := c.request(ctx, http.MethodDelete, path.Join(endpointV1Bundles, name), nil, headers)
 	if err != nil {
 		return err
 	}

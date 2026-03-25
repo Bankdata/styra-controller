@@ -119,12 +119,6 @@ func main() {
 		zap.Level(zapcore.Level(-ctrlConfig.LogLevel)),
 	))
 
-	styraToken, err1 := config.TokenFromConfig(ctrlConfig)
-	if err1 != nil {
-		log.Error(err1, "Unable to load styra token")
-		exit(err1)
-	}
-
 	options := config.OptionsFromConfig(ctrlConfig, scheme)
 
 	if ctrlConfig.Sentry != nil {
@@ -180,27 +174,6 @@ func main() {
 		if err != nil {
 			log.Error(err, "unable to create S3 client")
 			exit(err)
-		}
-	}
-
-	var styraClient styra.ClientInterface
-	if ctrlConfig.EnableStyraReconciliation {
-		roles := make([]styra.Role, len(ctrlConfig.SystemUserRoles))
-		for i, role := range ctrlConfig.SystemUserRoles {
-			roles[i] = styra.Role(role)
-		}
-
-		styraHostURL := strings.TrimSuffix(ctrlConfig.Styra.Address, "/")
-		styraClient = styra.New(styraHostURL, styraToken)
-
-		if err := configureExporter(
-			styraClient, ctrlConfig.DecisionsExporter, configv2alpha2.ExporterConfigTypeDecisions); err != nil {
-			log.Error(err, fmt.Sprintf("unable to configure %s", configv2alpha2.ExporterConfigTypeDecisions))
-		}
-
-		if err := configureExporter(
-			styraClient, ctrlConfig.ActivityExporter, configv2alpha2.ExporterConfigTypeActivity); err != nil {
-			log.Error(err, fmt.Sprintf("unable to configure %s", configv2alpha2.ExporterConfigTypeActivity))
 		}
 	}
 
@@ -267,10 +240,6 @@ func main() {
 		r1.S3 = s3Client
 	}
 
-	if ctrlConfig.EnableStyraReconciliation {
-		r1.Styra = styraClient
-	}
-
 	if ctrlConfig.NotificationWebhooks != nil {
 		r1.WebhookClient = webhook.New(
 			ctrlConfig.NotificationWebhooks.SystemDatasourceChanged,
@@ -302,7 +271,6 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		Config: ctrlConfig,
-		Styra:  styraClient,
 	}
 
 	if ctrlConfig.EnableOPAControlPlaneReconciliation || ctrlConfig.EnableOPAControlPlaneReconciliationTestData {
