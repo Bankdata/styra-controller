@@ -745,6 +745,11 @@ func (r *SystemReconciler) reconcileS3Credentials(
 	uniqueName string,
 	secretName string,
 ) (s3.Credentials, ctrl.Result, error) {
+	if r.Config.UserCredentialHandler == nil || r.Config.UserCredentialHandler.S3 == nil {
+		log.Info("No UserCredentialHandler configured, returning empty S3 credentials")
+		return s3.Credentials{}, ctrl.Result{}, nil
+	}
+
 	s3Credentials := s3.Credentials{}
 	s3Credentials.Region = r.Config.UserCredentialHandler.S3.Region
 	s3Credentials.AccessKeyID = fmt.Sprintf("Access-Key-%s-%s", r.Config.UserCredentialHandler.S3.Bucket, uniqueName)

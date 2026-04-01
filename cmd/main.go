@@ -176,10 +176,12 @@ func main() {
 		ocpHostURL := strings.TrimSuffix(ctrlConfig.OPAControlPlaneConfig.Address, "/")
 		opaControlPlaneClient = ocp.New(ocpHostURL, ctrlConfig.OPAControlPlaneConfig.Token)
 
-		s3Client, err = s3.NewClient(*ctrlConfig.UserCredentialHandler.S3)
-		if err != nil {
-			log.Error(err, "unable to create S3 client")
-			exit(err)
+		if ctrlConfig.UserCredentialHandler != nil && ctrlConfig.UserCredentialHandler.S3 != nil {
+			s3Client, err = s3.NewClient(*ctrlConfig.UserCredentialHandler.S3)
+			if err != nil {
+				log.Error(err, "unable to create S3 client")
+				exit(err)
+			}
 		}
 	}
 
