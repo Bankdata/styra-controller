@@ -628,6 +628,11 @@ func (r *SystemReconciler) reconcileOPASecret(
 ) (ctrl.Result, bool, error) {
 	log.Info("Reconciling OPA secret")
 
+	if r.Config.UserCredentialHandler == nil || r.Config.UserCredentialHandler.S3 == nil {
+		log.Info("No UserCredentialHandler configured, don't create secret")
+		return ctrl.Result{}, false, nil
+	}
+
 	reconcileS3CredentialsStart := time.Now()
 	s3CredentialsRead, result, err := r.reconcileS3Credentials(
 		ctx, log, system, uniqueName, secretName)
