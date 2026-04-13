@@ -36,9 +36,15 @@ func newMinioClient(cfg Config) (Client, error) {
 func (c *minioClient) UserExists(ctx context.Context, accessKey string) (bool, error) {
 	_, err := c.adminClient.GetUserInfo(ctx, accessKey)
 	if err != nil {
-		if strings.Contains(err.Error(), "The specified user does not exist") {
+        errResp := madmin.ToErrorResponse(err)
+        if errResp.Code == "XMinioAdminNoSuchUser" {
+            return false, nil
+        }
+
+		if errResp.Code == "InvalidAccessKeyId" {
 			return false, nil
 		}
+		
 		return false, fmt.Errorf("failed to get user info for %s: %w", accessKey, err)
 	}
 
