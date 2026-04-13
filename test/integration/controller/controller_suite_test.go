@@ -155,14 +155,6 @@ var _ = ginkgo.BeforeSuite(func() {
 						OCPConfigSecretName: "s3-credentials",
 					},
 				},
-				DecisionAPIConfig: &configv2alpha2.DecisionAPIConfig{
-					ServiceURL: "log-api-url",
-					Reporting: configv2alpha2.DecisionLogReporting{
-						MaxDelaySeconds:      60,
-						MinDelaySeconds:      5,
-						UploadSizeLimitBytes: 1024,
-					},
-				},
 			},
 			UserCredentialHandler: &configv2alpha2.UserCredentialHandler{
 				S3: &configv2alpha2.S3Handler{
@@ -177,6 +169,14 @@ var _ = ginkgo.BeforeSuite(func() {
 				BundleServer: &configv2alpha2.OPABundleServer{
 					URL:  "https://s3-url2",
 					Path: "/test-bucket",
+				},
+				DecisionAPIConfig: &configv2alpha2.DecisionAPIConfig{
+					ServiceURL: "log-api-url",
+					Reporting: configv2alpha2.DecisionLogReporting{
+						MaxDelaySeconds:      60,
+						MinDelaySeconds:      5,
+						UploadSizeLimitBytes: 1024,
+					},
 				},
 			},
 		},
