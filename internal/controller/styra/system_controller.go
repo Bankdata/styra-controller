@@ -531,12 +531,12 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 			WithSystemCondition(v1beta1.ConditionTypeOPAConfigMapUpdated)
 	}
 
-	bundleServiceCredintials := &ocp.ServiceCredentials{
+	bundleServiceCredentials := &ocp.ServiceCredentials{
 		S3: &ocp.S3Signing{
 			S3EnvironmentCredentials: map[string]ocp.EmptyStruct{},
 		}}
 	if r.Config.OPA.BundleServer.TokenPath != "" {
-		bundleServiceCredintials = &ocp.ServiceCredentials{
+		bundleServiceCredentials = &ocp.ServiceCredentials{
 			Bearer: &ocp.Bearer{
 				TokenPath: r.Config.OPA.BundleServer.TokenPath,
 			},
@@ -547,7 +547,7 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 		BundleService: &ocp.OPAServiceConfig{
 			Name:        r.Config.OPA.BundleServer.Name,
 			URL:         bundleURL,
-			Credentials: bundleServiceCredintials,
+			Credentials: bundleServiceCredentials,
 		},
 		LogService: &ocp.OPAServiceConfig{
 			Name: "logs",
