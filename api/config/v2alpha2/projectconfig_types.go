@@ -301,7 +301,9 @@ type DecisionLog struct {
 
 // DecisionAPIConfig contains configuration for decision log dispatch
 type DecisionAPIConfig struct {
+	Name       string               `json:"name,omitempty"`
 	ServiceURL string               `json:"serviceUrl,omitempty"`
+	TokenPath  string               `json:"tokenPath,omitempty"`
 	Reporting  DecisionLogReporting `json:"reporting,omitempty"`
 }
 

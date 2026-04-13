@@ -550,11 +550,11 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 			Credentials: bundleServiceCredentials,
 		},
 		LogService: &ocp.OPAServiceConfig{
-			Name: "logs",
+			Name: r.Config.OPA.DecisionAPIConfig.Name,
 			URL:  r.Config.OPA.DecisionAPIConfig.ServiceURL,
 			Credentials: &ocp.ServiceCredentials{
 				Bearer: &ocp.Bearer{
-					TokenPath: "/run/secrets/kubernetes.io/serviceaccount/token",
+					TokenPath: r.Config.OPA.DecisionAPIConfig.TokenPath,
 				},
 			},
 		},

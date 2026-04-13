@@ -2817,27 +2817,27 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			expectedYAML := `bundles:
   authz:
     resource: bundles/default-ocp-system/bundle.tar.gz
-    service: s3
+    service: bundle-server
 decision_logs:
   reporting:
     max_delay_seconds: 60
     min_delay_seconds: 5
     upload_size_limit_bytes: 1024
   resource_path: /logs
-  service: logs
+  service: decision-api
 labels:
   namespace: default
   unique-name: default-ocp-system
 services:
 - credentials:
-    s3_signing:
-      environment_credentials: {}
-  name: s3
-  url: https://s3-url2/test-bucket
+    bearer:
+      token_path: token-path-bundle-server
+  name: bundle-server
+  url: https://bundle-server-url/test-bucket
 - credentials:
     bearer:
-      token_path: /run/secrets/kubernetes.io/serviceaccount/token
-  name: logs
+      token_path: token-path-decision-api
+  name: decision-api
   url: log-api-url
 `
 
