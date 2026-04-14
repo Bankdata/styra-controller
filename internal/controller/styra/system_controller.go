@@ -531,26 +531,34 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 			WithSystemCondition(v1beta1.ConditionTypeOPAConfigMapUpdated)
 	}
 
+	bundleServiceCredentials := &ocp.ServiceCredentials{
+		S3: &ocp.S3Signing{
+			S3EnvironmentCredentials: map[string]ocp.EmptyStruct{},
+		}}
+	if r.Config.OPA.BundleServer.TokenPath != "" {
+		bundleServiceCredentials = &ocp.ServiceCredentials{
+			Bearer: &ocp.Bearer{
+				TokenPath: r.Config.OPA.BundleServer.TokenPath,
+			},
+		}
+	}
+
 	opaconf := ocp.OPAConfig{
 		BundleService: &ocp.OPAServiceConfig{
-			Name: "s3",
-			URL:  bundleURL,
-			Credentials: &ocp.ServiceCredentials{
-				S3: &ocp.S3Signing{
-					S3EnvironmentCredentials: map[string]ocp.EmptyStruct{},
-				},
-			},
+			Name:        r.Config.OPA.BundleServer.Name,
+			URL:         bundleURL,
+			Credentials: bundleServiceCredentials,
 		},
 		LogService: &ocp.OPAServiceConfig{
-			Name: "logs",
-			URL:  r.Config.OPAControlPlaneConfig.DecisionAPIConfig.ServiceURL,
+			Name: r.Config.OPA.DecisionAPIConfig.Name,
+			URL:  r.Config.OPA.DecisionAPIConfig.ServiceURL,
 			Credentials: &ocp.ServiceCredentials{
 				Bearer: &ocp.Bearer{
-					TokenPath: "/run/secrets/kubernetes.io/serviceaccount/token",
+					TokenPath: r.Config.OPA.DecisionAPIConfig.TokenPath,
 				},
 			},
 		},
-		DecisionLogReporting: r.Config.OPAControlPlaneConfig.DecisionAPIConfig.Reporting,
+		DecisionLogReporting: r.Config.OPA.DecisionAPIConfig.Reporting,
 		BundleResource:       fmt.Sprintf("bundles/%s/bundle.tar.gz", uniqueName),
 		UniqueName:           uniqueName,
 		Namespace:            system.Namespace,
