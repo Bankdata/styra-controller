@@ -637,8 +637,9 @@ func (r *SystemReconciler) reconcileOPASecret(
 	log.Info("Reconciling OPA secret")
 
 	if r.Config.UserCredentialHandler == nil || r.Config.UserCredentialHandler.S3 == nil {
-		log.Info("No UserCredentialHandler configured, don't create secret")
-		return ctrl.Result{}, false, nil
+		//Deprecated: breaking change in later version where no secret will be created
+		//create empty secret to avoid OPA complaining about missing secret.
+		log.Info("No UserCredentialHandler configured, empty secret will be created for OPA")
 	}
 
 	reconcileS3CredentialsStart := time.Now()
@@ -758,6 +759,11 @@ func (r *SystemReconciler) reconcileS3Credentials(
 	uniqueName string,
 	secretName string,
 ) (s3.Credentials, ctrl.Result, error) {
+	if r.Config.UserCredentialHandler == nil || r.Config.UserCredentialHandler.S3 == nil {
+		log.Info("No UserCredentialHandler configured, returning empty S3 credentials")
+		return s3.Credentials{}, ctrl.Result{}, nil
+	}
+
 	s3Credentials := s3.Credentials{}
 	s3Credentials.Region = r.Config.UserCredentialHandler.S3.Region
 	s3Credentials.AccessKeyID = fmt.Sprintf("Access-Key-%s-%s", r.Config.UserCredentialHandler.S3.Bucket, uniqueName)
