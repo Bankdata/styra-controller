@@ -174,7 +174,7 @@ var _ = ginkgo.BeforeSuite(func() {
 				},
 				DecisionAPIConfig: &configv2alpha2.DecisionAPIConfig{
 					Name:       "decision-api",
-					ServiceURL: "log-api-url",
+					ServiceURL: "decision-api-url",
 					TokenPath:  "token-path-decision-api",
 					Reporting: configv2alpha2.DecisionLogReporting{
 						MaxDelaySeconds:      60,

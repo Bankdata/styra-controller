@@ -2838,7 +2838,7 @@ services:
     bearer:
       token_path: token-path-decision-api
   name: decision-api
-  url: log-api-url
+  url: decision-api-url
 `
 
 			if err := yaml.Unmarshal([]byte(actualYAML), &actualMap); err != nil {
