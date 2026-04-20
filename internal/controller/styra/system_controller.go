@@ -376,7 +376,7 @@ func (r *SystemReconciler) ocpReconcile(
 	ctx context.Context,
 	log logr.Logger,
 	system *v1beta1.System) (ctrl.Result, error) {
-	requirements := ocp.ToRequirements(r.Config.OPAControlPlaneConfig.DefaultRequirements)
+	var requirements []ocp.Requirement
 
 	for _, datasource := range system.Spec.Datasources {
 		datasource.Path = strings.ToLower(strings.ReplaceAll(datasource.Path, "/", "-"))
@@ -419,8 +419,10 @@ func (r *SystemReconciler) ocpReconcile(
 	requirements = append(requirements, ocp.NewRequirement(uniqueName))
 	system.SetCondition(v1beta1.ConditionTypeSystemSourceUpdated, metav1.ConditionTrue)
 
+	defaultRequirements := ocp.ToRequirements(r.Config.OPAControlPlaneConfig.DefaultRequirements)
+
 	reconcileSystemBundleStart := time.Now()
-	result, err = r.reconcileSystemBundle(ctx, uniqueName, requirements)
+	result, err = r.reconcileSystemBundle(ctx, uniqueName, requirements, defaultRequirements)
 	r.Metrics.ReconcileSegmentTime.
 		WithLabelValues("reconcileSystemBundleOcp").
 		Observe(time.Since(reconcileSystemBundleStart).Seconds())
@@ -821,7 +823,8 @@ func (r *SystemReconciler) reconcileS3Credentials(
 func (r *SystemReconciler) reconcileSystemBundle(
 	ctx context.Context,
 	uniqueName string,
-	requirements []ocp.Requirement) (ctrl.Result, error) {
+	requirements []ocp.Requirement,
+	defaultRequirements []ocp.Requirement) (ctrl.Result, error) {
 	if r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3 == nil {
 		return ctrl.Result{}, ctrlerr.New("reconcileSystemBundle: no object storage configured")
 	}
@@ -839,8 +842,8 @@ func (r *SystemReconciler) reconcileSystemBundle(
 	bundle := &ocp.PutBundleRequest{
 		Name:          uniqueName,
 		ObjectStorage: objectStorage,
-		Requirements:  requirements,
-		Revision:      bundleRevision(),
+		Requirements:  append(requirements, defaultRequirements...),
+		Revision:      bundleRevision(uniqueName, defaultRequirements),
 	}
 	err := r.OCP.PutBundle(ctx, bundle)
 
@@ -850,12 +853,24 @@ func (r *SystemReconciler) reconcileSystemBundle(
 	return ctrl.Result{}, nil
 }
 
-// bundleRevision produces a string containing the commit sha for each git requirement
-// and the sha256 hash of the concatenated hashes of all datasources,
-// for example "data:sha256,gitsource1:commitsha1,requirement1:commitsha2"
-func bundleRevision() string {
-	return `$"data:{crypto.sha256(concat("", {x | x := input.sources[_].sql.hash}))},` +
-		`{concat(",", {sprintf("%s:%s", [y, x]) | some y; x := input.sources[y].git.commit})}"`
+// bundleRevision produces a Rego template string containing:
+// - data: sha256 hash of all datasource SQL hashes
+// - git-sha: the git commit for the system's unique source
+// - libraries: sha256 hash of all default requirement git commits
+// for example "data:sha256,git-sha:commitsha,libraries:sha256"
+func bundleRevision(uniqueName string, defaultRequirements []ocp.Requirement) string {
+	defaultReqNames := make([]string, len(defaultRequirements))
+	for i, req := range defaultRequirements {
+		defaultReqNames[i] = fmt.Sprintf(`"%s"`, req.Source)
+	}
+	defaultReqSet := strings.Join(defaultReqNames, ", ")
+
+	return fmt.Sprintf(
+		`$"data:{crypto.sha256(concat("", {x | x := input.sources[_].sql.hash}))},`+
+			`git-sha:{input.sources["%s"].git.commit},`+ // git sha for the system source
+			`libraries:{crypto.sha256(concat("", {x | some y in [%s]; x := input.sources[y].git.commit}))}"`,
+		uniqueName, defaultReqSet,
+	)
 }
 
 func (r *SystemReconciler) reconcileSystemSource(
