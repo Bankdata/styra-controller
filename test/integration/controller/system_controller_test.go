@@ -2620,17 +2620,18 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			},
 			Requirements: []ocp.Requirement{
 				{
-					Source: "library1",
-				},
-				{
 					Source: "path-to-datasource",
 				},
 				{
 					Source: "default-ocp-system",
 				},
+				{
+					Source: "library1",
+				},
 			},
 			Revision: `$"data:{crypto.sha256(concat("", {x | x := input.sources[_].sql.hash}))},` +
-				`{concat(",", {sprintf("%s:%s", [y, x]) | some y; x := input.sources[y].git.commit})}"`,
+				`git-sha:{input.sources["default-ocp-system"].git.commit},` +
+				`libraries:{crypto.sha256(concat("", {x | some y in ["library1"]; x := input.sources[y].git.commit}))}"`,
 		}).Return(nil).Once()
 
 		// Called in reconcileS3Credentials
@@ -2681,17 +2682,18 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			},
 			Requirements: []ocp.Requirement{
 				{
-					Source: "library1",
-				},
-				{
 					Source: "path-to-datasource",
 				},
 				{
 					Source: "default-ocp-system",
 				},
+				{
+					Source: "library1",
+				},
 			},
 			Revision: `$"data:{crypto.sha256(concat("", {x | x := input.sources[_].sql.hash}))},` +
-				`{concat(",", {sprintf("%s:%s", [y, x]) | some y; x := input.sources[y].git.commit})}"`,
+				`git-sha:{input.sources["default-ocp-system"].git.commit},` +
+				`libraries:{crypto.sha256(concat("", {x | some y in ["library1"]; x := input.sources[y].git.commit}))}"`,
 		}).Return(nil).Once()
 
 		// Called in reconcileS3Credentials
@@ -2736,17 +2738,18 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			},
 			Requirements: []ocp.Requirement{
 				{
-					Source: "library1",
-				},
-				{
 					Source: "path-to-datasource",
 				},
 				{
 					Source: "default-ocp-system",
 				},
+				{
+					Source: "library1",
+				},
 			},
 			Revision: `$"data:{crypto.sha256(concat("", {x | x := input.sources[_].sql.hash}))},` +
-				`{concat(",", {sprintf("%s:%s", [y, x]) | some y; x := input.sources[y].git.commit})}"`,
+				`git-sha:{input.sources["default-ocp-system"].git.commit},` +
+				`libraries:{crypto.sha256(concat("", {x | some y in ["library1"]; x := input.sources[y].git.commit}))}"`,
 		}).Return(nil).Once()
 
 		// Called in reconcileS3Credentials

@@ -19,12 +19,12 @@ notificationWebhooks: {}
 #sso:
 styra:
   address: https://styra-url.example.com
-  token: styra-token
+  # token: set via config-secrets.yaml
 #  tokenSecretPath: /etc/styra-controller-token/styra_token
 
 opaControlPlaneConfig:
   address: https://ocp-host/ocp
-  token: ocp-token
+  # token: set via config-secrets.yaml
   gitCredentials:
     - id: git-credential-id
       repoPrefix: https://github.com
@@ -43,8 +43,8 @@ userCredentialHandler:
     bucket: ocp
     url: https://minio-host
     region: us-east-1 #default use for minio
-    accessKeyID: minio-access-key
-    secretAccessKey: minio-secret-key
+    # accessKeyID: set via config-secrets.yaml
+    # secretAccessKey: set via config-secrets.yaml
 
 #systemPrefix:
 #systemSuffix:

@@ -10,15 +10,21 @@ spec:
       - name: manager
         args:
         - --config=/etc/styra-controller/config.yaml
+        - --config=/etc/styra-controller-secrets/config-secrets.yaml
         volumeMounts:
         - name: config
           mountPath: /etc/styra-controller
+        - name: config-secrets
+          mountPath: /etc/styra-controller-secrets
         - name: token
           mountPath: /etc/styra-controller-token
       volumes:
       - name: config
+        configMap:
+          name: config
+      - name: config-secrets
         secret:
-          secretName: config
+          secretName: config-secrets
       - name: token
         secret:
           secretName: token
