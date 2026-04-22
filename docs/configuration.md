@@ -1,6 +1,37 @@
 # Configuration of the ocp-controller
 This document describes the different configuration options for the ocp-controller. The configuration options are defined in `api/config/v2alpha2/projectconfig_types.go`. The configuration options are assigned in `config/default/config.yaml`. For the ease of reference the configuration options are listed here:
 
+## Multi-file configuration
+
+The `--config` flag can be specified multiple times. When multiple config files are provided, they are deep-merged in order: the first file serves as the base and each subsequent file is an overlay whose values take precedence. Fields not present in an overlay file are preserved from the base.
+
+This is designed to separate non-secret configuration (in a ConfigMap) from secret values (in a Secret):
+
+```
+--config=/etc/styra-controller/config.yaml \
+--config=/etc/styra-controller-secrets/config-secrets.yaml
+```
+
+**Base config** (`config.yaml` in a ConfigMap) — contains all non-secret settings like addresses, log levels, system prefix/suffix, OPA config, etc.
+
+**Secrets overlay** (`config-secrets.yaml` in a Secret) — contains only sensitive fields like API tokens, passwords, S3 keys, Sentry DSN, and TLS material. Only the fields you want to override need to be present; everything else is inherited from the base.
+
+Example secrets overlay:
+```yaml
+apiVersion: config.bankdata.dk/v2alpha2
+kind: ProjectConfig
+styra:
+  token: my-secret-token
+opaControlPlaneConfig:
+  token: my-ocp-token
+userCredentialHandler:
+  s3:
+    accessKeyID: my-access-key
+    secretAccessKey: my-secret-key
+```
+
+Single-file usage (`--config=config.yaml`) remains fully supported and behaves identically to previous versions.
+
 #### Deprecated styra configuration options
 * `decisionsExporter`
 * `activityExporter`

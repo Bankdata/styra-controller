@@ -18,6 +18,8 @@ limitations under the License.
 package config
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"regexp"
 
@@ -28,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	sigsyaml "sigs.k8s.io/yaml"
 )
 
 const (
@@ -37,14 +40,53 @@ const (
 	webhookPort            = 9443
 )
 
-// Load loads controller configuration from the given file using the types
-// registered in the scheme.
-func Load(file string, scheme *runtime.Scheme) (*v2alpha2.ProjectConfig, error) {
-	bs, err := os.ReadFile(file)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not read config file")
+// Load loads controller configuration from the given files using the types
+// registered in the scheme. When multiple files are provided, they are
+// deep-merged in order: the first file is the base and each subsequent file
+// is an overlay whose values take precedence. Fields not present in an
+// overlay file are preserved from the base.
+func Load(files []string, scheme *runtime.Scheme) (*v2alpha2.ProjectConfig, error) {
+	if len(files) == 0 {
+		return nil, errors.New("at least one config file must be specified")
 	}
-	return deserialize(bs, scheme)
+
+	// Fast path: single file — use the original codec-only path for full
+	// backward compatibility (no intermediate map round-trip).
+	if len(files) == 1 {
+		bs, err := os.ReadFile(files[0])
+		if err != nil {
+			return nil, errors.Wrap(err, "could not read config file")
+		}
+		return deserialize(bs, scheme)
+	}
+
+	// Multi-file path: YAML → map → deep-merge → JSON → codec decode.
+	var merged map[string]interface{}
+
+	for _, file := range files {
+		bs, err := os.ReadFile(file)
+		if err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("could not read config file %s", file))
+		}
+
+		var m map[string]interface{}
+		if err := sigsyaml.Unmarshal(bs, &m); err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("could not parse config file %s", file))
+		}
+
+		if merged == nil {
+			merged = m
+		} else {
+			merged = deepMerge(merged, m)
+		}
+	}
+
+	mergedJSON, err := json.Marshal(merged)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not marshal merged config")
+	}
+
+	return deserialize(mergedJSON, scheme)
 }
 
 // OptionsFromConfig creates a manager.Options based on a configuration file

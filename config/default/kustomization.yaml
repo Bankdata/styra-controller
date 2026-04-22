@@ -143,10 +143,15 @@ replacements:
           index: 1
           create: true
           
-secretGenerator:
+configMapGenerator:
 - name: config
   files:
   - config.yaml
+
+secretGenerator:
+- name: config-secrets
+  files:
+  - config-secrets.yaml
 - name: token
   literals:
   - styra_token=token
