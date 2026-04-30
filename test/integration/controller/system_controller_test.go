@@ -2620,15 +2620,18 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			},
 			Requirements: []ocp.Requirement{
 				{
-					Source: "library1",
-				},
-				{
 					Source: "path-to-datasource",
 				},
 				{
 					Source: "default-ocp-system",
 				},
+				{
+					Source: "library1",
+				},
 			},
+			Revision: `$"data:{crypto.sha256(concat("", {x | x := input.sources[_].sql.hash}))},` +
+				`git-sha:{input.sources["default-ocp-system"].git.commit},` +
+				`libraries:{crypto.sha256(concat("", {x | some y in ["library1"]; x := input.sources[y].git.commit}))}"`,
 		}).Return(nil).Once()
 
 		// Called in reconcileS3Credentials
@@ -2679,15 +2682,18 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			},
 			Requirements: []ocp.Requirement{
 				{
-					Source: "library1",
-				},
-				{
 					Source: "path-to-datasource",
 				},
 				{
 					Source: "default-ocp-system",
 				},
+				{
+					Source: "library1",
+				},
 			},
+			Revision: `$"data:{crypto.sha256(concat("", {x | x := input.sources[_].sql.hash}))},` +
+				`git-sha:{input.sources["default-ocp-system"].git.commit},` +
+				`libraries:{crypto.sha256(concat("", {x | some y in ["library1"]; x := input.sources[y].git.commit}))}"`,
 		}).Return(nil).Once()
 
 		// Called in reconcileS3Credentials
@@ -2732,15 +2738,18 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			},
 			Requirements: []ocp.Requirement{
 				{
-					Source: "library1",
-				},
-				{
 					Source: "path-to-datasource",
 				},
 				{
 					Source: "default-ocp-system",
 				},
+				{
+					Source: "library1",
+				},
 			},
+			Revision: `$"data:{crypto.sha256(concat("", {x | x := input.sources[_].sql.hash}))},` +
+				`git-sha:{input.sources["default-ocp-system"].git.commit},` +
+				`libraries:{crypto.sha256(concat("", {x | some y in ["library1"]; x := input.sources[y].git.commit}))}"`,
 		}).Return(nil).Once()
 
 		// Called in reconcileS3Credentials
@@ -2811,28 +2820,28 @@ var _ = ginkgo.Describe("SystemReconciler.ReconcileOCPSystem", ginkgo.Label("int
 			expectedYAML := `bundles:
   authz:
     resource: bundles/default-ocp-system/bundle.tar.gz
-    service: s3
+    service: bundle-server
 decision_logs:
   reporting:
     max_delay_seconds: 60
     min_delay_seconds: 5
     upload_size_limit_bytes: 1024
   resource_path: /logs
-  service: logs
+  service: decision-api
 labels:
   namespace: default
   unique-name: default-ocp-system
 services:
 - credentials:
-    s3_signing:
-      environment_credentials: {}
-  name: s3
-  url: https://s3-url2/test-bucket
+    bearer:
+      token_path: token-path-bundle-server
+  name: bundle-server
+  url: https://bundle-server-url/test-bucket
 - credentials:
     bearer:
-      token_path: /run/secrets/kubernetes.io/serviceaccount/token
-  name: logs
-  url: log-api-url
+      token_path: token-path-decision-api
+  name: decision-api
+  url: decision-api-url
 `
 
 			if err := yaml.Unmarshal([]byte(actualYAML), &actualMap); err != nil {

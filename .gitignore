@@ -27,6 +27,7 @@ Dockerfile.cross
 
 # Local configuration files
 config/default/config_local.yaml
+config/default/config-secrets_local.yaml
 config/samples/styra_v1beta1_system_local.yaml
 
 /dist

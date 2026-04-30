@@ -376,7 +376,7 @@ func (r *SystemReconciler) ocpReconcile(
 	ctx context.Context,
 	log logr.Logger,
 	system *v1beta1.System) (ctrl.Result, error) {
-	requirements := ocp.ToRequirements(r.Config.OPAControlPlaneConfig.DefaultRequirements)
+	var requirements []ocp.Requirement
 
 	for _, datasource := range system.Spec.Datasources {
 		datasource.Path = strings.ToLower(strings.ReplaceAll(datasource.Path, "/", "-"))
@@ -419,8 +419,10 @@ func (r *SystemReconciler) ocpReconcile(
 	requirements = append(requirements, ocp.NewRequirement(uniqueName))
 	system.SetCondition(v1beta1.ConditionTypeSystemSourceUpdated, metav1.ConditionTrue)
 
+	defaultRequirements := ocp.ToRequirements(r.Config.OPAControlPlaneConfig.DefaultRequirements)
+
 	reconcileSystemBundleStart := time.Now()
-	result, err = r.reconcileSystemBundle(ctx, uniqueName, requirements)
+	result, err = r.reconcileSystemBundle(ctx, uniqueName, requirements, defaultRequirements)
 	r.Metrics.ReconcileSegmentTime.
 		WithLabelValues("reconcileSystemBundleOcp").
 		Observe(time.Since(reconcileSystemBundleStart).Seconds())
@@ -531,26 +533,34 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 			WithSystemCondition(v1beta1.ConditionTypeOPAConfigMapUpdated)
 	}
 
+	bundleServiceCredentials := &ocp.ServiceCredentials{
+		S3: &ocp.S3Signing{
+			S3EnvironmentCredentials: map[string]ocp.EmptyStruct{},
+		}}
+	if r.Config.OPA.BundleServer.TokenPath != "" {
+		bundleServiceCredentials = &ocp.ServiceCredentials{
+			Bearer: &ocp.Bearer{
+				TokenPath: r.Config.OPA.BundleServer.TokenPath,
+			},
+		}
+	}
+
 	opaconf := ocp.OPAConfig{
 		BundleService: &ocp.OPAServiceConfig{
-			Name: "s3",
-			URL:  bundleURL,
-			Credentials: &ocp.ServiceCredentials{
-				S3: &ocp.S3Signing{
-					S3EnvironmentCredentials: map[string]ocp.EmptyStruct{},
-				},
-			},
+			Name:        r.Config.OPA.BundleServer.Name,
+			URL:         bundleURL,
+			Credentials: bundleServiceCredentials,
 		},
 		LogService: &ocp.OPAServiceConfig{
-			Name: "logs",
-			URL:  r.Config.OPAControlPlaneConfig.DecisionAPIConfig.ServiceURL,
+			Name: r.Config.OPA.DecisionAPIConfig.Name,
+			URL:  r.Config.OPA.DecisionAPIConfig.ServiceURL,
 			Credentials: &ocp.ServiceCredentials{
 				Bearer: &ocp.Bearer{
-					TokenPath: "/run/secrets/kubernetes.io/serviceaccount/token",
+					TokenPath: r.Config.OPA.DecisionAPIConfig.TokenPath,
 				},
 			},
 		},
-		DecisionLogReporting: r.Config.OPAControlPlaneConfig.DecisionAPIConfig.Reporting,
+		DecisionLogReporting: r.Config.OPA.DecisionAPIConfig.Reporting,
 		BundleResource:       fmt.Sprintf("bundles/%s/bundle.tar.gz", uniqueName),
 		UniqueName:           uniqueName,
 		Namespace:            system.Namespace,
@@ -627,6 +637,12 @@ func (r *SystemReconciler) reconcileOPASecret(
 	secretName string,
 ) (ctrl.Result, bool, error) {
 	log.Info("Reconciling OPA secret")
+
+	if r.Config.UserCredentialHandler == nil || r.Config.UserCredentialHandler.S3 == nil {
+		//Deprecated: breaking change in later version where no secret will be created
+		//create empty secret to avoid OPA complaining about missing secret.
+		log.Info("No UserCredentialHandler configured, empty secret will be created for OPA")
+	}
 
 	reconcileS3CredentialsStart := time.Now()
 	s3CredentialsRead, result, err := r.reconcileS3Credentials(
@@ -745,6 +761,11 @@ func (r *SystemReconciler) reconcileS3Credentials(
 	uniqueName string,
 	secretName string,
 ) (s3.Credentials, ctrl.Result, error) {
+	if r.Config.UserCredentialHandler == nil || r.Config.UserCredentialHandler.S3 == nil {
+		log.Info("No UserCredentialHandler configured, returning empty S3 credentials")
+		return s3.Credentials{}, ctrl.Result{}, nil
+	}
+
 	s3Credentials := s3.Credentials{}
 	s3Credentials.Region = r.Config.UserCredentialHandler.S3.Region
 	s3Credentials.AccessKeyID = fmt.Sprintf("Access-Key-%s-%s", r.Config.UserCredentialHandler.S3.Bucket, uniqueName)
@@ -802,7 +823,8 @@ func (r *SystemReconciler) reconcileS3Credentials(
 func (r *SystemReconciler) reconcileSystemBundle(
 	ctx context.Context,
 	uniqueName string,
-	requirements []ocp.Requirement) (ctrl.Result, error) {
+	requirements []ocp.Requirement,
+	defaultRequirements []ocp.Requirement) (ctrl.Result, error) {
 	if r.Config.OPAControlPlaneConfig.BundleObjectStorage.S3 == nil {
 		return ctrl.Result{}, ctrlerr.New("reconcileSystemBundle: no object storage configured")
 	}
@@ -820,7 +842,8 @@ func (r *SystemReconciler) reconcileSystemBundle(
 	bundle := &ocp.PutBundleRequest{
 		Name:          uniqueName,
 		ObjectStorage: objectStorage,
-		Requirements:  requirements,
+		Requirements:  append(requirements, defaultRequirements...),
+		Revision:      bundleRevision(uniqueName, defaultRequirements),
 	}
 	err := r.OCP.PutBundle(ctx, bundle)
 
@@ -828,6 +851,26 @@ func (r *SystemReconciler) reconcileSystemBundle(
 		return ctrl.Result{}, ctrlerr.Wrap(err, "ocpReconcile: could not create or update bundle in OCP")
 	}
 	return ctrl.Result{}, nil
+}
+
+// bundleRevision produces a Rego template string containing:
+// - data: sha256 hash of all datasource SQL hashes
+// - git-sha: the git commit for the system's unique source
+// - libraries: sha256 hash of all default requirement git commits
+// for example "data:sha256,git-sha:commitsha,libraries:sha256"
+func bundleRevision(uniqueName string, defaultRequirements []ocp.Requirement) string {
+	defaultReqNames := make([]string, len(defaultRequirements))
+	for i, req := range defaultRequirements {
+		defaultReqNames[i] = fmt.Sprintf(`"%s"`, req.Source)
+	}
+	defaultReqSet := strings.Join(defaultReqNames, ", ")
+
+	return fmt.Sprintf(
+		`$"data:{crypto.sha256(concat("", {x | x := input.sources[_].sql.hash}))},`+
+			`git-sha:{input.sources["%s"].git.commit},`+ // git sha for the system source
+			`libraries:{crypto.sha256(concat("", {x | some y in [%s]; x := input.sources[y].git.commit}))}"`,
+		uniqueName, defaultReqSet,
+	)
 }
 
 func (r *SystemReconciler) reconcileSystemSource(

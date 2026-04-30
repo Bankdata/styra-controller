@@ -80,14 +80,19 @@ func init() {
 
 func main() {
 	var (
-		configFile   string
+		configFiles  config.StringSlice
 		printVersion bool
 	)
 
-	flag.StringVar(&configFile, "config", "/etc/styra-controller/config.yaml",
-		"The controller will load its initial configuration from this file. ")
+	flag.Var(&configFiles, "config",
+		"Config file to load. Can be specified multiple times; files are deep-merged in order. "+
+			"(default /etc/styra-controller/config.yaml)")
 	flag.BoolVar(&printVersion, "version", false, "show version information")
 	flag.Parse()
+
+	if len(configFiles) == 0 {
+		configFiles = config.StringSlice{"/etc/styra-controller/config.yaml"}
+	}
 
 	if printVersion {
 		fmt.Printf(
@@ -108,9 +113,9 @@ func main() {
 		"apiPath", restCfg.APIPath,
 	)
 
-	ctrlConfig, err := config.Load(configFile, scheme)
+	ctrlConfig, err := config.Load(configFiles, scheme)
 	if err != nil {
-		log.Error(err, "unable to load the config file")
+		log.Error(err, "unable to load the config file(s)")
 		exit(err)
 	}
 
@@ -176,10 +181,12 @@ func main() {
 		ocpHostURL := strings.TrimSuffix(ctrlConfig.OPAControlPlaneConfig.Address, "/")
 		opaControlPlaneClient = ocp.New(ocpHostURL, ctrlConfig.OPAControlPlaneConfig.Token)
 
-		s3Client, err = s3.NewClient(*ctrlConfig.UserCredentialHandler.S3)
-		if err != nil {
-			log.Error(err, "unable to create S3 client")
-			exit(err)
+		if ctrlConfig.UserCredentialHandler != nil && ctrlConfig.UserCredentialHandler.S3 != nil {
+			s3Client, err = s3.NewClient(*ctrlConfig.UserCredentialHandler.S3)
+			if err != nil {
+				log.Error(err, "unable to create S3 client")
+				exit(err)
+			}
 		}
 	}
 
