@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
-	github.com/getsentry/sentry-go v0.45.1
+	github.com/getsentry/sentry-go v0.46.0
 	github.com/go-logr/logr v1.4.3
 	github.com/golangci/golangci-lint v1.64.8
 	github.com/google/uuid v1.6.0
@@ -28,6 +28,7 @@ require (
 	sigs.k8s.io/controller-tools v0.20.1
 	sigs.k8s.io/kind v0.31.0
 	sigs.k8s.io/kustomize/kustomize/v5 v5.8.1
+	sigs.k8s.io/yaml v1.6.0
 )
 
 require (
@@ -542,6 +543,5 @@ require (
 	sigs.k8s.io/kustomize/kyaml v0.21.1 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.0 // indirect
-	sigs.k8s.io/yaml v1.6.0 // indirect
 	software.sslmate.com/src/go-pkcs12 v0.4.0 // indirect
 )
