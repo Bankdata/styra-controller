@@ -3,9 +3,6 @@ kind: ProjectConfig
 #controllerClass:
 deletionProtectionDefault: false
 #disableCRDWebhooks:
-readOnly: true
-enableMigrations: false
-enableDeltaBundlesDefault: false # This does affect the thingy
 #gitCredentials:
 logLevel: 0
 # leaderElection:
@@ -17,10 +14,6 @@ notificationWebhooks: {}
   # libraryDatasourceChanged: test.dk
 #sentry:
 #sso:
-styra:
-  address: https://styra-url.example.com
-  # token: set via config-secrets.yaml
-#  tokenSecretPath: /etc/styra-controller-token/styra_token
 
 opaControlPlaneConfig:
   address: https://ocp-host/ocp
@@ -48,15 +41,6 @@ userCredentialHandler:
 
 #systemPrefix:
 #systemSuffix:
-systemUserRoles:
-  - SystemOwner
-  - SystemMetadataManager
-
-#datasourceIgnorePatterns:
-# - "^systems/[a-z0-9]+/dontdeleteme/.*"
-# - "^libraries/[a-z0-9_]+/deletemenot/.*"
-
-#decisionsExporter:
 
 opa:
   bundleServer:
@@ -95,8 +79,6 @@ opa:
         - 0.8
         - 0.9
         - 1
-
-#activityExporter:
 
 podRestart:
   slpRestart:

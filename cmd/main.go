@@ -19,7 +19,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -53,7 +52,6 @@ import (
 	webhookstyrav1beta1 "github.com/bankdata/styra-controller/internal/webhook/styra/v1beta1"
 	"github.com/bankdata/styra-controller/pkg/ocp"
 	"github.com/bankdata/styra-controller/pkg/s3"
-	"github.com/bankdata/styra-controller/pkg/styra"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -124,12 +122,6 @@ func main() {
 		zap.Level(zapcore.Level(-ctrlConfig.LogLevel)),
 	))
 
-	styraToken, err1 := config.TokenFromConfig(ctrlConfig)
-	if err1 != nil {
-		log.Error(err1, "Unable to load styra token")
-		exit(err1)
-	}
-
 	options := config.OptionsFromConfig(ctrlConfig, scheme)
 
 	if ctrlConfig.Sentry != nil {
@@ -147,8 +139,6 @@ func main() {
 		defer sentry.Flush(2 * time.Second)
 	}
 
-	log.Info("config", "Enable OCP Reconciliation", ctrlConfig.EnableOPAControlPlaneReconciliation)
-	log.Info("config", "Enable Styra Reconciliation", ctrlConfig.EnableStyraReconciliation)
 	log.Info("config", "Enable OCP Test Data", ctrlConfig.EnableOPAControlPlaneReconciliationTestData)
 
 	mgr, err := ctrl.NewManager(restCfg, options)
@@ -159,55 +149,30 @@ func main() {
 
 	var opaControlPlaneClient ocp.ClientInterface
 	var s3Client s3.Client
-	if ctrlConfig.EnableOPAControlPlaneReconciliation || ctrlConfig.EnableOPAControlPlaneReconciliationTestData {
-		if ctrlConfig.OPAControlPlaneConfig == nil ||
-			ctrlConfig.OPAControlPlaneConfig.Address == "" ||
-			ctrlConfig.OPAControlPlaneConfig.Token == "" {
-			err := errors.New(
-				"OPAControlPlane enabled: Missing OPA Control Plane configuration. Address and Token are required",
-			)
-			log.Error(err, "unable to start manager")
-			exit(err)
-		}
-
-		if ctrlConfig.OPAControlPlaneConfig.BundleObjectStorage == nil {
-			err := errors.New(
-				"OPAControlPlane enabled: But missing bundle object storage config",
-			)
-			log.Error(err, "unable to start manager")
-			exit(err)
-		}
-
-		ocpHostURL := strings.TrimSuffix(ctrlConfig.OPAControlPlaneConfig.Address, "/")
-		opaControlPlaneClient = ocp.New(ocpHostURL, ctrlConfig.OPAControlPlaneConfig.Token)
-
-		if ctrlConfig.UserCredentialHandler != nil && ctrlConfig.UserCredentialHandler.S3 != nil {
-			s3Client, err = s3.NewClient(*ctrlConfig.UserCredentialHandler.S3)
-			if err != nil {
-				log.Error(err, "unable to create S3 client")
-				exit(err)
-			}
-		}
+	if ctrlConfig.OPAControlPlaneConfig == nil ||
+		ctrlConfig.OPAControlPlaneConfig.Address == "" ||
+		ctrlConfig.OPAControlPlaneConfig.Token == "" {
+		err := errors.New(
+			"missing OPA Control Plane configuration: address and token are required",
+		)
+		log.Error(err, "unable to start manager")
+		exit(err)
 	}
 
-	var styraClient styra.ClientInterface
-	if ctrlConfig.EnableStyraReconciliation {
-		roles := make([]styra.Role, len(ctrlConfig.SystemUserRoles))
-		for i, role := range ctrlConfig.SystemUserRoles {
-			roles[i] = styra.Role(role)
-		}
+	if ctrlConfig.OPAControlPlaneConfig.BundleObjectStorage == nil {
+		err := errors.New("missing OPA Control Plane bundle object storage configuration")
+		log.Error(err, "unable to start manager")
+		exit(err)
+	}
 
-		styraHostURL := strings.TrimSuffix(ctrlConfig.Styra.Address, "/")
-		styraClient = styra.New(styraHostURL, styraToken)
+	ocpHostURL := strings.TrimSuffix(ctrlConfig.OPAControlPlaneConfig.Address, "/")
+	opaControlPlaneClient = ocp.New(ocpHostURL, ctrlConfig.OPAControlPlaneConfig.Token)
 
-		if err := configureExporter(
-			styraClient, ctrlConfig.DecisionsExporter, configv2alpha2.ExporterConfigTypeDecisions); err != nil {
-			log.Error(err, fmt.Sprintf("unable to configure %s", configv2alpha2.ExporterConfigTypeDecisions))
-		}
-
-		if err := configureExporter(
-			styraClient, ctrlConfig.ActivityExporter, configv2alpha2.ExporterConfigTypeActivity); err != nil {
-			log.Error(err, fmt.Sprintf("unable to configure %s", configv2alpha2.ExporterConfigTypeActivity))
+	if ctrlConfig.UserCredentialHandler != nil && ctrlConfig.UserCredentialHandler.S3 != nil {
+		s3Client, err = s3.NewClient(*ctrlConfig.UserCredentialHandler.S3)
+		if err != nil {
+			log.Error(err, "unable to create S3 client")
+			exit(err)
 		}
 	}
 
@@ -269,14 +234,8 @@ func main() {
 		APIReader: mgr.GetAPIReader(),
 	}
 
-	if ctrlConfig.EnableOPAControlPlaneReconciliation || ctrlConfig.EnableOPAControlPlaneReconciliationTestData {
-		r1.OCP = opaControlPlaneClient
-		r1.S3 = s3Client
-	}
-
-	if ctrlConfig.EnableStyraReconciliation {
-		r1.Styra = styraClient
-	}
+	r1.OCP = opaControlPlaneClient
+	r1.S3 = s3Client
 
 	if ctrlConfig.NotificationWebhooks != nil {
 		r1.WebhookClient = webhook.New(
@@ -291,11 +250,9 @@ func main() {
 		exit(err)
 	}
 
-	if ctrlConfig.EnableOPAControlPlaneReconciliation || ctrlConfig.EnableOPAControlPlaneReconciliationTestData {
-		if err = r1.CreateDefaultRequirements(context.Background(), log); err != nil {
-			log.Error(err, "unable to create default requirements")
-			exit(err)
-		}
+	if err = r1.CreateDefaultRequirements(context.Background(), log); err != nil {
+		log.Error(err, "unable to create default requirements")
+		exit(err)
 	}
 
 	if !ctrlConfig.DisableCRDWebhooks {
@@ -309,12 +266,9 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		Config: ctrlConfig,
-		Styra:  styraClient,
 	}
 
-	if ctrlConfig.EnableOPAControlPlaneReconciliation || ctrlConfig.EnableOPAControlPlaneReconciliationTestData {
-		libraryReconciler.OCP = opaControlPlaneClient
-	}
+	libraryReconciler.OCP = opaControlPlaneClient
 
 	if ctrlConfig.NotificationWebhooks != nil {
 		libraryReconciler.WebhookClient = webhook.New(
@@ -357,87 +311,4 @@ func exit(err error) {
 	sentry.CaptureException(err)
 	sentry.Flush(2 * time.Second)
 	os.Exit(1)
-}
-
-func configureExporter(
-	styraClient styra.ClientInterface,
-	exporterConfig *configv2alpha2.ExporterConfig,
-	exporterType configv2alpha2.ExporterConfigType) error {
-	if exporterConfig == nil {
-		ctrl.Log.Info(fmt.Sprintf("no exporter configuration found for %s", exporterType))
-		return nil
-	}
-	clientCertName := exporterConfig.Kafka.TLS.ClientCertificateName
-
-	if !exporterConfig.Enabled {
-		ctrl.Log.Info(fmt.Sprintf("Now removing exporter %s", exporterType))
-
-		_, err := styraClient.DeleteSecret(context.Background(), clientCertName)
-		if err != nil {
-			ctrl.Log.Error(err, fmt.Sprintf("failed to delete secret %s for %s", clientCertName, exporterType))
-			return err
-		}
-
-		if exporterType == configv2alpha2.ExporterConfigTypeActivity {
-			rawJSON := json.RawMessage("{\"activity_exporter\": null}")
-			_, err = styraClient.UpdateWorkspaceRaw(context.Background(), rawJSON)
-		} else if exporterType == configv2alpha2.ExporterConfigTypeDecisions {
-			rawJSON := json.RawMessage("{\"decisions_exporter\": null}")
-			_, err = styraClient.UpdateWorkspaceRaw(context.Background(), rawJSON)
-		}
-		if err != nil {
-			ctrl.Log.Error(err, fmt.Sprintf("could not remove %s", exporterType))
-			return err
-		}
-		ctrl.Log.Info(fmt.Sprintf("%s removed", exporterType))
-
-		return nil
-	}
-
-	ctrl.Log.Info(fmt.Sprintf("configuring %s", exporterType))
-
-	_, err := styraClient.CreateUpdateSecret(context.Background(), clientCertName, &styra.CreateUpdateSecretsRequest{
-		Description: "Client certificate for Kafka",
-		// Secret name should be client cert and secret should be client key
-		Name:   strings.TrimSuffix(exporterConfig.Kafka.TLS.ClientCertificate, "\n"),
-		Secret: strings.TrimSuffix(exporterConfig.Kafka.TLS.ClientKey, "\n"),
-	},
-	)
-	if err != nil {
-		ctrl.Log.Error(err, fmt.Sprintf("failed to upload secret %s for %s", clientCertName, exporterType))
-		return err
-	}
-
-	exportConfig := &styra.ExporterConfig{
-		Interval: exporterConfig.Interval,
-		Kafka: &styra.KafkaConfig{
-			Authentication: "TLS",
-			Brokers:        exporterConfig.Kafka.Brokers,
-			RequredAcks:    exporterConfig.Kafka.RequiredAcks,
-			Topic:          exporterConfig.Kafka.Topic,
-			TLS: &styra.KafkaTLS{
-				ClientCert:         clientCertName,
-				RootCA:             strings.TrimSuffix(exporterConfig.Kafka.TLS.RootCA, "\n"),
-				InsecureSkipVerify: exporterConfig.Kafka.TLS.InsecureSkipVerify,
-			},
-		},
-	}
-
-	if exporterType == "ActivityExporter" {
-		_, err = styraClient.UpdateWorkspace(context.Background(), &styra.UpdateWorkspaceRequest{
-			ActivityExporter: exportConfig,
-		})
-	} else if exporterType == "DecisionsExporter" {
-		_, err = styraClient.UpdateWorkspace(context.Background(), &styra.UpdateWorkspaceRequest{
-			DecisionsExporter: exportConfig,
-		})
-	}
-
-	if err != nil {
-		ctrl.Log.Error(err, fmt.Sprintf("could not update workspace configuration for %s", exporterType))
-		return err
-	}
-
-	ctrl.Log.Info(fmt.Sprintf("successfully configured %s", exporterType))
-	return nil
 }

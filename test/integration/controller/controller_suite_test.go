@@ -41,10 +41,7 @@ import (
 	styractrls "github.com/bankdata/styra-controller/internal/controller/styra"
 	webhookmocks "github.com/bankdata/styra-controller/internal/webhook/mocks"
 	ocpclientmock "github.com/bankdata/styra-controller/pkg/ocp/mocks"
-	"github.com/bankdata/styra-controller/pkg/ptr"
 	s3clientmock "github.com/bankdata/styra-controller/pkg/s3/mocks"
-	"github.com/bankdata/styra-controller/pkg/styra"
-	styraclientmock "github.com/bankdata/styra-controller/pkg/styra/mocks"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -55,7 +52,6 @@ var (
 	managerCancel           context.CancelFunc
 	managerCtxPodRestart    context.Context
 	managerCancelPodRestart context.CancelFunc
-	styraClientMock         *styraclientmock.ClientInterface
 	ocpClientMock           *ocpclientmock.ClientInterface
 	s3ClientMock            *s3clientmock.Client
 	webhookMock             *webhookmocks.Client
@@ -115,7 +111,6 @@ var _ = ginkgo.BeforeSuite(func() {
 	})
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-	styraClientMock = &styraclientmock.ClientInterface{}
 	ocpClientMock = &ocpclientmock.ClientInterface{}
 	webhookMock = &webhookmocks.Client{}
 	s3ClientMock = &s3clientmock.Client{}
@@ -123,22 +118,11 @@ var _ = ginkgo.BeforeSuite(func() {
 		Client:        k8sClient,
 		APIReader:     k8sManager.GetAPIReader(),
 		Scheme:        k8sManager.GetScheme(),
-		Styra:         styraClientMock,
 		OCP:           ocpClientMock,
 		S3:            s3ClientMock,
 		WebhookClient: webhookMock,
 		Recorder:      k8sManager.GetEventRecorderFor("system-controller"),
 		Config: &configv2alpha2.ProjectConfig{
-			SystemUserRoles: []string{string(styra.RoleSystemViewer)},
-			SSO: &configv2alpha2.SSOConfig{
-				IdentityProvider: "AzureAD Bankdata",
-				JWTGroupsClaim:   "groups",
-			},
-			DatasourceIgnorePatterns:            []string{"^.*/ignore$"},
-			ReadOnly:                            true,
-			EnableDeltaBundlesDefault:           ptr.Bool(false),
-			EnableStyraReconciliation:           true,
-			EnableOPAControlPlaneReconciliation: true,
 			OPAControlPlaneConfig: &configv2alpha2.OPAControlPlaneConfig{
 				Address: "ocp-url",
 				Token:   "ocp-token",
@@ -215,18 +199,16 @@ var _ = ginkgo.BeforeSuite(func() {
 
 	libraryReconciler := &styractrls.LibraryReconciler{
 		Config: &configv2alpha2.ProjectConfig{
-			SSO: &configv2alpha2.SSOConfig{
-				IdentityProvider: "AzureAD Bankdata",
-				JWTGroupsClaim:   "groups",
+			OPAControlPlaneConfig: &configv2alpha2.OPAControlPlaneConfig{
+				Address: "ocp-url",
+				Token:   "ocp-token",
+				GitCredentials: []*configv2alpha2.GitCredentials{&configv2alpha2.GitCredentials{
+					ID:         "github-credentials",
+					RepoPrefix: "https://github",
+				}},
 			},
-			DatasourceIgnorePatterns: []string{"^.*/ignore$"},
-			GitCredentials: []*configv2alpha2.GitCredential{
-				{User: "test-user", Password: "test-secret"},
-			},
-			EnableStyraReconciliation: true,
 		},
 		Client:        k8sClient,
-		Styra:         styraClientMock,
 		OCP:           ocpClientMock,
 		WebhookClient: webhookMock,
 	}
@@ -257,27 +239,17 @@ var _ = ginkgo.BeforeSuite(func() {
 		Client:        k8sClient,
 		APIReader:     k8sManagerPodRestart.GetAPIReader(),
 		Scheme:        k8sManagerPodRestart.GetScheme(),
-		Styra:         styraClientMock,
 		OCP:           ocpClientMock,
 		WebhookClient: webhookMock,
 		Recorder:      k8sManagerPodRestart.GetEventRecorderFor("system-controller"),
 		Config: &configv2alpha2.ProjectConfig{
 			ControllerClass: "styra-controller-pod-restart",
-			SystemUserRoles: []string{string(styra.RoleSystemViewer)},
-			SSO: &configv2alpha2.SSOConfig{
-				IdentityProvider: "AzureAD Bankdata",
-				JWTGroupsClaim:   "groups",
-			},
-			DatasourceIgnorePatterns:  []string{"^.*/ignore$"},
-			ReadOnly:                  true,
-			EnableDeltaBundlesDefault: ptr.Bool(false),
 			PodRestart: &configv2alpha2.PodRestartConfig{
 				SLPRestart: &configv2alpha2.SLPRestartConfig{
 					Enabled:        true,
 					DeploymentType: "statefulset",
 				},
 			},
-			EnableStyraReconciliation: true,
 		},
 		Metrics: &styractrls.SystemReconcilerMetrics{
 			ControllerSystemStatusReady: prometheus.NewGaugeVec(

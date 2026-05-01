@@ -20,8 +20,6 @@ Example secrets overlay:
 ```yaml
 apiVersion: config.bankdata.dk/v2alpha2
 kind: ProjectConfig
-styra:
-  token: my-secret-token
 opaControlPlaneConfig:
   token: my-ocp-token
 userCredentialHandler:
@@ -32,22 +30,7 @@ userCredentialHandler:
 
 Single-file usage (`--config=config.yaml`) remains fully supported and behaves identically to previous versions.
 
-#### Deprecated styra configuration options
-* `decisionsExporter`
-* `activityExporter`
-* `systemUserRoles`
-* `sso`
-* `styra`
-* `gitCredentials`
-* `enableDeltaBundlesDefault`
-* `readOnly`
-
-#### Deprecated migration configuration options
-* `enableStyraReconciliation`
-* `enableOPAControlPlaneReconciliationTestData`
-* `enableMigrations`
-
-#### Configurations options that is kept for OPA Control Plane
+#### Supported configuration options for OPA Control Plane
 * `opaControlPlaneConfig`
 * `systemPrefix`
 * `systemSuffix`
@@ -76,33 +59,7 @@ In `internal/sentry` is a sentry reconciler that wraps the other reconcilers. Th
 ### Metrics
 The ocp-controller exposes the standard go and controller runtime metrics. In addition, the controller exposes:
 - `controller_system_status_ready` metric that counts the amount of Systems whose status are Ready.
-- `controller_system_reconcile_seconds` metric that measures time taken to reconcile a system
-- `controller_system_reconcile_segment_seconds` metric that measures time taken to perform one segment of reconciling a system
-
-### Notification Webhooks
-#### System Datasources
-Currently the controller can register a custom notification webhook that will POST the system ID and datasource ID to a URL when a system's datasource is created or updated. The webhook is implemented in `internal/webhook`. The URL is configured by setting `notificationWebhooks.systemDatasourceChanged` and the data is formatted like this:
-
-```json
-{
-  "systemId": "system ID", 
-  "datasourceId": "datasource ID"
-}
-```
-#### Library Datasources
-The controller also can register a custom notification webhook that will POST the datasource ID of a Library Datasource to a URL when a library's datasource is created or updated. The webhook is implemented in `internal/webhook`. The URL is configured by setting `notificationWebhooks.libraryDatasourceChanged` and the data is formatted like this:
-
-```json
-{
   "datasourceID": "datasource ID"
-}
-```
-
-
-## RBAC (DEPRECATED)
-Access to Styra can be given based on emails and SSO claims. The access rights given to the users are defined in `systemUserRoles`. For giving access based on SSO claims set the `sso.identityProvider` to the SSO providor used to login to Styra. Which claim in the JWT to give access upon is define by setting `sso.jwtGroupsClaim`. As an example, assume `systemUserRoles` is `[SystemViewer, SystemInstall]`, `sso.identityProvider` is AzureAD, and `sso.jwtGroupsClaim` is `companies`. Then if `.spec.subjects` are:
-
-```yaml
 spec:
   subjects:
   - name: user@users.com
@@ -135,54 +92,14 @@ The controller can be configured to only reconcile resources that has the `styra
 Only one controller per cluster should have webhooks (default and validating) enabled. Therefore, when running multiple controllers in the same cluster set `disableCRDWebhooks` on one of them. Usually, it is the least stable version of the controller that has webhooks disabled.
 
 ### Configure prefix and suffix on Systems
-The controller can be configured to add a prefix and a suffix to the Systems names when created in Styra. This is achieved by setting `systemPrefix` and `systemSuffix`. 
+The controller can be configured to add a prefix and a suffix to managed system names. This is achieved by setting `systemPrefix` and `systemSuffix`. 
 
 ## Delete Protection
-Custom Resources can have delete protection, which means that they will not be deleted by the controller in Styra. The default can be configured by setting `deletionProtectionDefault`.
-
-## Delta Bundles (DEPRECATED)
-Styra Systems can have enable Delta Bundles, which means Styra will upload the change between two bundles to the SLP/OPA rather than uploading the entire bundle. 
-The default can be configured by setting `enableDeltaBundlesDefault`.
-This is recommended to be set to true if all opas are version 0.44.0 or higher.
-
-## Read Only (DEPRECATED)
-Styra Systems can be read-only, meaning they cannot be changed in the Styra GUI. This can be configured by setting `readOnly`.
-
-## EnableMigrations (DEPRECATED)
-An annotation that allows configuring Systems in Kubernetes to link to a specific system in Styra. The ID that the system in Kubernetes should link to is configured by setting `styra-contoller/migration-id: [styra system id]` annotation on Kubernetes system resource. Should only be set while migrating. 
+Custom Resources can have delete protection, which means that backing OCP resources will not be deleted by the controller. The default can be configured by setting `deletionProtectionDefault`.
 
 ## Leader Election
 If multiple instances of the controller are running together, leader election can be configured by setting the `leaderElection.leaseDuration`, `leaderElection.renewDeadline`, `leaderElection.retryPeriod`.
-
-## Decisions & Activity Exporter (DEPRECATED)
-It is possible to configure all decisions and/or activities to be exported to a Kafka cluster. This is achieved by setting the `decisionsExporter` and/or `activityExporter` in the controller configuration. For example, if `decisionsExporter` is set to this:
-
-```yaml
 decisionsExporter: 
-  enabled: true
-  interval: 30s
-  kafka:
-    brokers:
-    - broker1.com:1111
-    - broker2.com:2222
-    requiredAcks: WaitForAll
-    topic: bd-styra-opa-dev
-    tls:
-      clientCertificateName: kafka-client-cert
-      clientCertificate: |
-        -----BEGIN CERTIFICATE-----
-        Client Certificate
-        -----END CERTIFICATE-----
-      clientKey: |
-        -----BEGIN PRIVATE KEY-----
-        Client Key
-        -----END PRIVATE KEY-----
-      rootCA: |
-        -----BEGIN CERTIFICATE-----
-        Root Certificate
-        -----END CERTIFICATE-----
-```
-It will configure Styra to export all decisions to the brokers and connect via mTLS using the provided certs and key. The decision exporter configuration will be uploaded to Styra each time the controller boots. If `decisionsExporter.enabled` is set to `false`, the controller will remove the decision exporter config from Styra. The same applies when using `activityExporter`, the controller will remove the user activity exporter config from Styra when setting `activityExporter.enabled` to `false`.
 
 ## Restarting Pods
 OPA and SLP pods read their configuration at startup. If the configuration is changed, the pods need to be restarted for the changes to take effect. 

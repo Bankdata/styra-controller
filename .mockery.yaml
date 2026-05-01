@@ -5,9 +5,6 @@ mockname: "{{ .InterfaceName }}"
 with-expecter: false
 disable-version-string: true
 packages:
-  github.com/bankdata/styra-controller/pkg/styra:
-    config:
-      all: true
   github.com/bankdata/styra-controller/pkg/ocp:
     config:
       all: true
