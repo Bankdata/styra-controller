@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"github.com/bankdata/styra-controller/internal/predicate"
-	"github.com/bankdata/styra-controller/internal/sentry"
 	"github.com/bankdata/styra-controller/internal/webhook"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -147,5 +146,5 @@ func (r *LibraryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&styrav1alpha1.Library{}, builder.WithPredicates(p)).
-		Complete(sentry.Decorate(r))
+		Complete(r)
 }

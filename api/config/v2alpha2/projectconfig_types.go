@@ -47,8 +47,6 @@ type ProjectConfig struct {
 
 	LeaderElection *LeaderElectionConfig `json:"leaderElection"`
 
-	Sentry *SentryConfig `json:"sentry"`
-
 	OPA OPAConfig `json:"opa,omitempty"`
 
 	// SystemPrefix is a prefix for all the systems that the controller creates.
@@ -61,9 +59,6 @@ type ProjectConfig struct {
 	// OPA Control Plane APIs. If this is not set, the controller will not
 	// attempt to connect to the OPA Control Plane APIs.
 	OPAControlPlaneConfig *OPAControlPlaneConfig `json:"opaControlPlaneConfig,omitempty"`
-
-	// UserCredentialHandler contains configuration for the controller to handle user credentials, e.g. in S3
-	UserCredentialHandler *UserCredentialHandler `json:"userCredentialHandler,omitempty"`
 
 	// EnableOPAControlPlaneReconciliationTestData is a flag that sets whether the controller should create
 	// OPAControlPlane test data.
@@ -106,20 +101,6 @@ type OPAControlPlaneConfig struct {
 	SystemDatasourceChanged string `json:"systemDatasourceChanged,omitempty"`
 	// LibraryDatasourceChanged is the URL to be called when a library datasource has changed.
 	LibraryDatasourceChanged string `json:"libraryDatasourceChanged,omitempty"`
-}
-
-// UserCredentialHandler defines the structure of possible user credential handlers
-type UserCredentialHandler struct {
-	S3 *S3Handler `json:"s3,omitempty" yaml:"s3,omitempty"`
-}
-
-// S3Handler defines the structure for S3 handler configuration.
-type S3Handler struct {
-	Bucket          string `json:"bucket" yaml:"bucket"`
-	URL             string `json:"url" yaml:"url"`
-	Region          string `json:"region" yaml:"region"`
-	AccessKeyID     string `json:"accessKeyID" yaml:"accessKeyID"`
-	SecretAccessKey string `json:"secretAccessKey" yaml:"secretAccessKey"`
 }
 
 // BundleObjectStorage defines the structure for object storage configuration used by bundles
@@ -207,22 +188,6 @@ type RequestContext struct {
 type HTTP struct {
 	// http headers that will be added to the decision logs
 	Headers []string `json:"headers"`
-}
-
-// SentryConfig contains configuration for how errors should be reported to
-// sentry.
-type SentryConfig struct {
-	// Debug enables Sentry client debugging.
-	Debug bool `json:"debug"`
-
-	// DSN is the Sentry project DSN.
-	DSN string `json:"dsn"`
-
-	// Environment sets the environment of the events sent to Sentry.
-	Environment string `json:"environment"`
-
-	// HTTPSProxy sets an HTTP proxy server for sentry to use.
-	HTTPSProxy string `json:"httpsProxy"`
 }
 
 func init() {

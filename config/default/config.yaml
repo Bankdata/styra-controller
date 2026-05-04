@@ -10,7 +10,6 @@ logLevel: 0
 #   renewDeadline: "30s"
 #   retryPeriod: "5s"
 
-#sentry:
 #sso:
 
 opaControlPlaneConfig:
@@ -27,15 +26,6 @@ opaControlPlaneConfig:
       ocpConfigSecretName: minio # Name of secret in ocp config
   defaultRequirements:
     - library1
-
-# used by controller to create users and policies
-userCredentialHandler:
-  s3:
-    bucket: ocp
-    url: https://minio-host
-    region: us-east-1 #default use for minio
-    # accessKeyID: set via config-secrets.yaml
-    # secretAccessKey: set via config-secrets.yaml
 
 #systemPrefix:
 #systemSuffix:

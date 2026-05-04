@@ -14,7 +14,7 @@ This is designed to separate non-secret configuration (in a ConfigMap) from secr
 
 **Base config** (`config.yaml` in a ConfigMap) — contains all non-secret settings like addresses, log levels, system prefix/suffix, OPA config, etc.
 
-**Secrets overlay** (`config-secrets.yaml` in a Secret) — contains only sensitive fields like API tokens, passwords, S3 keys, Sentry DSN, and TLS material. Only the fields you want to override need to be present; everything else is inherited from the base.
+**Secrets overlay** (`config-secrets.yaml` in a Secret) — contains only sensitive fields like API tokens, passwords, and TLS material. Only the fields you want to override need to be present; everything else is inherited from the base.
 
 Example secrets overlay:
 ```yaml
@@ -22,10 +22,6 @@ apiVersion: config.bankdata.dk/v2alpha2
 kind: ProjectConfig
 opaControlPlaneConfig:
   token: my-ocp-token
-userCredentialHandler:
-  s3:
-    accessKeyID: my-access-key
-    secretAccessKey: my-secret-key
 ```
 
 Single-file usage (`--config=config.yaml`) remains fully supported and behaves identically to previous versions.
@@ -36,7 +32,6 @@ Single-file usage (`--config=config.yaml`) remains fully supported and behaves i
 * `systemSuffix`
 * `logLevel`
 * `leaderElection`
-* `sentry`
 * `controllerClass`         
 * `deletionProtectionDefault`
 * `disableCRDWebhooks`
@@ -49,11 +44,6 @@ The controllers logs are written to stdout. If the logs should be persistent an
 external system should be configured to scrape and store the logs. The
 verbosity of the controller logs is configured by setting `logLevel` to an
 integer. A log level above 0 should only be set for debugging purposes.
-
-### Logging to Sentry
-To configure Sentry there exists four configuration options: `sentry.dsn`, `sentry.environment`, `sentry.debug`, and `sentry.httpsProxy`. `sentry.dsn` is the DSN to the Sentry instance. `sentry.environment` specifies the Sentry environment that the log should be categorized under in Sentry. `sentry.debug` toggles whether information sendt to Sentry should also be sent to stdout. If Sentry can only be reaches through a proxy set `sentry.httpsProxy` to the proxy URL.
-
-In `internal/sentry` is a sentry reconciler that wraps the other reconcilers. The sentry reconciler simply calls the reconcilers. If the reconcilers return an error and Sentry has been configured, the sentry reconciler will send the error to Sentry. 
 
 ### Metrics
 The ocp-controller exposes the standard go and controller runtime metrics. In addition, the controller exposes:

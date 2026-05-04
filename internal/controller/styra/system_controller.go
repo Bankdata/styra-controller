@@ -51,11 +51,15 @@ import (
 	"github.com/bankdata/styra-controller/internal/k8sconv"
 	"github.com/bankdata/styra-controller/internal/labels"
 	"github.com/bankdata/styra-controller/internal/predicate"
-	"github.com/bankdata/styra-controller/internal/sentry"
 	"github.com/bankdata/styra-controller/internal/webhook"
 	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/bankdata/styra-controller/pkg/ocp"
-	"github.com/bankdata/styra-controller/pkg/s3"
+)
+
+const (
+	awsSecretNameKeyID     = "AWS_ACCESS_KEY_ID"
+	awsSecretNameSecretKey = "AWS_SECRET_ACCESS_KEY"
+	awsSecretNameRegion    = "AWS_REGION"
 )
 
 // SystemReconcilerMetrics holds the metrics for the SystemReconciller
@@ -71,7 +75,6 @@ type SystemReconciler struct {
 	APIReader     client.Reader
 	Scheme        *runtime.Scheme
 	OCP           ocp.ClientInterface
-	S3            s3.Client
 	WebhookClient webhook.Client
 	Recorder      record.EventRecorder
 	Metrics       *SystemReconcilerMetrics
@@ -548,26 +551,11 @@ func (r *SystemReconciler) reconcileOPASecret(
 	secretName string,
 ) (ctrl.Result, bool, error) {
 	log.Info("Reconciling OPA secret")
-
-	if r.Config.UserCredentialHandler == nil || r.Config.UserCredentialHandler.S3 == nil {
-		//Deprecated: breaking change in later version where no secret will be created
-		//create empty secret to avoid OPA complaining about missing secret.
-		log.Info("No UserCredentialHandler configured, empty secret will be created for OPA")
-	}
-
-	reconcileS3CredentialsStart := time.Now()
-	s3CredentialsRead, result, err := r.reconcileS3Credentials(
-		ctx, log, system, uniqueName, secretName)
-	r.Metrics.ReconcileSegmentTime.
-		WithLabelValues("reconcileS3CredentialsOcp").
-		Observe(time.Since(reconcileS3CredentialsStart).Seconds())
-	if err != nil {
-		return result, false, err
-	}
+	_ = uniqueName
+	log.Info("Direct S3 credential management is disabled, creating OPA secret without generated credentials")
 
 	reconcilek8sOPASecret := time.Now()
-	result, secretUpdated, err := r.reconcilek8sOPASecret(
-		ctx, log, system, s3CredentialsRead, secretName)
+	result, secretUpdated, err := r.reconcilek8sOPASecret(ctx, log, system, secretName)
 	r.Metrics.ReconcileSegmentTime.
 		WithLabelValues("reconcilek8sOPASecretOcp").
 		Observe(time.Since(reconcilek8sOPASecret).Seconds())
@@ -578,25 +566,10 @@ func (r *SystemReconciler) reconcileOPASecret(
 	return ctrl.Result{}, secretUpdated, nil
 }
 
-func (r *SystemReconciler) getk8sOPASecret(
-	ctx context.Context,
-	system *v1beta1.System,
-	secretName string) (corev1.Secret, error) {
-	var secret corev1.Secret
-
-	nsName := types.NamespacedName{Name: secretName, Namespace: system.Namespace}
-	err := r.Get(ctx, nsName, &secret)
-	if err != nil {
-		return secret, err
-	}
-	return secret, err
-}
-
 func (r *SystemReconciler) reconcilek8sOPASecret(
 	ctx context.Context,
 	log logr.Logger,
 	system *v1beta1.System,
-	s3Credentials s3.Credentials,
 	secretName string,
 ) (ctrl.Result, bool, error) {
 
@@ -612,11 +585,7 @@ func (r *SystemReconciler) reconcilek8sOPASecret(
 				s.Labels = map[string]string{}
 			}
 			labels.SetManagedBy(&s)
-			s.Data = map[string][]byte{
-				s3.AWSSecretNameKeyID:     []byte(s3Credentials.AccessKeyID),
-				s3.AWSSecretNameSecretKey: []byte(s3Credentials.SecretAccessKey),
-				s3.AWSSecretNameRegion:    []byte(s3Credentials.Region),
-			}
+			s.Data = map[string][]byte{}
 			if err := controllerutil.SetControllerReference(system, &s, r.Scheme); err != nil {
 				return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not set owner reference on Secret").
 					WithEvent(v1beta1.EventErrorOwnerRefOPATokenSecret).
@@ -642,15 +611,19 @@ func (r *SystemReconciler) reconcilek8sOPASecret(
 			WithSystemCondition(v1beta1.ConditionTypeOPATokenUpdated)
 	}
 
-	if (string(s.Data[s3.AWSSecretNameKeyID]) != s3Credentials.AccessKeyID) ||
-		(string(s.Data[s3.AWSSecretNameSecretKey]) != s3Credentials.SecretAccessKey) ||
-		(string(s.Data[s3.AWSSecretNameRegion]) != s3Credentials.Region) {
-		log.Info("Secret mismatch. Updating secret.")
-		s.Data = map[string][]byte{
-			s3.AWSSecretNameKeyID:     []byte(s3Credentials.AccessKeyID),
-			s3.AWSSecretNameSecretKey: []byte(s3Credentials.SecretAccessKey),
-			s3.AWSSecretNameRegion:    []byte(s3Credentials.Region),
-		}
+	if _, ok := s.Data[awsSecretNameKeyID]; ok {
+		log.Info("Removing controller-managed S3 access key from OPA Secret")
+		delete(s.Data, awsSecretNameKeyID)
+		update = true
+	}
+	if _, ok := s.Data[awsSecretNameSecretKey]; ok {
+		log.Info("Removing controller-managed S3 secret key from OPA Secret")
+		delete(s.Data, awsSecretNameSecretKey)
+		update = true
+	}
+	if _, ok := s.Data[awsSecretNameRegion]; ok {
+		log.Info("Removing controller-managed S3 region from OPA Secret")
+		delete(s.Data, awsSecretNameRegion)
 		update = true
 	}
 
@@ -663,72 +636,6 @@ func (r *SystemReconciler) reconcilek8sOPASecret(
 	}
 
 	return ctrl.Result{}, update, nil
-}
-
-func (r *SystemReconciler) reconcileS3Credentials(
-	ctx context.Context,
-	log logr.Logger,
-	system *v1beta1.System,
-	uniqueName string,
-	secretName string,
-) (s3.Credentials, ctrl.Result, error) {
-	if r.Config.UserCredentialHandler == nil || r.Config.UserCredentialHandler.S3 == nil {
-		log.Info("No UserCredentialHandler configured, returning empty S3 credentials")
-		return s3.Credentials{}, ctrl.Result{}, nil
-	}
-
-	s3Credentials := s3.Credentials{}
-	s3Credentials.Region = r.Config.UserCredentialHandler.S3.Region
-	s3Credentials.AccessKeyID = fmt.Sprintf("Access-Key-%s-%s", r.Config.UserCredentialHandler.S3.Bucket, uniqueName)
-
-	userExist, err := r.S3.UserExists(ctx, s3Credentials.AccessKeyID)
-	if err != nil {
-		return s3Credentials, ctrl.Result{}, ctrlerr.Wrap(err, "reconcileS3Credentials: could not call S3")
-	}
-
-	if userExist {
-		secret, err := r.getk8sOPASecret(ctx, system, secretName)
-		if err != nil && !k8serrors.IsNotFound(err) {
-			return s3Credentials, ctrl.Result{}, ctrlerr.Wrap(err, "reconcileS3Credentials: error while getting secret from k8s")
-		}
-		if secret.Data == nil ||
-			len(secret.Data[s3.AWSSecretNameKeyID]) == 0 ||
-			len(secret.Data[s3.AWSSecretNameSecretKey]) == 0 {
-			log.Info(
-				"AccessKey exists, but no secret in k8s-secret. We need to update secretKey for accessKey",
-				"accessKey", s3Credentials.AccessKeyID,
-			)
-
-			s3Credentials.SecretAccessKey, err = r.S3.SetNewUserSecretKey(ctx, s3Credentials.AccessKeyID)
-			if err != nil {
-				log.Error(err, "failed to apply new secretKey for accessKey", "accessKey", s3Credentials.AccessKeyID)
-				return s3Credentials, ctrl.Result{}, ctrlerr.Wrap(
-					err, "reconcileS3Credentials: failed to apply new secretKey for accessKey",
-				)
-			}
-			log.Info("SecretKey updated for existing accessKey", "accessKey", s3Credentials.AccessKeyID)
-			return s3Credentials, ctrl.Result{}, nil
-		}
-		log.Info("User exists in MinIO and secret found in k8s. We must assume it is valid",
-			"accessKey", s3Credentials.AccessKeyID)
-		s3Credentials.SecretAccessKey = string(secret.Data[s3.AWSSecretNameSecretKey])
-		return s3Credentials, ctrl.Result{}, nil
-	}
-
-	if !userExist {
-		log.Info("AccessKey does not exist, creating new accessKey", "accessKey", s3Credentials.AccessKeyID)
-		// create read only user for this bundle
-		s3Credentials.SecretAccessKey, err = r.S3.CreateSystemBundleUser(
-			ctx, s3Credentials.AccessKeyID, r.Config.UserCredentialHandler.S3.Bucket, uniqueName,
-		)
-		if err != nil {
-			log.Error(err, "failed to create accessKey", "accessKey", s3Credentials.AccessKeyID)
-			return s3Credentials, ctrl.Result{}, ctrlerr.Wrap(err, "reconcileS3Credentials: could not create accessKey")
-		}
-		log.Info("AccessKey created", "accessKey", s3Credentials.AccessKeyID)
-	}
-
-	return s3Credentials, ctrl.Result{}, nil
 }
 
 func (r *SystemReconciler) reconcileSystemBundle(
@@ -944,7 +851,7 @@ func (r *SystemReconciler) SetupWithManager(mgr ctrl.Manager, name string) error
 			handler.EnqueueRequestsFromMapFunc(r.findSystemsForConfigMap),
 			builder.WithPredicates(ctrlpred.ResourceVersionChangedPredicate{}),
 		).
-		Complete(sentry.Decorate(r))
+		Complete(r)
 }
 
 func (r *SystemReconciler) findSystemsForSecret(ctx context.Context, secret client.Object) []reconcile.Request {

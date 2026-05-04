@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -31,7 +30,6 @@ import (
 	"go.uber.org/zap/zapcore"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -51,7 +49,6 @@ import (
 	webhookstyrav1alpha1 "github.com/bankdata/styra-controller/internal/webhook/styra/v1alpha1"
 	webhookstyrav1beta1 "github.com/bankdata/styra-controller/internal/webhook/styra/v1beta1"
 	"github.com/bankdata/styra-controller/pkg/ocp"
-	"github.com/bankdata/styra-controller/pkg/s3"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -124,21 +121,6 @@ func main() {
 
 	options := config.OptionsFromConfig(ctrlConfig, scheme)
 
-	if ctrlConfig.Sentry != nil {
-		err := sentry.Init(sentry.ClientOptions{
-			Dsn:         ctrlConfig.Sentry.DSN,
-			Environment: ctrlConfig.Sentry.Environment,
-			Release:     version,
-			Debug:       ctrlConfig.Sentry.Debug,
-			HTTPSProxy:  ctrlConfig.Sentry.HTTPSProxy,
-		})
-		if err != nil {
-			log.Error(err, "failed to init sentry")
-			exit(err)
-		}
-		defer sentry.Flush(2 * time.Second)
-	}
-
 	log.Info("config", "Enable OCP Test Data", ctrlConfig.EnableOPAControlPlaneReconciliationTestData)
 
 	mgr, err := ctrl.NewManager(restCfg, options)
@@ -148,7 +130,6 @@ func main() {
 	}
 
 	var opaControlPlaneClient ocp.ClientInterface
-	var s3Client s3.Client
 	if ctrlConfig.OPAControlPlaneConfig == nil ||
 		ctrlConfig.OPAControlPlaneConfig.Address == "" ||
 		ctrlConfig.OPAControlPlaneConfig.Token == "" {
@@ -167,14 +148,6 @@ func main() {
 
 	ocpHostURL := strings.TrimSuffix(ctrlConfig.OPAControlPlaneConfig.Address, "/")
 	opaControlPlaneClient = ocp.New(ocpHostURL, ctrlConfig.OPAControlPlaneConfig.Token)
-
-	if ctrlConfig.UserCredentialHandler != nil && ctrlConfig.UserCredentialHandler.S3 != nil {
-		s3Client, err = s3.NewClient(*ctrlConfig.UserCredentialHandler.S3)
-		if err != nil {
-			log.Error(err, "unable to create S3 client")
-			exit(err)
-		}
-	}
 
 	// System Controller
 	systemReadyMetric := prometheus.NewGaugeVec(
@@ -235,7 +208,6 @@ func main() {
 	}
 
 	r1.OCP = opaControlPlaneClient
-	r1.S3 = s3Client
 
 	r1.WebhookClient = webhook.New(
 		ctrlConfig.OPAControlPlaneConfig.SystemDatasourceChanged,
@@ -298,8 +270,6 @@ func main() {
 	}
 }
 
-func exit(err error) {
-	sentry.CaptureException(err)
-	sentry.Flush(2 * time.Second)
+func exit(_ error) {
 	os.Exit(1)
 }

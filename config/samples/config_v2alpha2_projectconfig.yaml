@@ -40,13 +40,6 @@ logLevel: 0
 #notificationWebhook:
 #  address: ""
 
-# sentry contains configuration for how errors should be reported to sentry.
-#sentry:
-#  debug: false
-#  dsn: ""
-#  environment: ""
-#  httpsProxy: ""
-
 # sso contains configuration for how to use SSO tokens for determining what
 # groups a user belongs to. This can be used to grant members of a certain
 # group access to systems.

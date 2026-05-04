@@ -36,7 +36,6 @@ import (
 	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/bankdata/styra-controller/pkg/ocp"
 	"github.com/bankdata/styra-controller/pkg/ptr"
-	"github.com/bankdata/styra-controller/pkg/s3"
 )
 
 var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"), func() {
@@ -135,16 +134,6 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"
 				`libraries:{crypto.sha256(concat("", {x | some y in ["library1"]; x := input.sources[y].git.commit}))}"`,
 		}).Return(nil)
 
-		// Called in reconcileS3Credentials - first time, user does not exist
-		s3ClientMock.On("UserExists", mock.Anything, "Access-Key-test-bucket-default-ocp-system").Return(false, nil).Once()
-
-		// Called in reconcileS3Credentials
-		s3ClientMock.On("CreateSystemBundleUser", mock.Anything,
-			"Access-Key-test-bucket-default-ocp-system", "test-bucket", "default-ocp-system").
-			Return("system-user-secret-key", nil).Once()
-
-		s3ClientMock.On("UserExists", mock.Anything, "Access-Key-test-bucket-default-ocp-system").Return(true, nil)
-
 		gomega.Expect(k8sClient.Create(ctx, toCreate)).To(gomega.Succeed())
 
 		// Assert that the System has all the correct statuses.
@@ -184,13 +173,11 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"
 				conditionOPAUpToDate
 		}, timeout, interval).Should(gomega.BeTrue())
 
-		// Assert that the secret has correct name and content
+		// Assert that the secret has the correct name and is created.
 		gomega.Eventually(func() bool {
 			fetched := &corev1.Secret{}
 			secretKey := types.NamespacedName{Name: fmt.Sprintf("%s-opa-secret", key.Name), Namespace: key.Namespace}
-			return k8sClient.Get(ctx, secretKey, fetched) == nil &&
-				string(fetched.Data[s3.AWSSecretNameKeyID]) == "Access-Key-test-bucket-default-ocp-system" &&
-				string(fetched.Data[s3.AWSSecretNameSecretKey]) == "system-user-secret-key"
+			return k8sClient.Get(ctx, secretKey, fetched) == nil
 		}, timeout, interval).Should(gomega.BeTrue())
 
 		// Assert that the configmap has the correct name and content.
@@ -277,29 +264,6 @@ services:
 		}, timeout, interval).Should(gomega.BeTrue())
 
 		resetMock(&ocpClientMock.Mock)
-
-		gomega.Eventually(func() bool {
-			var (
-				userExists             int
-				createSystemBundleUser int
-			)
-			for _, call := range s3ClientMock.Calls {
-				switch call.Method {
-				case "UserExists":
-					if len(call.Arguments) >= 2 && call.Arguments.Get(1) == "Access-Key-test-bucket-default-ocp-system" {
-						userExists++
-					}
-				case "CreateSystemBundleUser":
-					if len(call.Arguments) >= 2 && call.Arguments.Get(1) == "Access-Key-test-bucket-default-ocp-system" {
-						createSystemBundleUser++
-					}
-				}
-			}
-
-			return userExists == 3 && createSystemBundleUser == 1
-		}, timeout, interval).Should(gomega.BeTrue())
-
-		resetMock(&s3ClientMock.Mock)
 
 		ginkgo.By("Deleting the system")
 

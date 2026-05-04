@@ -41,7 +41,6 @@ import (
 	styractrls "github.com/bankdata/styra-controller/internal/controller/styra"
 	webhookmocks "github.com/bankdata/styra-controller/internal/webhook/mocks"
 	ocpclientmock "github.com/bankdata/styra-controller/pkg/ocp/mocks"
-	s3clientmock "github.com/bankdata/styra-controller/pkg/s3/mocks"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -51,7 +50,6 @@ var (
 	managerCtx    context.Context
 	managerCancel context.CancelFunc
 	ocpClientMock *ocpclientmock.ClientInterface
-	s3ClientMock  *s3clientmock.Client
 	webhookMock   *webhookmocks.Client
 )
 
@@ -111,13 +109,11 @@ var _ = ginkgo.BeforeSuite(func() {
 
 	ocpClientMock = &ocpclientmock.ClientInterface{}
 	webhookMock = &webhookmocks.Client{}
-	s3ClientMock = &s3clientmock.Client{}
 	systemReconciler := styractrls.SystemReconciler{
 		Client:        k8sClient,
 		APIReader:     k8sManager.GetAPIReader(),
 		Scheme:        k8sManager.GetScheme(),
 		OCP:           ocpClientMock,
-		S3:            s3ClientMock,
 		WebhookClient: webhookMock,
 		Recorder:      k8sManager.GetEventRecorderFor("system-controller"),
 		Config: &configv2alpha2.ProjectConfig{
@@ -136,15 +132,6 @@ var _ = ginkgo.BeforeSuite(func() {
 						URL:                 "s3-url",
 						OCPConfigSecretName: "s3-credentials",
 					},
-				},
-			},
-			UserCredentialHandler: &configv2alpha2.UserCredentialHandler{
-				S3: &configv2alpha2.S3Handler{
-					Bucket:          "test-bucket",
-					Region:          "eu-west-1",
-					URL:             "s3-url",
-					AccessKeyID:     "access-key-id",
-					SecretAccessKey: "secret-access-key",
 				},
 			},
 			OPA: configv2alpha2.OPAConfig{

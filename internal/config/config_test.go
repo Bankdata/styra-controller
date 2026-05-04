@@ -275,35 +275,6 @@ opaControlPlaneConfig:
 		gomega.Ω(cfg.OPAControlPlaneConfig.BundleObjectStorage.S3.Bucket).Should(gomega.Equal("ocp"))
 	})
 
-	ginkgo.It("overlay can set S3 credentials in userCredentialHandler", func() {
-		base := writeFile("base.yaml", `
-apiVersion: config.bankdata.dk/v2alpha2
-kind: ProjectConfig
-userCredentialHandler:
-  s3:
-    bucket: ocp
-    url: https://minio-host
-    region: us-east-1
-`)
-		secrets := writeFile("secrets.yaml", `
-apiVersion: config.bankdata.dk/v2alpha2
-kind: ProjectConfig
-userCredentialHandler:
-  s3:
-    accessKeyID: my-key
-    secretAccessKey: my-secret
-`)
-		cfg, err := Load([]string{base, secrets}, scheme)
-		gomega.Ω(err).ShouldNot(gomega.HaveOccurred())
-		gomega.Ω(cfg.UserCredentialHandler).ShouldNot(gomega.BeNil())
-		gomega.Ω(cfg.UserCredentialHandler.S3).ShouldNot(gomega.BeNil())
-		gomega.Ω(cfg.UserCredentialHandler.S3.Bucket).Should(gomega.Equal("ocp"))
-		gomega.Ω(cfg.UserCredentialHandler.S3.URL).Should(gomega.Equal("https://minio-host"))
-		gomega.Ω(cfg.UserCredentialHandler.S3.Region).Should(gomega.Equal("us-east-1"))
-		gomega.Ω(cfg.UserCredentialHandler.S3.AccessKeyID).Should(gomega.Equal("my-key"))
-		gomega.Ω(cfg.UserCredentialHandler.S3.SecretAccessKey).Should(gomega.Equal("my-secret"))
-	})
-
 	ginkgo.It("overlay replaces default requirements entirely", func() {
 		base := writeFile("base.yaml", `
 apiVersion: config.bankdata.dk/v2alpha2
@@ -346,11 +317,6 @@ opaControlPlaneConfig:
       ocpConfigSecretName: s3-config
   defaultRequirements:
     - base-library
-userCredentialHandler:
-  s3:
-    bucket: creds
-    url: https://s3.example.com
-    region: eu-west-1
 opa:
   bundleServer:
     url: https://s3.example.com
@@ -361,13 +327,6 @@ apiVersion: config.bankdata.dk/v2alpha2
 kind: ProjectConfig
 opaControlPlaneConfig:
   token: real-ocp-token
-userCredentialHandler:
-  s3:
-    accessKeyID: AKIA-REAL-KEY
-    secretAccessKey: real-secret-key
-sentry:
-  dsn: https://abc@sentry.example.com/123
-  environment: production
 `)
 		cfg, err := Load([]string{configMap, secret}, scheme)
 		gomega.Ω(err).ShouldNot(gomega.HaveOccurred())
@@ -381,16 +340,9 @@ sentry:
 		gomega.Ω(cfg.OPAControlPlaneConfig.Address).Should(gomega.Equal("https://ocp.example.com"))
 		gomega.Ω(cfg.OPAControlPlaneConfig.BundleObjectStorage.S3.Bucket).Should(gomega.Equal("bundles"))
 		gomega.Ω(cfg.OPAControlPlaneConfig.DefaultRequirements).Should(gomega.Equal([]string{"base-library"}))
-		gomega.Ω(cfg.UserCredentialHandler.S3.Bucket).Should(gomega.Equal("creds"))
-		gomega.Ω(cfg.UserCredentialHandler.S3.URL).Should(gomega.Equal("https://s3.example.com"))
 		gomega.Ω(cfg.OPA.BundleServer.URL).Should(gomega.Equal("https://s3.example.com"))
 
 		// Secret fields from Secret overlay
 		gomega.Ω(cfg.OPAControlPlaneConfig.Token).Should(gomega.Equal("real-ocp-token"))
-		gomega.Ω(cfg.UserCredentialHandler.S3.AccessKeyID).Should(gomega.Equal("AKIA-REAL-KEY"))
-		gomega.Ω(cfg.UserCredentialHandler.S3.SecretAccessKey).Should(gomega.Equal("real-secret-key"))
-		gomega.Ω(cfg.Sentry).ShouldNot(gomega.BeNil())
-		gomega.Ω(cfg.Sentry.DSN).Should(gomega.Equal("https://abc@sentry.example.com/123"))
-		gomega.Ω(cfg.Sentry.Environment).Should(gomega.Equal("production"))
 	})
 })

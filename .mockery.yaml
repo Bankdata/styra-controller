@@ -11,6 +11,3 @@ packages:
   github.com/bankdata/styra-controller/internal/webhook:
     config:
       all: true
-  github.com/bankdata/styra-controller/pkg/s3:
-    config:
-      all: true
