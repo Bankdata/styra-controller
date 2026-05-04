@@ -237,13 +237,9 @@ func main() {
 	r1.OCP = opaControlPlaneClient
 	r1.S3 = s3Client
 
-	if ctrlConfig.NotificationWebhooks != nil {
-		r1.WebhookClient = webhook.New(
-			ctrlConfig.NotificationWebhooks.SystemDatasourceChanged,
-			"",
-			ctrlConfig.OPAControlPlaneConfig.SystemDatasourceChanged,
-			"")
-	}
+	r1.WebhookClient = webhook.New(
+		ctrlConfig.OPAControlPlaneConfig.SystemDatasourceChanged,
+		ctrlConfig.OPAControlPlaneConfig.LibraryDatasourceChanged)
 
 	if err = r1.SetupWithManager(mgr, "styra-controller"); err != nil {
 		log.Error(err, "unable to create controller", "controller", "System")
@@ -270,14 +266,9 @@ func main() {
 
 	libraryReconciler.OCP = opaControlPlaneClient
 
-	if ctrlConfig.NotificationWebhooks != nil {
-		libraryReconciler.WebhookClient = webhook.New(
-			"",
-			ctrlConfig.NotificationWebhooks.LibraryDatasourceChanged,
-			ctrlConfig.OPAControlPlaneConfig.LibraryDatasourceChanged,
-			"",
-		)
-	}
+	libraryReconciler.WebhookClient = webhook.New(
+		ctrlConfig.OPAControlPlaneConfig.SystemDatasourceChanged,
+		ctrlConfig.OPAControlPlaneConfig.LibraryDatasourceChanged)
 
 	if err = libraryReconciler.SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create controller", "controller", "Library")

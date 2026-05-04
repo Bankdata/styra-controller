@@ -36,7 +36,6 @@ Single-file usage (`--config=config.yaml`) remains fully supported and behaves i
 * `systemSuffix`
 * `logLevel`
 * `leaderElection`
-* `notificationWebhooks`
 * `sentry`
 * `controllerClass`         
 * `deletionProtectionDefault`
@@ -99,17 +98,3 @@ Custom Resources can have delete protection, which means that backing OCP resour
 
 ## Leader Election
 If multiple instances of the controller are running together, leader election can be configured by setting the `leaderElection.leaseDuration`, `leaderElection.renewDeadline`, `leaderElection.retryPeriod`.
-decisionsExporter: 
-
-## Restarting Pods
-OPA and SLP pods read their configuration at startup. If the configuration is changed, the pods need to be restarted for the changes to take effect. 
-This can be done manually by either deleting the pods or by using the `kubectl rollout restart` command. 
-If the controller is given the permissions for `statefulsets` defined in `config/rbac/role.yaml`, and the controller configuration has
-```
-podRestart:
-  slpRestart:
-    enabled: true
-    deploymentType: StatefulSet
-```
-it will automatically restart the SLP pods when the configuration is changed. 
-There is not currently support for other deployment types, such as `DaemonSet` or `Deployment`, and there is not support for restarting OPA pods.

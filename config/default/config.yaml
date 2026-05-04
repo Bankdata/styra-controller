@@ -9,9 +9,7 @@ logLevel: 0
 #   leaseDuration: "60s"
 #   renewDeadline: "30s"
 #   retryPeriod: "5s"
-notificationWebhooks: {}
-  # systemDatasourceChanged: google.com
-  # libraryDatasourceChanged: test.dk
+
 #sentry:
 #sso:
 
@@ -79,11 +77,6 @@ opa:
         - 0.8
         - 0.9
         - 1
-
-podRestart:
-  slpRestart:
-    enabled: true
-    deploymentType: StatefulSet
 
 # opa:
 #  decision_logs:

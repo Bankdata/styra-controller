@@ -355,9 +355,6 @@ opa:
   bundleServer:
     url: https://s3.example.com
     path: /bundles
-notificationWebhooks:
-  systemDatasourceChanged: https://hooks.example.com/system
-  libraryDatasourceChanged: https://hooks.example.com/library
 `)
 		secret := writeFile("config-secrets.yaml", `
 apiVersion: config.bankdata.dk/v2alpha2
@@ -387,8 +384,6 @@ sentry:
 		gomega.Ω(cfg.UserCredentialHandler.S3.Bucket).Should(gomega.Equal("creds"))
 		gomega.Ω(cfg.UserCredentialHandler.S3.URL).Should(gomega.Equal("https://s3.example.com"))
 		gomega.Ω(cfg.OPA.BundleServer.URL).Should(gomega.Equal("https://s3.example.com"))
-		gomega.Ω(cfg.NotificationWebhooks.SystemDatasourceChanged).Should(
-			gomega.Equal("https://hooks.example.com/system"))
 
 		// Secret fields from Secret overlay
 		gomega.Ω(cfg.OPAControlPlaneConfig.Token).Should(gomega.Equal("real-ocp-token"))

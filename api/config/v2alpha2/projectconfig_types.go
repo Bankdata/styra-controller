@@ -47,8 +47,6 @@ type ProjectConfig struct {
 
 	LeaderElection *LeaderElectionConfig `json:"leaderElection"`
 
-	NotificationWebhooks *NotificationWebhooksConfig `json:"notificationWebhooks,omitempty"`
-
 	Sentry *SentryConfig `json:"sentry"`
 
 	OPA OPAConfig `json:"opa,omitempty"`
@@ -58,8 +56,6 @@ type ProjectConfig struct {
 
 	// SystemSuffix is a suffix for all the systems that the controller creates.
 	SystemSuffix string `json:"systemSuffix"`
-
-	PodRestart *PodRestartConfig `json:"podRestart,omitempty"`
 
 	// OPAControlPlaneConfig contains configuration for connecting to the
 	// OPA Control Plane APIs. If this is not set, the controller will not
@@ -77,24 +73,6 @@ type ProjectConfig struct {
 	// Deprecated: EnableOPAControlPlaneReconciliationTestData field is deprecated.
 	// Only used in migration versions Styra->OCP. This field will be removed in a future version.
 	EnableOPAControlPlaneReconciliationTestData bool `json:"enableOPAControlPlaneReconciliationTestData,omitempty"`
-}
-
-// PodRestartConfig contains configuration for restarting OPA and SLP pods
-type PodRestartConfig struct {
-	SLPRestart *SLPRestartConfig `json:"slpRestart,omitempty"`
-	OPARestart *OPARestartConfig `json:"opaRestart,omitempty"`
-}
-
-// SLPRestartConfig contains configuration for restarting SLP pods
-type SLPRestartConfig struct {
-	Enabled        bool   `json:"enabled"`
-	DeploymentType string `json:"deploymentType"` // DeploymentType only currently supports "StatefulSet""
-}
-
-// OPARestartConfig contains configuration for restarting OPA pods -- This is not yet implemented
-type OPARestartConfig struct {
-	Enabled        bool   `json:"enabled"`
-	DeploymentType string `json:"deploymentType"`
 }
 
 // LeaderElectionConfig contains configuration for leader election
@@ -245,39 +223,6 @@ type SentryConfig struct {
 
 	// HTTPSProxy sets an HTTP proxy server for sentry to use.
 	HTTPSProxy string `json:"httpsProxy"`
-}
-
-// NotificationWebhooksConfig contains configuration for how to call the notification
-// webhook.
-type NotificationWebhooksConfig struct {
-	// Address is the URL to be called when the controller should do a webhook
-	// notification. Currently the only supported notification is that a
-	// datasource configuration has changed.
-
-	//+kubebuilder:deprecatedversion:warning="SystemDatasourceChanged field is deprecated, only used in Styra"
-	// Deprecated: SystemDatasourceChanged field is deprecated, only used in Styra.
-	// This field will be removed in a future version.
-	SystemDatasourceChanged string `json:"systemDatasourceChanged,omitempty"`
-	//+kubebuilder:deprecatedversion:warning="LibraryDatasourceChanged field is deprecated, only used in Styra"
-	// Deprecated: LibraryDatasourceChanged field is deprecated, only used in Styra.
-	// This field will be removed in a future version.
-	LibraryDatasourceChanged string `json:"libraryDatasourceChanged,omitempty"`
-}
-
-// SLPRestartEnabled returns true if the OPA restart is enabled
-func (c *ProjectConfig) SLPRestartEnabled() bool {
-	if c.PodRestart == nil || c.PodRestart.SLPRestart == nil {
-		return false
-	}
-	return c.PodRestart.SLPRestart.Enabled
-}
-
-// OPARestartEnabled returns true if the OPA restart is enabled
-func (c *ProjectConfig) OPARestartEnabled() bool {
-	if c.PodRestart == nil || c.PodRestart.OPARestart == nil {
-		return false
-	}
-	return c.PodRestart.OPARestart.Enabled
 }
 
 func init() {

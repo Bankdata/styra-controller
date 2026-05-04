@@ -46,15 +46,13 @@ import (
 )
 
 var (
-	k8sClient               client.Client
-	testEnv                 *envtest.Environment
-	managerCtx              context.Context
-	managerCancel           context.CancelFunc
-	managerCtxPodRestart    context.Context
-	managerCancelPodRestart context.CancelFunc
-	ocpClientMock           *ocpclientmock.ClientInterface
-	s3ClientMock            *s3clientmock.Client
-	webhookMock             *webhookmocks.Client
+	k8sClient     client.Client
+	testEnv       *envtest.Environment
+	managerCtx    context.Context
+	managerCancel context.CancelFunc
+	ocpClientMock *ocpclientmock.ClientInterface
+	s3ClientMock  *s3clientmock.Client
+	webhookMock   *webhookmocks.Client
 )
 
 const (
@@ -223,68 +221,6 @@ var _ = ginkgo.BeforeSuite(func() {
 		err = k8sManager.Start(managerCtx)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	}()
-
-	// Test setup for systemReconcilerPodRestart that deploys a system with an ID and a Statefulset for a SLP
-	k8sManagerPodRestart, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:         scheme.Scheme,
-		LeaderElection: false,
-		Metrics: metricsserver.Options{
-			BindAddress: "0",
-		},
-	})
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-	// Controller with PodRestart enabled for SLPs.
-	systemReconcilerPodRestart := styractrls.SystemReconciler{
-		Client:        k8sClient,
-		APIReader:     k8sManagerPodRestart.GetAPIReader(),
-		Scheme:        k8sManagerPodRestart.GetScheme(),
-		OCP:           ocpClientMock,
-		WebhookClient: webhookMock,
-		Recorder:      k8sManagerPodRestart.GetEventRecorderFor("system-controller"),
-		Config: &configv2alpha2.ProjectConfig{
-			ControllerClass: "styra-controller-pod-restart",
-			PodRestart: &configv2alpha2.PodRestartConfig{
-				SLPRestart: &configv2alpha2.SLPRestartConfig{
-					Enabled:        true,
-					DeploymentType: "statefulset",
-				},
-			},
-		},
-		Metrics: &styractrls.SystemReconcilerMetrics{
-			ControllerSystemStatusReady: prometheus.NewGaugeVec(
-				prometheus.GaugeOpts{
-					Name: "controller_system_status_ready",
-					Help: "Show if a system is in status ready",
-				},
-				[]string{"system_name", "namespace", "system_id", "control_plane"},
-			),
-			ReconcileSegmentTime: prometheus.NewHistogramVec(
-				prometheus.HistogramOpts{
-					Name:    "controller_system_reconcile_segment_seconds",
-					Help:    "Time taken to perform one segment of reconciling a system",
-					Buckets: prometheus.DefBuckets,
-				}, []string{"segment"},
-			),
-			ReconcileTime: prometheus.NewHistogramVec(
-				prometheus.HistogramOpts{
-					Name:    "controller_system_reconcile_seconds",
-					Help:    "Time taken to reconcile a system",
-					Buckets: prometheus.DefBuckets,
-				}, []string{"result"},
-			),
-		},
-	}
-
-	err = systemReconcilerPodRestart.SetupWithManager(k8sManagerPodRestart, "styra-controller-pod-restart")
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-	managerCtxPodRestart, managerCancelPodRestart = context.WithCancel(context.Background())
-	go func() {
-		defer ginkgo.GinkgoRecover()
-		err = k8sManagerPodRestart.Start(managerCtxPodRestart)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	}()
 })
 
 var _ = ginkgo.AfterSuite(func() {
@@ -294,9 +230,6 @@ var _ = ginkgo.AfterSuite(func() {
 	ginkgo.By("tearing down the test environment")
 	if managerCancel != nil {
 		managerCancel()
-	}
-	if managerCancelPodRestart != nil {
-		managerCancelPodRestart()
 	}
 	if testEnv != nil {
 		err := testEnv.Stop()
