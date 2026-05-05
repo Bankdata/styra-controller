@@ -74,10 +74,10 @@ var _ = ginkgo.Describe("System", func() {
 		},
 
 		ginkgo.Entry("Add first condition", nil,
-			ConditionTypeCreatedInStyra, metav1.ConditionTrue,
+			ConditionTypeCreatedInOcp, metav1.ConditionTrue,
 			[]Condition{
 				{
-					Type:   ConditionTypeCreatedInStyra,
+					Type:   ConditionTypeCreatedInOcp,
 					Status: metav1.ConditionTrue,
 				},
 			},
@@ -86,18 +86,18 @@ var _ = ginkgo.Describe("System", func() {
 		ginkgo.Entry("Add new condition",
 			[]Condition{
 				{
-					Type:   ConditionTypeCreatedInStyra,
+					Type:   ConditionTypeCreatedInOcp,
 					Status: metav1.ConditionTrue,
 				},
 			},
-			ConditionTypeGitCredentialsUpdated, metav1.ConditionFalse,
+			ConditionTypeRequirementsUpdated, metav1.ConditionFalse,
 			[]Condition{
 				{
-					Type:   ConditionTypeCreatedInStyra,
+					Type:   ConditionTypeCreatedInOcp,
 					Status: metav1.ConditionTrue,
 				},
 				{
-					Type:   ConditionTypeGitCredentialsUpdated,
+					Type:   ConditionTypeRequirementsUpdated,
 					Status: metav1.ConditionFalse,
 				},
 			},
@@ -106,22 +106,22 @@ var _ = ginkgo.Describe("System", func() {
 		ginkgo.Entry("Update status on existing condition",
 			[]Condition{
 				{
-					Type:   ConditionTypeCreatedInStyra,
+					Type:   ConditionTypeCreatedInOcp,
 					Status: metav1.ConditionTrue,
 				},
 				{
-					Type:   ConditionTypeGitCredentialsUpdated,
+					Type:   ConditionTypeRequirementsUpdated,
 					Status: metav1.ConditionFalse,
 				},
 			},
-			ConditionTypeGitCredentialsUpdated, metav1.ConditionTrue,
+			ConditionTypeRequirementsUpdated, metav1.ConditionTrue,
 			[]Condition{
 				{
-					Type:   ConditionTypeCreatedInStyra,
+					Type:   ConditionTypeCreatedInOcp,
 					Status: metav1.ConditionTrue,
 				},
 				{
-					Type:   ConditionTypeGitCredentialsUpdated,
+					Type:   ConditionTypeRequirementsUpdated,
 					Status: metav1.ConditionTrue,
 				},
 			},

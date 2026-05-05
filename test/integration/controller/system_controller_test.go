@@ -132,7 +132,7 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"
 			Revision: `$"data:{crypto.sha256(concat("", {x | x := input.sources[_].sql.hash}))},` +
 				`git-sha:{input.sources["default-ocp-system"].git.commit},` +
 				`libraries:{crypto.sha256(concat("", {x | some y in ["library1"]; x := input.sources[y].git.commit}))}"`,
-		}).Return(nil)
+		}).Return(nil).Times(3)
 
 		gomega.Expect(k8sClient.Create(ctx, toCreate)).To(gomega.Succeed())
 

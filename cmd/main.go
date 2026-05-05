@@ -121,8 +121,6 @@ func main() {
 
 	options := config.OptionsFromConfig(ctrlConfig, scheme)
 
-	log.Info("config", "Enable OCP Test Data", ctrlConfig.EnableOPAControlPlaneReconciliationTestData)
-
 	mgr, err := ctrl.NewManager(restCfg, options)
 	if err != nil {
 		log.Error(err, "unable to start manager")

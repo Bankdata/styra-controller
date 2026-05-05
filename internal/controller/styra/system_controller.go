@@ -175,23 +175,6 @@ func (r *SystemReconciler) updateMetric(req ctrl.Request, systemID string, ready
 		value = 1
 	}
 	r.Metrics.ControllerSystemStatusReady.WithLabelValues(req.Name, req.Namespace, systemID, controlPlane).Set(value)
-
-	var labelToDelete string
-	if controlPlane == labels.LabelValueControlPlaneOCP {
-		labelToDelete = labels.LabelValueControlPlaneStyra
-	}
-	if controlPlane == labels.LabelValueControlPlaneStyra {
-		labelToDelete = labels.LabelValueControlPlaneOCP
-	}
-
-	r.Metrics.ControllerSystemStatusReady.DeletePartialMatch(
-		prometheus.Labels{
-			"system_name":   req.Name,
-			"namespace":     req.Namespace,
-			"system_id":     systemID,
-			"control_plane": labelToDelete,
-		},
-	)
 }
 
 func (r *SystemReconciler) deleteMetrics(req ctrl.Request) {
@@ -220,7 +203,7 @@ func (r *SystemReconciler) reconcileFinalizer(ctx context.Context, log logr.Logg
 	if err := r.Update(ctx, system); err != nil {
 		return ctrlerr.Wrap(err, "Could not set finalizer").
 			WithEvent(v1beta1.EventErrorSetFinalizer).
-			WithSystemCondition(v1beta1.ConditionTypeCreatedInStyra)
+			WithSystemCondition(v1beta1.ConditionTypeCreatedInOcp)
 	}
 	return nil
 }
@@ -354,11 +337,6 @@ func (r *SystemReconciler) ocpReconcile(
 			WithSystemCondition(v1beta1.ConditionTypeSystemBundleUpdated)
 	}
 	system.SetCondition(v1beta1.ConditionTypeSystemBundleUpdated, metav1.ConditionTrue)
-
-	if r.Config.EnableOPAControlPlaneReconciliationTestData {
-		log.Info("OCP reconciliation completed - skipping rest of OCP reconciliation due to test data flag")
-		return ctrl.Result{}, nil
-	}
 
 	secretName := fmt.Sprintf("%s-opa-secret", system.Name)
 	result, secretUpdated, err := r.reconcileOPASecret(ctx, log, system, uniqueName, secretName)

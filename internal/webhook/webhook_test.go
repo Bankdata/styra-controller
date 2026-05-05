@@ -64,7 +64,7 @@ var _ = ginkgo.Describe("New client creation", func() {
 	})
 })
 
-var _ = ginkgo.Describe("Succeed to update system datasource OCP", func() {
+var _ = ginkgo.Describe("Succeed to update system datasource", func() {
 
 	datasourceID := "systems/id_system/test_datasource"
 
@@ -99,7 +99,7 @@ var _ = ginkgo.Describe("Succeed to update system datasource OCP", func() {
 	})
 })
 
-var _ = ginkgo.Describe("Fail to update system datasource OCP", func() {
+var _ = ginkgo.Describe("Fail to update system datasource", func() {
 
 	datasourceID := "systems/id_system/test_datasource"
 
@@ -137,7 +137,7 @@ var _ = ginkgo.Describe("Fail to update system datasource OCP", func() {
 	})
 })
 
-var _ = ginkgo.Describe("Succeed to update library datasource OCP", func() {
+var _ = ginkgo.Describe("Succeed to update library datasource", func() {
 
 	datasourceID := "libraries/libraryID/datasource"
 
@@ -171,7 +171,7 @@ var _ = ginkgo.Describe("Succeed to update library datasource OCP", func() {
 	})
 })
 
-var _ = ginkgo.Describe("Fail to update library datasource OCP", func() {
+var _ = ginkgo.Describe("Fail to update library datasource", func() {
 
 	datasourceID := "libraries/libraryID/datasource"
 
