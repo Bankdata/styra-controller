@@ -123,7 +123,7 @@ string
 </em>
 </td>
 <td>
-<p>Name is the name the Library will have in Styra DAS</p>
+<p>Name is the name the Library will have in OCP</p>
 </td>
 </tr>
 <tr>
@@ -294,7 +294,7 @@ string
 </em>
 </td>
 <td>
-<p>Name is the name the Library will have in Styra DAS</p>
+<p>Name is the name the Library will have in OCP</p>
 </td>
 </tr>
 <tr>
@@ -430,7 +430,7 @@ SubjectKind.</p>
 (<em>Appears on:</em><a href="#styra.bankdata.dk/v1alpha1.LibrarySpec">LibrarySpec</a>)
 </p>
 <div>
-<p>SourceControl is a struct from styra where we only use a single field
+<p>SourceControl is a struct from OCP where we only use a single field
 but kept for clarity when comparing to the API</p>
 </div>
 <table>
@@ -458,5 +458,5 @@ GitRepo
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>577de2c</code>.
+on git commit <code>4b70bcc</code>.
 </em></p>

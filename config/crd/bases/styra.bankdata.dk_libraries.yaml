@@ -60,7 +60,7 @@ spec:
                 description: Description is the description of the Library
                 type: string
               name:
-                description: Name is the name the Library will have in Styra DAS
+                description: Name is the name the Library will have in OCP
                 type: string
               sourceControl:
                 description: SourceControl is the sourcecontrol configuration for

@@ -56,12 +56,11 @@ spec:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
               datasources:
-                description: |-
-                  Datasources represents a list of Styra datasources to be mounted in the
-                  system.
+                description: Datasources represents a list of datasources to be mounted
+                  in the system.
                 items:
-                  description: Datasource represents a Styra datasource to be mounted
-                    in the system.
+                  description: Datasource represents a datasource to be mounted in
+                    the system.
                   properties:
                     description:
                       description: Description is a description of the datasource
@@ -82,7 +81,7 @@ spec:
                     DecisionMapping specifies how a system decision mapping should be
                     configured. This allows configuration of when a decision is considered
                     allowed or not. It also provides the ability to show additional columns in
-                    Styra.
+                    the decision log.
                   properties:
                     allowed:
                       description: AllowedMapping specifies how to determine if a
@@ -124,7 +123,7 @@ spec:
                       items:
                         description: |-
                           ColumnMapping specifies how a value in the decision result should be mapped
-                          to a column in the Styra decision log.
+                          to a column in the decision log.
                         properties:
                           key:
                             description: Key is the name of the column as shown in
@@ -155,13 +154,13 @@ spec:
                 type: array
               deletionProtection:
                 description: |-
-                  DeletionProtection disables deletion of the system in Styra, when the
-                  System resource is deleted.
+                  DeletionProtection disables deletion of backing OPA Control Plane
+                  resources when the System resource is deleted.
                 type: boolean
               discoveryOverrides:
                 description: |-
-                  DiscoveryOverrides is an opa config which will take precedence over the
-                  configuration supplied by Styra discovery API. Configuration set here
+                  DiscoveryOverrides is an OPA config which will take precedence over the
+                  configuration supplied by the OPA discovery API. Configuration set here
                   will be merged with the configuration supplied by the discovery API.
                 properties:
                   distributed_tracing:
@@ -208,9 +207,7 @@ spec:
                 description: EnableDeltaBundles decides whether DeltaBundles are enabled
                 type: boolean
               localPlane:
-                description: |-
-                  LocalPlane specifies how the Styra Local Plane should be configured. This is
-                  used to generate Secret and ConfigMap for the SLP to consume.
+                description: LocalPlane specifies how the local plane should be configured.
                 properties:
                   name:
                     description: Name is the hostname of the SLP service.

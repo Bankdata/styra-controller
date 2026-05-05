@@ -41,24 +41,16 @@ import (
 	styractrls "github.com/bankdata/styra-controller/internal/controller/styra"
 	webhookmocks "github.com/bankdata/styra-controller/internal/webhook/mocks"
 	ocpclientmock "github.com/bankdata/styra-controller/pkg/ocp/mocks"
-	"github.com/bankdata/styra-controller/pkg/ptr"
-	s3clientmock "github.com/bankdata/styra-controller/pkg/s3/mocks"
-	"github.com/bankdata/styra-controller/pkg/styra"
-	styraclientmock "github.com/bankdata/styra-controller/pkg/styra/mocks"
 	//+kubebuilder:scaffold:imports
 )
 
 var (
-	k8sClient               client.Client
-	testEnv                 *envtest.Environment
-	managerCtx              context.Context
-	managerCancel           context.CancelFunc
-	managerCtxPodRestart    context.Context
-	managerCancelPodRestart context.CancelFunc
-	styraClientMock         *styraclientmock.ClientInterface
-	ocpClientMock           *ocpclientmock.ClientInterface
-	s3ClientMock            *s3clientmock.Client
-	webhookMock             *webhookmocks.Client
+	k8sClient     client.Client
+	testEnv       *envtest.Environment
+	managerCtx    context.Context
+	managerCancel context.CancelFunc
+	ocpClientMock *ocpclientmock.ClientInterface
+	webhookMock   *webhookmocks.Client
 )
 
 const (
@@ -115,30 +107,16 @@ var _ = ginkgo.BeforeSuite(func() {
 	})
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-	styraClientMock = &styraclientmock.ClientInterface{}
 	ocpClientMock = &ocpclientmock.ClientInterface{}
 	webhookMock = &webhookmocks.Client{}
-	s3ClientMock = &s3clientmock.Client{}
 	systemReconciler := styractrls.SystemReconciler{
 		Client:        k8sClient,
 		APIReader:     k8sManager.GetAPIReader(),
 		Scheme:        k8sManager.GetScheme(),
-		Styra:         styraClientMock,
 		OCP:           ocpClientMock,
-		S3:            s3ClientMock,
 		WebhookClient: webhookMock,
 		Recorder:      k8sManager.GetEventRecorderFor("system-controller"),
 		Config: &configv2alpha2.ProjectConfig{
-			SystemUserRoles: []string{string(styra.RoleSystemViewer)},
-			SSO: &configv2alpha2.SSOConfig{
-				IdentityProvider: "AzureAD Bankdata",
-				JWTGroupsClaim:   "groups",
-			},
-			DatasourceIgnorePatterns:            []string{"^.*/ignore$"},
-			ReadOnly:                            true,
-			EnableDeltaBundlesDefault:           ptr.Bool(false),
-			EnableStyraReconciliation:           true,
-			EnableOPAControlPlaneReconciliation: true,
 			OPAControlPlaneConfig: &configv2alpha2.OPAControlPlaneConfig{
 				Address: "ocp-url",
 				Token:   "ocp-token",
@@ -154,15 +132,6 @@ var _ = ginkgo.BeforeSuite(func() {
 						URL:                 "s3-url",
 						OCPConfigSecretName: "s3-credentials",
 					},
-				},
-			},
-			UserCredentialHandler: &configv2alpha2.UserCredentialHandler{
-				S3: &configv2alpha2.S3Handler{
-					Bucket:          "test-bucket",
-					Region:          "eu-west-1",
-					URL:             "s3-url",
-					AccessKeyID:     "access-key-id",
-					SecretAccessKey: "secret-access-key",
 				},
 			},
 			OPA: configv2alpha2.OPAConfig{
@@ -215,18 +184,16 @@ var _ = ginkgo.BeforeSuite(func() {
 
 	libraryReconciler := &styractrls.LibraryReconciler{
 		Config: &configv2alpha2.ProjectConfig{
-			SSO: &configv2alpha2.SSOConfig{
-				IdentityProvider: "AzureAD Bankdata",
-				JWTGroupsClaim:   "groups",
+			OPAControlPlaneConfig: &configv2alpha2.OPAControlPlaneConfig{
+				Address: "ocp-url",
+				Token:   "ocp-token",
+				GitCredentials: []*configv2alpha2.GitCredentials{&configv2alpha2.GitCredentials{
+					ID:         "github-credentials",
+					RepoPrefix: "https://github",
+				}},
 			},
-			DatasourceIgnorePatterns: []string{"^.*/ignore$"},
-			GitCredentials: []*configv2alpha2.GitCredential{
-				{User: "test-user", Password: "test-secret"},
-			},
-			EnableStyraReconciliation: true,
 		},
 		Client:        k8sClient,
-		Styra:         styraClientMock,
 		OCP:           ocpClientMock,
 		WebhookClient: webhookMock,
 	}
@@ -241,78 +208,6 @@ var _ = ginkgo.BeforeSuite(func() {
 		err = k8sManager.Start(managerCtx)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	}()
-
-	// Test setup for systemReconcilerPodRestart that deploys a system with an ID and a Statefulset for a SLP
-	k8sManagerPodRestart, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:         scheme.Scheme,
-		LeaderElection: false,
-		Metrics: metricsserver.Options{
-			BindAddress: "0",
-		},
-	})
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-	// Controller with PodRestart enabled for SLPs.
-	systemReconcilerPodRestart := styractrls.SystemReconciler{
-		Client:        k8sClient,
-		APIReader:     k8sManagerPodRestart.GetAPIReader(),
-		Scheme:        k8sManagerPodRestart.GetScheme(),
-		Styra:         styraClientMock,
-		OCP:           ocpClientMock,
-		WebhookClient: webhookMock,
-		Recorder:      k8sManagerPodRestart.GetEventRecorderFor("system-controller"),
-		Config: &configv2alpha2.ProjectConfig{
-			ControllerClass: "styra-controller-pod-restart",
-			SystemUserRoles: []string{string(styra.RoleSystemViewer)},
-			SSO: &configv2alpha2.SSOConfig{
-				IdentityProvider: "AzureAD Bankdata",
-				JWTGroupsClaim:   "groups",
-			},
-			DatasourceIgnorePatterns:  []string{"^.*/ignore$"},
-			ReadOnly:                  true,
-			EnableDeltaBundlesDefault: ptr.Bool(false),
-			PodRestart: &configv2alpha2.PodRestartConfig{
-				SLPRestart: &configv2alpha2.SLPRestartConfig{
-					Enabled:        true,
-					DeploymentType: "statefulset",
-				},
-			},
-			EnableStyraReconciliation: true,
-		},
-		Metrics: &styractrls.SystemReconcilerMetrics{
-			ControllerSystemStatusReady: prometheus.NewGaugeVec(
-				prometheus.GaugeOpts{
-					Name: "controller_system_status_ready",
-					Help: "Show if a system is in status ready",
-				},
-				[]string{"system_name", "namespace", "system_id", "control_plane"},
-			),
-			ReconcileSegmentTime: prometheus.NewHistogramVec(
-				prometheus.HistogramOpts{
-					Name:    "controller_system_reconcile_segment_seconds",
-					Help:    "Time taken to perform one segment of reconciling a system",
-					Buckets: prometheus.DefBuckets,
-				}, []string{"segment"},
-			),
-			ReconcileTime: prometheus.NewHistogramVec(
-				prometheus.HistogramOpts{
-					Name:    "controller_system_reconcile_seconds",
-					Help:    "Time taken to reconcile a system",
-					Buckets: prometheus.DefBuckets,
-				}, []string{"result"},
-			),
-		},
-	}
-
-	err = systemReconcilerPodRestart.SetupWithManager(k8sManagerPodRestart, "styra-controller-pod-restart")
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-	managerCtxPodRestart, managerCancelPodRestart = context.WithCancel(context.Background())
-	go func() {
-		defer ginkgo.GinkgoRecover()
-		err = k8sManagerPodRestart.Start(managerCtxPodRestart)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	}()
 })
 
 var _ = ginkgo.AfterSuite(func() {
@@ -322,9 +217,6 @@ var _ = ginkgo.AfterSuite(func() {
 	ginkgo.By("tearing down the test environment")
 	if managerCancel != nil {
 		managerCancel()
-	}
-	if managerCancelPodRestart != nil {
-		managerCancelPodRestart()
 	}
 	if testEnv != nil {
 		err := testEnv.Stop()
