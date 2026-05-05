@@ -777,7 +777,7 @@ func (r *SystemReconciler) createSourceIfNotExists(
 
 // CreateDefaultRequirements creates all the configured default sources in OCP.
 func (r *SystemReconciler) CreateDefaultRequirements(ctx context.Context, log logr.Logger) error {
-	log.Info("Creating ocp default requirements")
+	log.Info("Creating OCP default requirements")
 	for _, defaultRequirement := range r.Config.OPAControlPlaneConfig.DefaultRequirements {
 		_, err := r.createSourceIfNotExists(ctx, log, v1beta1.Datasource{Path: defaultRequirement})
 		if err != nil {

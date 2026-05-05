@@ -30,7 +30,7 @@ import (
 )
 
 // Test PersistBundle config
-var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMapforOCP", func() {
+var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMap", func() {
 
 	type test struct {
 		opaDefaultConfig  configv2alpha2.OPAConfig
@@ -39,7 +39,7 @@ var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMapforOCP", func() {
 		expectedCMContent string
 	}
 
-	ginkgo.DescribeTable("OPAConfToK8sOPAConfigMapforOCP", func(test test) {
+	ginkgo.DescribeTable("OPAConfToK8sOPAConfigMap", func(test test) {
 		cm, err := k8sconv.OPAConfToK8sOPAConfigMapforOCP(
 			test.opaconf,
 			test.opaDefaultConfig,
@@ -149,7 +149,7 @@ distributed_tracing:
 
 // Test without PersistBundle config
 // And custom config overriding opaconf
-var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMapforOCP", func() {
+var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMap", func() {
 
 	type test struct {
 		opaDefaultConfig  configv2alpha2.OPAConfig
@@ -158,7 +158,7 @@ var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMapforOCP", func() {
 		expectedCMContent string
 	}
 
-	ginkgo.DescribeTable("OPAConfToK8sOPAConfigMapforOCP", func(test test) {
+	ginkgo.DescribeTable("OPAConfToK8sOPAConfigMap", func(test test) {
 		cm, err := k8sconv.OPAConfToK8sOPAConfigMapforOCP(
 			test.opaconf,
 			test.opaDefaultConfig,

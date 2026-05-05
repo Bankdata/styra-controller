@@ -30,7 +30,7 @@ import (
 )
 
 var _ = ginkgo.Describe("LibraryReconciler.Reconcile", ginkgo.Label("integration"), func() {
-	ginkgo.It("reconciles Library with OCP", func() {
+	ginkgo.It("reconciles Library", func() {
 		key := types.NamespacedName{Name: "uniquename", Namespace: "default"}
 		toCreate := &styrav1alpha1.Library{
 			ObjectMeta: metav1.ObjectMeta{
