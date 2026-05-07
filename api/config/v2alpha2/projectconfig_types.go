@@ -31,11 +31,14 @@ type ProjectConfig struct {
 	// running multiple controllers in the same cluster.
 	ControllerClass string `json:"controllerClass"`
 
-	// NamespaceExclusionSelector defines criteria for excluding namespaces from reconciliation.
-	// If a resource is in a namespace that matches the criteria defined in NamespaceExclusionSelector,
-	// it will be excluded from reconciliation even if the resource matches the ControllerClass.
-	// If not set, the controller will reconcile resources in all namespaces.
-	NamespaceExclusionSelector *NamespaceExclusionSelector `json:"namespaceExclusionSelector,omitempty"`
+	// SystemControllerClassesIgnoreList is a list of controller classes that the controller should ignore.
+	// If a System has a controller class that is in this list the Controller will ignore controllerClass validation
+	SystemControllerClassesIgnoreList []string `json:"systemControllerClassesIgnoreList,omitempty"`
+
+	// NamespaceSelector defines criteria for only accepting  namespaces matching the selector.
+	// If a resource is in a namespace that matches the criteria defined in NamespaceSelector,
+	// it will be included in reconciliation. If not set, the controller will reconcile resources in all namespaces.
+	NamespaceSelector *NamespaceSelector `json:"namespaceSelector,omitempty"`
 
 	// DeletionProtectionDefault sets the default to use with regards to deletion
 	// protection if it is not set on the resource.
@@ -100,8 +103,8 @@ type OPAControlPlaneConfig struct {
 	LibraryDatasourceChanged string `json:"libraryDatasourceChanged,omitempty"`
 }
 
-// NamespaceExclusionSelector defines criteria for excluding namespaces.
-type NamespaceExclusionSelector struct {
+// NamespaceSelector defines criteria for only accepting MatchPatterns namespaces for reconciliation.
+type NamespaceSelector struct {
 	// MatchPatterns is a list of glob patterns to match namespace names against.
 	MatchPatterns []string `json:"matchPatterns,omitempty"`
 }
