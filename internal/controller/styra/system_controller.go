@@ -114,13 +114,13 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	log = log.WithValues("uniqueName", system.OCPUniqueName(r.Config.SystemPrefix, r.Config.SystemSuffix))
 
 	if !r.isSystemNamespaceMatchingSelector(&system) {
-		log.Info("Namespace is not in NamespaceSelector for reconciliation. Skipping.")
+		log.Info("Namespace is not in NamespaceSelector for reconciliation. Skipping reconciliation")
 		r.deleteMetrics(req)
 		return ctrl.Result{}, nil
 	}
 
 	if r.isSystemControllerClassOnIgnoreList(&system) {
-		log.Info("Ignore controllerClass validation for SystemControllerClassesIgnoreList")
+		log.Info("Starting reconciliation since controllerClass is on ignore list")
 	} else {
 		if !labels.ControllerClassMatches(&system, r.Config.ControllerClass) {
 			log.Info("This is not a System we are managing. Skipping reconciliation.")
