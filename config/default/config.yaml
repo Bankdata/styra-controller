@@ -1,6 +1,12 @@
 apiVersion: config.bankdata.dk/v2alpha2
 kind: ProjectConfig
 #controllerClass:
+
+#namespaceExclusionSelector:
+#  matchPatterns:
+#    - "*-dev"
+#    - "*-staging"
+
 deletionProtectionDefault: false
 #disableCRDWebhooks:
 #gitCredentials:
