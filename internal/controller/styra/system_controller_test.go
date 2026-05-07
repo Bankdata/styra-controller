@@ -17,8 +17,11 @@ limitations under the License.
 package styra
 
 import (
+	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
+	"github.com/bankdata/styra-controller/api/styra/v1beta1"
 	ginkgo "github.com/onsi/ginkgo/v2"
 	gomega "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // test the isURLValid method
@@ -34,4 +37,27 @@ var _ = ginkgo.DescribeTable("isURLValid",
 	ginkgo.Entry("invalid url", "www.google.com", false),
 	ginkgo.Entry("invalid url", "google.com", false),
 	ginkgo.Entry("invalid url", "google", false),
+)
+
+// test the isNamespaceExcluded method
+var _ = ginkgo.DescribeTable("isNamespaceExcluded",
+	func(namespaceExclusionSelector *configv2alpha2.NamespaceExclusionSelector, systemNamespace string, expected bool) {
+		reconciler := &SystemReconciler{
+			Config: &configv2alpha2.ProjectConfig{
+				NamespaceExclusionSelector: namespaceExclusionSelector,
+			},
+		}
+		system := v1beta1.System{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: systemNamespace,
+			},
+		}
+		gomega.Ω(reconciler.isNamespaceExcluded(&system)).To(gomega.Equal(expected))
+	},
+	ginkgo.Entry("no exclusion selector", nil, "namespace-dev", false),
+	ginkgo.Entry("empty exclusion selector", &configv2alpha2.NamespaceExclusionSelector{}, "namespace-dev", false),
+	ginkgo.Entry("no match multiple patterns", &configv2alpha2.NamespaceExclusionSelector{MatchPatterns: []string{"dev-*"}}, "namespace-dev", false),
+	ginkgo.Entry("match single pattern", &configv2alpha2.NamespaceExclusionSelector{MatchPatterns: []string{"*-dev"}}, "namespace-dev", true),
+	ginkgo.Entry("no match single pattern", &configv2alpha2.NamespaceExclusionSelector{MatchPatterns: []string{"*-staging", "*-prod"}}, "namespace-dev", false),
+	ginkgo.Entry("match multiple patterns", &configv2alpha2.NamespaceExclusionSelector{MatchPatterns: []string{"*-dev", "*-staging"}}, "namespace-dev", true),
 )

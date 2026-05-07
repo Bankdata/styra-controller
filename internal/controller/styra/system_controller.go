@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -112,6 +113,12 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	log = log.WithValues("controlPlane", system.Labels["styra-controller/control-plane"])
 	log = log.WithValues("uniqueName", system.OCPUniqueName(r.Config.SystemPrefix, r.Config.SystemSuffix))
 
+	if r.isNamespaceExcluded(&system) {
+		log.Info("Namespace is excluded from reconciliation. Skipping.")
+		r.deleteMetrics(req)
+		return ctrl.Result{}, nil
+	}
+
 	if !labels.ControllerClassMatches(&system, r.Config.ControllerClass) {
 		log.Info("This is not a System we are managing. Skipping reconciliation.")
 		r.deleteMetrics(req)
@@ -150,6 +157,20 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		r.Metrics.ReconcileTime.WithLabelValues("ok").Observe(time.Since(start).Seconds())
 	}
 	return res, err
+}
+
+func (r *SystemReconciler) isNamespaceExcluded(system *v1beta1.System) bool {
+	if r.Config.NamespaceExclusionSelector == nil {
+		return false
+	}
+
+	for _, pattern := range r.Config.NamespaceExclusionSelector.MatchPatterns {
+		if matched, _ := filepath.Match(pattern, system.Namespace); matched {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (r *SystemReconciler) setSystemStatusError(System *v1beta1.System, err error) {
