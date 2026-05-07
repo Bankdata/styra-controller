@@ -55,11 +55,16 @@ var _ = ginkgo.DescribeTable("isSystemControllerClassOnIgnoreList",
 		}
 		gomega.Ω(r.isSystemControllerClassOnIgnoreList(system)).To(gomega.Equal(expected))
 	},
-	ginkgo.Entry("empty ignore list returns false", []string{}, map[string]string{"styra-controller/class": "myclass"}, false),
-	ginkgo.Entry("nil ignore list returns false", nil, map[string]string{"styra-controller/class": "myclass"}, false),
-	ginkgo.Entry("class in ignore list returns true", []string{"myclass"}, map[string]string{"styra-controller/class": "myclass"}, true),
-	ginkgo.Entry("class not in ignore list returns false", []string{"otherclass"}, map[string]string{"styra-controller/class": "myclass"}, false),
-	ginkgo.Entry("class matches one of multiple entries", []string{"a", "myclass", "b"}, map[string]string{"styra-controller/class": "myclass"}, true),
+	ginkgo.Entry("empty ignore list returns false", []string{},
+		map[string]string{"styra-controller/class": "myclass"}, false),
+	ginkgo.Entry("nil ignore list returns false", nil,
+		map[string]string{"styra-controller/class": "myclass"}, false),
+	ginkgo.Entry("class in ignore list returns true", []string{"myclass"},
+		map[string]string{"styra-controller/class": "myclass"}, true),
+	ginkgo.Entry("class not in ignore list returns false", []string{"otherclass"},
+		map[string]string{"styra-controller/class": "myclass"}, false),
+	ginkgo.Entry("class matches one of multiple entries", []string{"a", "myclass", "b"},
+		map[string]string{"styra-controller/class": "myclass"}, true),
 	ginkgo.Entry("no labels, empty class in ignore list returns false", []string{""}, nil, false),
 	ginkgo.Entry("no labels, non-empty class in ignore list returns false", []string{"myclass"}, nil, false),
 )
@@ -80,10 +85,16 @@ var _ = ginkgo.DescribeTable("isSystemNamespaceMatchingSelector",
 		gomega.Ω(r.isSystemNamespaceMatchingSelector(system)).To(gomega.Equal(expected))
 	},
 	ginkgo.Entry("nil selector returns true", nil, "mynamespace", true),
-	ginkgo.Entry("exact match returns true", &configv2alpha2.NamespaceSelector{MatchPatterns: []string{"mynamespace"}}, "mynamespace", true),
-	ginkgo.Entry("no match returns false", &configv2alpha2.NamespaceSelector{MatchPatterns: []string{"other"}}, "mynamespace", false),
-	ginkgo.Entry("wildcard matches namespace", &configv2alpha2.NamespaceSelector{MatchPatterns: []string{"*-dev"}}, "mynamespace-dev", true),
-	ginkgo.Entry("wildcard does not match unrelated namespace", &configv2alpha2.NamespaceSelector{MatchPatterns: []string{"*-dev"}}, "other", false),
-	ginkgo.Entry("matches one of multiple patterns", &configv2alpha2.NamespaceSelector{MatchPatterns: []string{"*-dev", "*-staging", "*-prod"}}, "mynamespace-staging", true),
-	ginkgo.Entry("empty patterns returns true", &configv2alpha2.NamespaceSelector{MatchPatterns: []string{}}, "mynamespace", true),
+	ginkgo.Entry("exact match returns true", &configv2alpha2.NamespaceSelector{
+		MatchPatterns: []string{"mynamespace"}}, "mynamespace", true),
+	ginkgo.Entry("no match returns false", &configv2alpha2.NamespaceSelector{
+		MatchPatterns: []string{"other"}}, "mynamespace", false),
+	ginkgo.Entry("wildcard matches namespace", &configv2alpha2.NamespaceSelector{
+		MatchPatterns: []string{"*-dev"}}, "mynamespace-dev", true),
+	ginkgo.Entry("wildcard does not match unrelated namespace", &configv2alpha2.NamespaceSelector{
+		MatchPatterns: []string{"*-dev"}}, "other", false),
+	ginkgo.Entry("matches one of multiple patterns", &configv2alpha2.NamespaceSelector{
+		MatchPatterns: []string{"*-dev", "*-staging", "*-prod"}}, "mynamespace-staging", true),
+	ginkgo.Entry("empty patterns returns true", &configv2alpha2.NamespaceSelector{
+		MatchPatterns: []string{}}, "mynamespace", true),
 )
