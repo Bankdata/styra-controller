@@ -3,24 +3,14 @@ kind: ProjectConfig
 #controllerClass:
 deletionProtectionDefault: false
 #disableCRDWebhooks:
-readOnly: true
-enableMigrations: false
-enableDeltaBundlesDefault: false # This does affect the thingy
 #gitCredentials:
 logLevel: 0
 # leaderElection:
 #   leaseDuration: "60s"
 #   renewDeadline: "30s"
 #   retryPeriod: "5s"
-notificationWebhooks: {}
-  # systemDatasourceChanged: google.com
-  # libraryDatasourceChanged: test.dk
-#sentry:
+
 #sso:
-styra:
-  address: https://styra-url.example.com
-  # token: set via config-secrets.yaml
-#  tokenSecretPath: /etc/styra-controller-token/styra_token
 
 opaControlPlaneConfig:
   address: https://ocp-host/ocp
@@ -37,26 +27,8 @@ opaControlPlaneConfig:
   defaultRequirements:
     - library1
 
-# used by controller to create users and policies
-userCredentialHandler:
-  s3:
-    bucket: ocp
-    url: https://minio-host
-    region: us-east-1 #default use for minio
-    # accessKeyID: set via config-secrets.yaml
-    # secretAccessKey: set via config-secrets.yaml
-
 #systemPrefix:
 #systemSuffix:
-systemUserRoles:
-  - SystemOwner
-  - SystemMetadataManager
-
-#datasourceIgnorePatterns:
-# - "^systems/[a-z0-9]+/dontdeleteme/.*"
-# - "^libraries/[a-z0-9_]+/deletemenot/.*"
-
-#decisionsExporter:
 
 opa:
   bundleServer:
@@ -95,13 +67,6 @@ opa:
         - 0.8
         - 0.9
         - 1
-
-#activityExporter:
-
-podRestart:
-  slpRestart:
-    enabled: true
-    deploymentType: StatefulSet
 
 # opa:
 #  decision_logs:

@@ -25,12 +25,11 @@ import (
 
 // Constants for labels configured on System resources.
 const (
-	labelControllerClass        = "styra-controller/class"
-	labelManagedBy              = "app.kubernetes.io/managed-by"
-	labelValueManagedBy         = "styra-controller"
-	LabelControlPlane           = "styra-controller/control-plane"
-	LabelValueControlPlaneStyra = "styra"
-	LabelValueControlPlaneOCP   = "opa-control-plane"
+	labelControllerClass      = "styra-controller/class"
+	labelManagedBy            = "app.kubernetes.io/managed-by"
+	labelValueManagedBy       = "styra-controller"
+	LabelControlPlane         = "styra-controller/control-plane"
+	LabelValueControlPlaneOCP = "opa-control-plane"
 )
 
 // ControllerClassLabelSelector creates a metav1.LabelSelector which selects

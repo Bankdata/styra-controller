@@ -23,7 +23,7 @@ import (
 // LibrarySpec defines the desired state of Library
 type LibrarySpec struct {
 
-	// Name is the name the Library will have in Styra DAS
+	// Name is the name the Library will have in OCP
 	Name string `json:"name"`
 
 	// Description is the description of the Library
@@ -48,7 +48,7 @@ type LibraryDatasource struct {
 	Description string `json:"description,omitempty"`
 }
 
-// SourceControl is a struct from styra where we only use a single field
+// SourceControl is a struct from OCP where we only use a single field
 // but kept for clarity when comparing to the API
 type SourceControl struct {
 	LibraryOrigin *GitRepo `json:"libraryOrigin"`

@@ -27,8 +27,8 @@ import (
 
 // SystemSpec is the specification of the System resource.
 type SystemSpec struct {
-	// DeletionProtection disables deletion of the system in Styra, when the
-	// System resource is deleted.
+	// DeletionProtection disables deletion of backing OPA Control Plane
+	// resources when the System resource is deleted.
 	DeletionProtection *bool `json:"deletionProtection,omitempty"`
 
 	// EnableDeltaBundles decides whether DeltaBundles are enabled
@@ -40,12 +40,11 @@ type SystemSpec struct {
 	// DecisionMappings holds the list of decision mappings for the system.
 	DecisionMappings []DecisionMapping `json:"decisionMappings,omitempty"`
 
-	// Datasources represents a list of Styra datasources to be mounted in the
-	// system.
+	// Datasources represents a list of datasources to be mounted in the system.
 	Datasources []Datasource `json:"datasources,omitempty"`
 
-	// DiscoveryOverrides is an opa config which will take precedence over the
-	// configuration supplied by Styra discovery API. Configuration set here
+	// DiscoveryOverrides is an OPA config which will take precedence over the
+	// configuration supplied by the OPA discovery API. Configuration set here
 	// will be merged with the configuration supplied by the discovery API.
 	DiscoveryOverrides *DiscoveryOverrides `json:"discoveryOverrides,omitempty"`
 
@@ -58,7 +57,7 @@ type SystemSpec struct {
 }
 
 // DiscoveryOverrides specifies system specific overrides for the configuration
-// served from the Styra OPA Discovery API
+// served from the OPA discovery API.
 type DiscoveryOverrides struct {
 	Status             *OPAConfigStatus             `json:"status"`
 	DistributedTracing *OPAConfigDistributedTracing `json:"distributed_tracing,omitempty"`
@@ -84,8 +83,7 @@ type OPAConfigDistributedTracing struct {
 	TLSPrivateKeyFile string `json:"tls_private_key_file,omitempty"`
 }
 
-// LocalPlane specifies how the Styra Local Plane should be configured. This is
-// used to generate Secret and ConfigMap for the SLP to consume.
+// LocalPlane specifies how the local plane should be configured.
 type LocalPlane struct {
 	// Name is the hostname of the SLP service.
 	Name string `json:"name"`
@@ -122,7 +120,7 @@ func (subject Subject) IsUser() bool {
 // DecisionMapping specifies how a system decision mapping should be
 // configured. This allows configuration of when a decision is considered
 // allowed or not. It also provides the ability to show additional columns in
-// Styra.
+// the decision log.
 type DecisionMapping struct {
 	// Name is the name of the decision mapping.
 	//+kubebuilder:validation:Optional
@@ -185,7 +183,7 @@ func (e Expected) Value() interface{} {
 }
 
 // ColumnMapping specifies how a value in the decision result should be mapped
-// to a column in the Styra decision log.
+// to a column in the decision log.
 type ColumnMapping struct {
 	// Key is the name of the column as shown in the decision log.
 	Key string `json:"key"`
@@ -228,7 +226,7 @@ type GitRepo struct {
 	URL string `json:"url"`
 }
 
-// Datasource represents a Styra datasource to be mounted in the system.
+// Datasource represents a datasource to be mounted in the system.
 type Datasource struct {
 	// Path is the path within the system where the datasource should reside.
 	Path string `json:"path"`
@@ -239,6 +237,7 @@ type Datasource struct {
 
 // SystemStatus defines the observed state of System.
 type SystemStatus struct {
+	//+kubebuilder:deprecatedversion:warning="ID field is deprecated, only used in Styra"
 	// ID is the system ID in Styra.
 	ID string `json:"id,omitempty"`
 
@@ -295,25 +294,9 @@ type Condition struct {
 type ConditionType string
 
 const (
-	// ConditionTypeCreatedInStyra is a ConditionType used when the system has
-	// been created in Styra.
-	ConditionTypeCreatedInStyra ConditionType = "CreatedInStyra"
-
-	// ConditionTypeGitCredentialsUpdated is a ConditionType used when git
-	// credentials are updated in Styra.
-	ConditionTypeGitCredentialsUpdated ConditionType = "GitCredentialsUpdated"
-
-	// ConditionTypeSubjectsUpdated is a ConditionType used when the subjects of
-	// the System are updated in Styra.
-	ConditionTypeSubjectsUpdated ConditionType = "SubjectsUpdated"
-
-	// ConditionTypeDatasourcesUpdated is a ConditionType used when
-	// the datasources of the System are updated in Styra.
-	ConditionTypeDatasourcesUpdated ConditionType = "DatasourcesUpdated"
-
-	// ConditionTypeOPATokenUpdated is a ConditionType used when
-	// the secret with the Styra token has been updated in the cluster.
-	ConditionTypeOPATokenUpdated ConditionType = "OPATokenUpdated"
+	// ConditionTypeCreatedInOcp is a ConditionType used when the system has
+	// been created in OCP.
+	ConditionTypeCreatedInOcp ConditionType = "CreatedInOcp"
 
 	// ConditionTypeOPAConfigMapUpdated is a ConditionType used when
 	// the ConfigMap for the OPA are updated in the cluster.
@@ -322,18 +305,6 @@ const (
 	// ConditionTypeOPAUpToDate is a ConditionType used to say whether
 	// the OPA is up to date or needs to be restarted.
 	ConditionTypeOPAUpToDate ConditionType = "OPAUpToDate"
-
-	// ConditionTypeSLPConfigMapUpdated is a ConditionType used when
-	// the ConfigMap for the SLP are updated in the cluster.
-	ConditionTypeSLPConfigMapUpdated ConditionType = "SLPConfigMapUpdated"
-
-	// ConditionTypeSLPUpToDate is a ConditionType used to say whether
-	// the SLP is up to date or needs to be restarted.
-	ConditionTypeSLPUpToDate ConditionType = "SLPUpToDate"
-
-	// ConditionTypeSystemConfigUpdated is a ConditionType used when
-	// the configuration of the System are updated in Styra.
-	ConditionTypeSystemConfigUpdated ConditionType = "SystemConfigUpdated"
 
 	// ConditionTypeRequirementsUpdated is a ConditionType used when
 	// the requirements of for the System's bundle is updated in OCP.
@@ -350,6 +321,10 @@ const (
 	// ConditionTypeOPASecretUpdated is a ConditionType used when
 	// the OPA secret for the System is updated in the cluster.
 	ConditionTypeOPASecretUpdated ConditionType = "OPASecretUpdated"
+
+	// ConditionTypeOPATokenUpdated is a ConditionType used when
+	// the OPA token secret has been updated in the cluster.
+	ConditionTypeOPATokenUpdated ConditionType = "OPATokenUpdated"
 )
 
 // EventType is a type of event which can be emitted by the System controller.
@@ -360,98 +335,20 @@ const (
 	// the finalizer on the System resource.
 	EventErrorSetFinalizer EventType = "ErrorSetFinalizer"
 
-	// EventErrorDeleteSystemInStyra is an EventType used when the controller fails
-	// to delete the System in Styra.
-	EventErrorDeleteSystemInStyra EventType = "ErrorDeleteSystemInStyra"
-
 	// EventErrorRemovingFinalizer is an EventType used when the controller fails to
 	// remove the finalizer from the System resource.
 	EventErrorRemovingFinalizer EventType = "ErrorRemovingFinalizer"
-
-	// EventErrorFetchOPAConfig is an EventType used when the controller fails to fetch
-	// the OPA configuration from Styra.
-	EventErrorFetchOPAConfig EventType = "ErrorFetchOPAConfig"
 
 	// EventErrorUpdateStatus is an EventType used when the controller fails to update
 	// the status of the System resource.
 	EventErrorUpdateStatus EventType = "ErrorUpdateStatus"
 
-	// EventErrorRestartSLPs is an EventType used when the controller fails to restart the SLPs.
-	EventErrorRestartSLPs EventType = "ErrorRestartSLPs"
-
 	// EventErrorPhaseToCreated is an EventType used when the controller fails to set the
 	// phase of the System resource to Created.
 	EventErrorPhaseToCreated EventType = "ErrorPhaseToCreated"
 
-	// EventErrorGetStatefulSet is an EventType used when the controller fails to get the StatefulSet
-	// for the SLP used by the System.
-	EventErrorGetStatefulSet EventType = "ErrorGetStatefulSet"
-
-	// EventErrorStatefulSetNotFound is an EventType used when a system with 'localPlane' enabled but which
-	// does not have a StatefulSet created for the SLP.
-	EventErrorStatefulSetNotFound EventType = "ErrorStatefulSetNotFound"
-
-	// EventErrorPatchStatefulSet is an EventType used when the controller fails to patch the StatefulSet
-	// for the SLP used by the System.
-	EventErrorPatchStatefulSet EventType = "ErrorPatchStatefulSet"
-
-	// EventErrorFetchSystemFromStyra is an EventType used when the controller fails to fetch the System from Styra.
-	EventErrorFetchSystemFromStyra EventType = "ErrorFetchSystemFromStyra"
-
-	// EventErrorCreateSystemInStyra is an EventType used when the controller fails to create the System in Styra.
-	EventErrorCreateSystemInStyra EventType = "ErrorCreateSystemInStyra"
-
-	// EventErrorCredentialsSecretNotFound is an EventType used when the controller gets a 404 when fetching
-	// secret referenced by the System resource under Spec.SourceControl.Origin.CredentialsSecretName.
-	EventErrorCredentialsSecretNotFound EventType = "ErrorCredentialsSecretNotFound"
-
-	// EventErrorCredentialsSecretCouldNotFetch is an EventType used when the controller fails to fetch the
-	// secret referenced by the System resource under Spec.SourceControl.Origin.CredentialsSecretName.
-	EventErrorCredentialsSecretCouldNotFetch EventType = "ErrorCredentialsSecretCouldNotFetch"
-
-	// EventErrorCreateUpdateSecret is an EventType used when the controller fails to create or update the
-	// Styra secret containing the Git credentials used to access Git.
-	EventErrorCreateUpdateSecret EventType = "ErrorCreateUpdateSecret"
-
-	// EventErrorDeleteDefaultPolicy is an EventType used when the controller fails to delete the default policy
-	// in the System in Styra.
-	EventErrorDeleteDefaultPolicy EventType = "ErrorDeleteDefaultPolicy"
-
-	// EventErrorReconcileID is an EventType used when the controller fails to reconcile the ID for the System.
-	EventErrorReconcileID EventType = "ErrorReconcileID"
-
-	// EventErrorGetUsersFromStyra is an EventType used when the controller fails to get the users
-	// for a system in Styra.
-	EventErrorGetUsersFromStyra EventType = "ErrorGetUsersFromStyra"
-
-	// EventErrorCreateInvitation is an EventType used when the controller fails to create an invitation
-	// for a new user in Styra.
-	EventErrorCreateInvitation EventType = "ErrorCreateInvitation"
-
-	// EventErrorGetSystemRolebindings is an EventType used when the controller fails to get the rolebindings
-	// for a system in Styra.
-	EventErrorGetSystemRolebindings EventType = "ErrorGetSystemRolebindings"
-
-	// EventErrorCreateRolebinding is an EventType used when the controller fails to create a rolebinding
-	// for a user in Styra.
-	EventErrorCreateRolebinding EventType = "ErrorCreateRolebinding"
-
-	// EventErrorUpdateRolebinding is an EventType used when the controller fails to update a rolebinding
-	// for a user in Styra.
-	EventErrorUpdateRolebinding EventType = "ErrorUpdateRolebinding"
-
-	// EventErrorUpsertDatasource is an EventType used when the controller fails to upsert a datasource in Styra.
-	EventErrorUpsertDatasource EventType = "ErrorUpsertDatasource"
-
 	// EventErrorCallWebhook is an EventType used when the controller fails to call the datasource changed webhook.
 	EventErrorCallWebhook EventType = "ErrorCallWebhook"
-
-	// EventErrorDeleteDatasource is an EventType used when the controller fails to delete a datasource in Styra.
-	EventErrorDeleteDatasource EventType = "ErrorDeleteDatasource"
-
-	// EventErrorOPATokenSecretNoToken is an EventType used when the controller creates the OPA token Secret
-	// but the downloaded OPA config from Styra does not contain a token.
-	EventErrorOPATokenSecretNoToken EventType = "ErrorOPATokenSecretNoToken"
 
 	// EventErrorOwnerRefOPATokenSecret is an EventType used when the controller fails to set the owner reference
 	// on the OPA token secret.
@@ -470,8 +367,8 @@ const (
 	// EventErrorUpdateOPATokenSecret is an EventType used when the controller fails to update the OPA token Secret.
 	EventErrorUpdateOPATokenSecret EventType = "ErrorUpdateOPATokenSecret"
 
-	// EventErrorConvertOPAConf is an EventType used when the controller fails to convert the OPA config from Styra
-	// to a ConfigMap for the OPA or the SLP.
+	// EventErrorConvertOPAConf is an EventType used when the controller fails to convert the OPA config
+	// to a ConfigMap for OPA.
 	EventErrorConvertOPAConf EventType = "ErrorConvertOPAConfig"
 
 	// EventErrorCreateOPAConfigMap is an EventType used when the controller fails to create the OPA ConfigMap.
@@ -493,22 +390,6 @@ const (
 
 	// EventErrorUpdateOPASecret is an EventType used when the controller fails to update the OPA ConfigMap.
 	EventErrorUpdateOPASecret EventType = "ErrorUpdateOPASecret"
-
-	// EventErrorOwnerRefSLPConfigMap is an EventType used when the controller fails to set the owner reference
-	// on the SLP ConfigMap.
-	EventErrorOwnerRefSLPConfigMap EventType = "ErrorOwnerRefSLPConfigMap"
-
-	// EventErrorCreateSLPConfigMap is an EventType used when the controller fails to create the SLP ConfigMap.
-	EventErrorCreateSLPConfigMap EventType = "ErrorCreateSLPConfigMap"
-
-	// EventErrorFetchSLPConfigMap is an EventType used when the controller fails to fetch the SLP ConfigMap.
-	EventErrorFetchSLPConfigMap EventType = "ErrorFetchSLPConfigMap"
-
-	// EventErrorUpdateSLPConfigmap is an EventType used when the controller fails to update the SLP ConfigMap.
-	EventErrorUpdateSLPConfigmap EventType = "ErrorUpdateSLPConfigMap"
-
-	// EventErrorUpdateSystem is an EventType used when the controller fails to update the System in Styra.
-	EventErrorUpdateSystem EventType = "ErrorUpdateSystem"
 
 	// EventErrorUpdateSource is an EventType used when the controller fails to update the Source in OCP.
 	EventErrorUpdateSource EventType = "ErrorUpdateSource"
@@ -605,7 +486,7 @@ func (s *System) OCPUniqueName(prefix, suffix string) string {
 	return strings.ReplaceAll(path.Join(prefix, s.Namespace, s.Name, suffix), "/", "-")
 }
 
-// GitSecretID returns the Styra internal ID of the Git Secret used by the
+// GitSecretID returns the internal ID of the Git Secret used by the
 // System.
 func (s *System) GitSecretID() string {
 	return path.Join("systems", s.Status.ID, "git")

@@ -57,7 +57,7 @@ styra:
 		[]byte(`
 apiVersion: config.bankdata.dk/v2alpha2
 kind: ProjectConfig
-styra:
+opaControlPlaneConfig:
   token: my-token
 `),
 		&v2alpha2.ProjectConfig{
@@ -65,7 +65,7 @@ styra:
 				Kind:       "ProjectConfig",
 				APIVersion: v2alpha2.GroupVersion.Identifier(),
 			},
-			Styra: v2alpha2.StyraConfig{
+			OPAControlPlaneConfig: &v2alpha2.OPAControlPlaneConfig{
 				Token: "my-token",
 			},
 		},
@@ -97,13 +97,13 @@ var _ = ginkgo.Describe("Load", func() {
 		f := writeFile("config.yaml", `
 apiVersion: config.bankdata.dk/v2alpha2
 kind: ProjectConfig
-styra:
+opaControlPlaneConfig:
   token: my-token
 logLevel: 2
 `)
 		cfg, err := Load([]string{f}, scheme)
 		gomega.Ω(err).ShouldNot(gomega.HaveOccurred())
-		gomega.Ω(cfg.Styra.Token).Should(gomega.Equal("my-token"))
+		gomega.Ω(cfg.OPAControlPlaneConfig.Token).Should(gomega.Equal("my-token"))
 		gomega.Ω(cfg.LogLevel).Should(gomega.Equal(2))
 	})
 
@@ -111,7 +111,7 @@ logLevel: 2
 		base := writeFile("base.yaml", `
 apiVersion: config.bankdata.dk/v2alpha2
 kind: ProjectConfig
-styra:
+opaControlPlaneConfig:
   address: https://styra.example.com
   token: base-token
 logLevel: 1
@@ -120,15 +120,15 @@ systemPrefix: my-prefix
 		secrets := writeFile("secrets.yaml", `
 apiVersion: config.bankdata.dk/v2alpha2
 kind: ProjectConfig
-styra:
+opaControlPlaneConfig:
   token: secret-token
 `)
 		cfg, err := Load([]string{base, secrets}, scheme)
 		gomega.Ω(err).ShouldNot(gomega.HaveOccurred())
 		// Token should be overridden by secrets file
-		gomega.Ω(cfg.Styra.Token).Should(gomega.Equal("secret-token"))
+		gomega.Ω(cfg.OPAControlPlaneConfig.Token).Should(gomega.Equal("secret-token"))
 		// Address should be preserved from base
-		gomega.Ω(cfg.Styra.Address).Should(gomega.Equal("https://styra.example.com"))
+		gomega.Ω(cfg.OPAControlPlaneConfig.Address).Should(gomega.Equal("https://styra.example.com"))
 		// Other fields from base should be preserved
 		gomega.Ω(cfg.LogLevel).Should(gomega.Equal(1))
 		gomega.Ω(cfg.SystemPrefix).Should(gomega.Equal("my-prefix"))
@@ -151,7 +151,7 @@ systemPrefix: overlay
 		f3 := writeFile("secrets.yaml", `
 apiVersion: config.bankdata.dk/v2alpha2
 kind: ProjectConfig
-styra:
+opaControlPlaneConfig:
   token: secret
 `)
 		cfg, err := Load([]string{f1, f2, f3}, scheme)
@@ -159,7 +159,7 @@ styra:
 		gomega.Ω(cfg.LogLevel).Should(gomega.Equal(1))
 		gomega.Ω(cfg.SystemPrefix).Should(gomega.Equal("overlay"))
 		gomega.Ω(cfg.SystemSuffix).Should(gomega.Equal("base-suffix"))
-		gomega.Ω(cfg.Styra.Token).Should(gomega.Equal("secret"))
+		gomega.Ω(cfg.OPAControlPlaneConfig.Token).Should(gomega.Equal("secret"))
 	})
 
 	ginkgo.It("returns an error when no files are specified", func() {
@@ -216,7 +216,7 @@ logLevel: 0
 		secrets := writeFile("secrets.yaml", `
 apiVersion: config.bankdata.dk/v2alpha2
 kind: ProjectConfig
-styra:
+opaControlPlaneConfig:
   token: secret-token
 `)
 		cfg, err := Load([]string{base, secrets}, scheme)
@@ -225,7 +225,7 @@ styra:
 		gomega.Ω(cfg.OPA.BundleServer.URL).Should(gomega.Equal("https://minio-host"))
 		gomega.Ω(cfg.OPA.BundleServer.Path).Should(gomega.Equal("/ocp"))
 		gomega.Ω(cfg.OPA.Metrics.Prometheus.HTTP.Buckets).Should(gomega.Equal([]float64{0.01, 0.1, 1}))
-		gomega.Ω(cfg.Styra.Token).Should(gomega.Equal("secret-token"))
+		gomega.Ω(cfg.OPAControlPlaneConfig.Token).Should(gomega.Equal("secret-token"))
 	})
 
 	ginkgo.It("overlay can override boolean fields", func() {
@@ -275,53 +275,26 @@ opaControlPlaneConfig:
 		gomega.Ω(cfg.OPAControlPlaneConfig.BundleObjectStorage.S3.Bucket).Should(gomega.Equal("ocp"))
 	})
 
-	ginkgo.It("overlay can set S3 credentials in userCredentialHandler", func() {
+	ginkgo.It("overlay replaces default requirements entirely", func() {
 		base := writeFile("base.yaml", `
 apiVersion: config.bankdata.dk/v2alpha2
 kind: ProjectConfig
-userCredentialHandler:
-  s3:
-    bucket: ocp
-    url: https://minio-host
-    region: us-east-1
-`)
-		secrets := writeFile("secrets.yaml", `
-apiVersion: config.bankdata.dk/v2alpha2
-kind: ProjectConfig
-userCredentialHandler:
-  s3:
-    accessKeyID: my-key
-    secretAccessKey: my-secret
-`)
-		cfg, err := Load([]string{base, secrets}, scheme)
-		gomega.Ω(err).ShouldNot(gomega.HaveOccurred())
-		gomega.Ω(cfg.UserCredentialHandler).ShouldNot(gomega.BeNil())
-		gomega.Ω(cfg.UserCredentialHandler.S3).ShouldNot(gomega.BeNil())
-		gomega.Ω(cfg.UserCredentialHandler.S3.Bucket).Should(gomega.Equal("ocp"))
-		gomega.Ω(cfg.UserCredentialHandler.S3.URL).Should(gomega.Equal("https://minio-host"))
-		gomega.Ω(cfg.UserCredentialHandler.S3.Region).Should(gomega.Equal("us-east-1"))
-		gomega.Ω(cfg.UserCredentialHandler.S3.AccessKeyID).Should(gomega.Equal("my-key"))
-		gomega.Ω(cfg.UserCredentialHandler.S3.SecretAccessKey).Should(gomega.Equal("my-secret"))
-	})
-
-	ginkgo.It("overlay replaces slice fields entirely", func() {
-		base := writeFile("base.yaml", `
-apiVersion: config.bankdata.dk/v2alpha2
-kind: ProjectConfig
-systemUserRoles:
-  - SystemOwner
-  - SystemMetadataManager
-  - SystemViewer
+opaControlPlaneConfig:
+  defaultRequirements:
+  - library-a
+  - library-b
+  - library-c
 `)
 		overlay := writeFile("overlay.yaml", `
 apiVersion: config.bankdata.dk/v2alpha2
 kind: ProjectConfig
-systemUserRoles:
-  - SystemOwner
+opaControlPlaneConfig:
+  defaultRequirements:
+  - library-a
 `)
 		cfg, err := Load([]string{base, overlay}, scheme)
 		gomega.Ω(err).ShouldNot(gomega.HaveOccurred())
-		gomega.Ω(cfg.SystemUserRoles).Should(gomega.Equal([]string{"SystemOwner"}))
+		gomega.Ω(cfg.OPAControlPlaneConfig.DefaultRequirements).Should(gomega.Equal([]string{"library-a"}))
 	})
 
 	ginkgo.It("simulates realistic ConfigMap + Secret split", func() {
@@ -334,8 +307,6 @@ disableCRDWebhooks: false
 logLevel: 0
 systemPrefix: prod
 systemSuffix: cluster-01
-styra:
-  address: https://styra.example.com
 opaControlPlaneConfig:
   address: https://ocp.example.com
   bundleObjectStorage:
@@ -346,33 +317,16 @@ opaControlPlaneConfig:
       ocpConfigSecretName: s3-config
   defaultRequirements:
     - base-library
-userCredentialHandler:
-  s3:
-    bucket: creds
-    url: https://s3.example.com
-    region: eu-west-1
 opa:
   bundleServer:
     url: https://s3.example.com
     path: /bundles
-notificationWebhooks:
-  systemDatasourceChanged: https://hooks.example.com/system
-  libraryDatasourceChanged: https://hooks.example.com/library
 `)
 		secret := writeFile("config-secrets.yaml", `
 apiVersion: config.bankdata.dk/v2alpha2
 kind: ProjectConfig
-styra:
-  token: real-styra-token
 opaControlPlaneConfig:
   token: real-ocp-token
-userCredentialHandler:
-  s3:
-    accessKeyID: AKIA-REAL-KEY
-    secretAccessKey: real-secret-key
-sentry:
-  dsn: https://abc@sentry.example.com/123
-  environment: production
 `)
 		cfg, err := Load([]string{configMap, secret}, scheme)
 		gomega.Ω(err).ShouldNot(gomega.HaveOccurred())
@@ -383,23 +337,12 @@ sentry:
 		gomega.Ω(cfg.LogLevel).Should(gomega.Equal(0))
 		gomega.Ω(cfg.SystemPrefix).Should(gomega.Equal("prod"))
 		gomega.Ω(cfg.SystemSuffix).Should(gomega.Equal("cluster-01"))
-		gomega.Ω(cfg.Styra.Address).Should(gomega.Equal("https://styra.example.com"))
 		gomega.Ω(cfg.OPAControlPlaneConfig.Address).Should(gomega.Equal("https://ocp.example.com"))
 		gomega.Ω(cfg.OPAControlPlaneConfig.BundleObjectStorage.S3.Bucket).Should(gomega.Equal("bundles"))
 		gomega.Ω(cfg.OPAControlPlaneConfig.DefaultRequirements).Should(gomega.Equal([]string{"base-library"}))
-		gomega.Ω(cfg.UserCredentialHandler.S3.Bucket).Should(gomega.Equal("creds"))
-		gomega.Ω(cfg.UserCredentialHandler.S3.URL).Should(gomega.Equal("https://s3.example.com"))
 		gomega.Ω(cfg.OPA.BundleServer.URL).Should(gomega.Equal("https://s3.example.com"))
-		gomega.Ω(cfg.NotificationWebhooks.SystemDatasourceChanged).Should(
-			gomega.Equal("https://hooks.example.com/system"))
 
 		// Secret fields from Secret overlay
-		gomega.Ω(cfg.Styra.Token).Should(gomega.Equal("real-styra-token"))
 		gomega.Ω(cfg.OPAControlPlaneConfig.Token).Should(gomega.Equal("real-ocp-token"))
-		gomega.Ω(cfg.UserCredentialHandler.S3.AccessKeyID).Should(gomega.Equal("AKIA-REAL-KEY"))
-		gomega.Ω(cfg.UserCredentialHandler.S3.SecretAccessKey).Should(gomega.Equal("real-secret-key"))
-		gomega.Ω(cfg.Sentry).ShouldNot(gomega.BeNil())
-		gomega.Ω(cfg.Sentry.DSN).Should(gomega.Equal("https://abc@sentry.example.com/123"))
-		gomega.Ω(cfg.Sentry.Environment).Should(gomega.Equal("production"))
 	})
 })

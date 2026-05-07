@@ -32,30 +32,22 @@ import (
 
 // Client defines the interface for the notification webhook client.
 type Client interface {
-	SystemDatasourceChanged(context.Context, logr.Logger, string, string) error
-	LibraryDatasourceChanged(context.Context, logr.Logger, string) error
 	SystemDatasourceChangedOCP(context.Context, logr.Logger, string) error
 	LibraryDatasourceChangedOCP(context.Context, logr.Logger, string) error
 }
 
 type client struct {
 	hc                          http.Client
-	libraryDatasourceChanged    string
-	systemDatasourceChanged     string
 	systemDatasourceChangedOCP  string
 	libraryDatasourceChangedOCP string
 }
 
 // New creates a new webhook notification Client.
 func New(
-	systemDatasourceChanged string,
-	libraryDatasourceChanged string,
 	systemDatasourceChangedOCP string,
 	libraryDatasourceChangedOCP string) Client {
 	return &client{
 		hc:                          http.Client{},
-		systemDatasourceChanged:     systemDatasourceChanged,
-		libraryDatasourceChanged:    libraryDatasourceChanged,
 		systemDatasourceChangedOCP:  systemDatasourceChangedOCP,
 		libraryDatasourceChangedOCP: libraryDatasourceChangedOCP,
 	}
@@ -106,58 +98,6 @@ func (client *client) SystemDatasourceChangedOCP(ctx context.Context, log logr.L
 	}
 
 	log.Info("Called system webhook successfully for OCP")
-	return nil
-}
-
-// LibraryDatasourceChanged notifies the webhook that a library datasource has changed.
-func (client *client) LibraryDatasourceChanged(ctx context.Context, log logr.Logger, datasourceID string) error {
-	if client.libraryDatasourceChanged == "" {
-		log.Info("LibraryDatasourceChanged webhook not configured")
-		return nil
-	}
-
-	body := map[string]string{"datasourceID": datasourceID}
-	jsonData, err := json.Marshal(body)
-	if err != nil {
-		log.Error(err, "Failed to marshal request body")
-		return errors.Wrap(err, "Failed to marshal request body")
-	}
-
-	err = client.newRequest(ctx, log, client.libraryDatasourceChanged, jsonData)
-	if err != nil {
-		log.Error(err, "Failed to create request to webhook")
-		return errors.Wrap(err, "Failed to create request to webhook")
-	}
-
-	log.Info("Called library webhook successfully")
-	return nil
-}
-
-// SystemDatasourceChanged notifies the webhook that a system datasource has changed.
-func (client *client) SystemDatasourceChanged(
-	ctx context.Context,
-	log logr.Logger,
-	systemID string,
-	dsID string) error {
-	if client.systemDatasourceChanged == "" {
-		log.Info("systemDatasourceChanged webhook not configured")
-		return nil
-	}
-
-	body := map[string]string{"systemId": systemID, "datasourceId": dsID}
-	jsonData, err := json.Marshal(body)
-	if err != nil {
-		log.Error(err, "Failed to marshal request body")
-		return errors.Wrap(err, "Failed to marshal request body")
-	}
-
-	err = client.newRequest(ctx, log, client.systemDatasourceChanged, jsonData)
-	if err != nil {
-		log.Error(err, "Failed to create request to webhook")
-		return errors.Wrap(err, "Failed to create request to webhook")
-	}
-
-	log.Info("Called system webhook successfully")
 	return nil
 }
 

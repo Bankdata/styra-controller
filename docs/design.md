@@ -11,7 +11,9 @@ The custom resources managed by the ocp-controller are:
 ## System  
 
 The `System` custom resource definition (CRD) declaratively defines a desired
-bundle in OPA Control Plane (Before a System in Styra DAS). It provides options for configuring the name of the bundle, requirements/datasources, decision mappings(deprecated, only used in Styra DAS), git settings, and access control as a list of users and/or SSO claims (deprecated, only used in Styra DAS).
+bundle in OPA Control Plane. It provides options for configuring the name of
+the bundle, requirements and datasources, decision mappings, git settings, and
+access control as a list of users and groups.
 
 ```yaml
 apiVersion: styra.bankdata.dk/v1beta1
@@ -51,11 +53,14 @@ spec:
 
 The git credentials which OPA Control Plane will need for fetching policy are specified
 by referencing to a credential ID in the controller config `opaControlPlane.gitCredentials.id` and `opaControlPlane.gitCredentials.repoPrefix`.
-[controller configuration documentation](configuration.md#default-git-credentials).
+[controller configuration documentation](configuration.md).
 
 ## Library
 
-The `Library` custom resource definition (CRD) declaratively defines a desired library in OPA Control Plane (Before Styra DAS). It provides options for configuring the name of the library, a description of it, permissions, git settings, and datasources. Note, a library is just a source in OPA Control Plane.
+The `Library` custom resource definition (CRD) declaratively defines a desired
+library in OPA Control Plane. It provides options for configuring the name of
+the library, a description of it, permissions, git settings, and datasources.
+Note, a library is just a source in OPA Control Plane.
 
 ```yaml
 apiVersion: styra.bankdata.dk/v1alpha1

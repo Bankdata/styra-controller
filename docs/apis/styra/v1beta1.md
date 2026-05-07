@@ -72,7 +72,7 @@ string
 </p>
 <div>
 <p>ColumnMapping specifies how a value in the decision result should be mapped
-to a column in the Styra decision log.</p>
+to a column in the decision log.</p>
 </div>
 <table>
 <thead>
@@ -192,17 +192,9 @@ changed state.</p>
 <th>Description</th>
 </tr>
 </thead>
-<tbody><tr><td><p>&#34;CreatedInStyra&#34;</p></td>
-<td><p>ConditionTypeCreatedInStyra is a ConditionType used when the system has
-been created in Styra.</p>
-</td>
-</tr><tr><td><p>&#34;DatasourcesUpdated&#34;</p></td>
-<td><p>ConditionTypeDatasourcesUpdated is a ConditionType used when
-the datasources of the System are updated in Styra.</p>
-</td>
-</tr><tr><td><p>&#34;GitCredentialsUpdated&#34;</p></td>
-<td><p>ConditionTypeGitCredentialsUpdated is a ConditionType used when git
-credentials are updated in Styra.</p>
+<tbody><tr><td><p>&#34;CreatedInOcp&#34;</p></td>
+<td><p>ConditionTypeCreatedInOcp is a ConditionType used when the system has
+been created in OCP.</p>
 </td>
 </tr><tr><td><p>&#34;OPAConfigMapUpdated&#34;</p></td>
 <td><p>ConditionTypeOPAConfigMapUpdated is a ConditionType used when
@@ -214,7 +206,7 @@ the OPA secret for the System is updated in the cluster.</p>
 </td>
 </tr><tr><td><p>&#34;OPATokenUpdated&#34;</p></td>
 <td><p>ConditionTypeOPATokenUpdated is a ConditionType used when
-the secret with the Styra token has been updated in the cluster.</p>
+the OPA token secret has been updated in the cluster.</p>
 </td>
 </tr><tr><td><p>&#34;OPAUpToDate&#34;</p></td>
 <td><p>ConditionTypeOPAUpToDate is a ConditionType used to say whether
@@ -224,25 +216,9 @@ the OPA is up to date or needs to be restarted.</p>
 <td><p>ConditionTypeRequirementsUpdated is a ConditionType used when
 the requirements of for the System&rsquo;s bundle is updated in OCP.</p>
 </td>
-</tr><tr><td><p>&#34;SLPConfigMapUpdated&#34;</p></td>
-<td><p>ConditionTypeSLPConfigMapUpdated is a ConditionType used when
-the ConfigMap for the SLP are updated in the cluster.</p>
-</td>
-</tr><tr><td><p>&#34;SLPUpToDate&#34;</p></td>
-<td><p>ConditionTypeSLPUpToDate is a ConditionType used to say whether
-the SLP is up to date or needs to be restarted.</p>
-</td>
-</tr><tr><td><p>&#34;SubjectsUpdated&#34;</p></td>
-<td><p>ConditionTypeSubjectsUpdated is a ConditionType used when the subjects of
-the System are updated in Styra.</p>
-</td>
 </tr><tr><td><p>&#34;SystemBundleUpdated&#34;</p></td>
 <td><p>ConditionTypeSystemBundleUpdated is a ConditionType used when
 the bundle for the System is updated in OCP.</p>
-</td>
-</tr><tr><td><p>&#34;SystemConfigUpdated&#34;</p></td>
-<td><p>ConditionTypeSystemConfigUpdated is a ConditionType used when
-the configuration of the System are updated in Styra.</p>
 </td>
 </tr><tr><td><p>&#34;SystemSourceUpdated&#34;</p></td>
 <td><p>ConditionTypeSystemSourceUpdated is a ConditionType used when
@@ -256,7 +232,7 @@ the source for the System is updated in OCP.</p>
 (<em>Appears on:</em><a href="#styra.bankdata.dk/v1beta1.SystemSpec">SystemSpec</a>)
 </p>
 <div>
-<p>Datasource represents a Styra datasource to be mounted in the system.</p>
+<p>Datasource represents a datasource to be mounted in the system.</p>
 </div>
 <table>
 <thead>
@@ -299,7 +275,7 @@ string
 <p>DecisionMapping specifies how a system decision mapping should be
 configured. This allows configuration of when a decision is considered
 allowed or not. It also provides the ability to show additional columns in
-Styra.</p>
+the decision log.</p>
 </div>
 <table>
 <thead>
@@ -366,7 +342,7 @@ AllowedMapping
 </p>
 <div>
 <p>DiscoveryOverrides specifies system specific overrides for the configuration
-served from the Styra OPA Discovery API</p>
+served from the OPA discovery API.</p>
 </div>
 <table>
 <thead>
@@ -422,12 +398,8 @@ OPAConfigDistributedTracing
 that is not owned by the controller.</p>
 </td>
 </tr><tr><td><p>&#34;ErrorConvertOPAConfig&#34;</p></td>
-<td><p>EventErrorConvertOPAConf is an EventType used when the controller fails to convert the OPA config from Styra
-to a ConfigMap for the OPA or the SLP.</p>
-</td>
-</tr><tr><td><p>&#34;ErrorCreateInvitation&#34;</p></td>
-<td><p>EventErrorCreateInvitation is an EventType used when the controller fails to create an invitation
-for a new user in Styra.</p>
+<td><p>EventErrorConvertOPAConf is an EventType used when the controller fails to convert the OPA config
+to a ConfigMap for OPA.</p>
 </td>
 </tr><tr><td><p>&#34;ErrorCreateOPAConfigMap&#34;</p></td>
 <td><p>EventErrorCreateOPAConfigMap is an EventType used when the controller fails to create the OPA ConfigMap.</p>
@@ -435,78 +407,19 @@ for a new user in Styra.</p>
 </tr><tr><td><p>&#34;ErrorCreateOPATokenSecret&#34;</p></td>
 <td><p>EventErrorCreateOPATokenSecret is an EventType used when the controller fails to create the OPA token Secret.</p>
 </td>
-</tr><tr><td><p>&#34;ErrorCreateRolebinding&#34;</p></td>
-<td><p>EventErrorCreateRolebinding is an EventType used when the controller fails to create a rolebinding
-for a user in Styra.</p>
-</td>
-</tr><tr><td><p>&#34;ErrorCreateSLPConfigMap&#34;</p></td>
-<td><p>EventErrorCreateSLPConfigMap is an EventType used when the controller fails to create the SLP ConfigMap.</p>
-</td>
-</tr><tr><td><p>&#34;ErrorCreateSystemInStyra&#34;</p></td>
-<td><p>EventErrorCreateSystemInStyra is an EventType used when the controller fails to create the System in Styra.</p>
-</td>
-</tr><tr><td><p>&#34;ErrorCreateUpdateSecret&#34;</p></td>
-<td><p>EventErrorCreateUpdateSecret is an EventType used when the controller fails to create or update the
-Styra secret containing the Git credentials used to access Git.</p>
-</td>
-</tr><tr><td><p>&#34;ErrorCredentialsSecretCouldNotFetch&#34;</p></td>
-<td><p>EventErrorCredentialsSecretCouldNotFetch is an EventType used when the controller fails to fetch the
-secret referenced by the System resource under Spec.SourceControl.Origin.CredentialsSecretName.</p>
-</td>
-</tr><tr><td><p>&#34;ErrorCredentialsSecretNotFound&#34;</p></td>
-<td><p>EventErrorCredentialsSecretNotFound is an EventType used when the controller gets a 404 when fetching
-secret referenced by the System resource under Spec.SourceControl.Origin.CredentialsSecretName.</p>
-</td>
 </tr><tr><td><p>&#34;ErrorDeleteBundleInOCP&#34;</p></td>
 <td><p>EventErrorDeleteBundleInOCP is an EventType used when the controller fails
 to delete the System&rsquo;s Bundle in OCP.</p>
 </td>
-</tr><tr><td><p>&#34;ErrorDeleteDatasource&#34;</p></td>
-<td><p>EventErrorDeleteDatasource is an EventType used when the controller fails to delete a datasource in Styra.</p>
-</td>
-</tr><tr><td><p>&#34;ErrorDeleteDefaultPolicy&#34;</p></td>
-<td><p>EventErrorDeleteDefaultPolicy is an EventType used when the controller fails to delete the default policy
-in the System in Styra.</p>
-</td>
 </tr><tr><td><p>&#34;ErrorDeleteSourceInOCP&#34;</p></td>
 <td><p>EventErrorDeleteSourceInOCP is an EventType used when the controller fails
 to delete the System&rsquo;s Source in OCP.</p>
-</td>
-</tr><tr><td><p>&#34;ErrorDeleteSystemInStyra&#34;</p></td>
-<td><p>EventErrorDeleteSystemInStyra is an EventType used when the controller fails
-to delete the System in Styra.</p>
-</td>
-</tr><tr><td><p>&#34;ErrorFetchOPAConfig&#34;</p></td>
-<td><p>EventErrorFetchOPAConfig is an EventType used when the controller fails to fetch
-the OPA configuration from Styra.</p>
 </td>
 </tr><tr><td><p>&#34;ErrorFetchOPAConfigMap&#34;</p></td>
 <td><p>EventErrorFetchOPAConfigMap is an EventType used when the controller fails to fetch the OPA ConfigMap.</p>
 </td>
 </tr><tr><td><p>&#34;ErrorFetchOPATokenSecret&#34;</p></td>
 <td><p>EventErrorFetchOPATokenSecret is an EventType used when the controller fails to fetch the OPA token Secret.</p>
-</td>
-</tr><tr><td><p>&#34;ErrorFetchSLPConfigMap&#34;</p></td>
-<td><p>EventErrorFetchSLPConfigMap is an EventType used when the controller fails to fetch the SLP ConfigMap.</p>
-</td>
-</tr><tr><td><p>&#34;ErrorFetchSystemFromStyra&#34;</p></td>
-<td><p>EventErrorFetchSystemFromStyra is an EventType used when the controller fails to fetch the System from Styra.</p>
-</td>
-</tr><tr><td><p>&#34;ErrorGetStatefulSet&#34;</p></td>
-<td><p>EventErrorGetStatefulSet is an EventType used when the controller fails to get the StatefulSet
-for the SLP used by the System.</p>
-</td>
-</tr><tr><td><p>&#34;ErrorGetSystemRolebindings&#34;</p></td>
-<td><p>EventErrorGetSystemRolebindings is an EventType used when the controller fails to get the rolebindings
-for a system in Styra.</p>
-</td>
-</tr><tr><td><p>&#34;ErrorGetUsersFromStyra&#34;</p></td>
-<td><p>EventErrorGetUsersFromStyra is an EventType used when the controller fails to get the users
-for a system in Styra.</p>
-</td>
-</tr><tr><td><p>&#34;ErrorOPATokenSecretNoToken&#34;</p></td>
-<td><p>EventErrorOPATokenSecretNoToken is an EventType used when the controller creates the OPA token Secret
-but the downloaded OPA config from Styra does not contain a token.</p>
 </td>
 </tr><tr><td><p>&#34;ErrorOwnerRefOPAConfigMap&#34;</p></td>
 <td><p>EventErrorOwnerRefOPAConfigMap is an EventType used when the controller fails to set the owner reference
@@ -516,27 +429,13 @@ on the OPA config map.</p>
 <td><p>EventErrorOwnerRefOPATokenSecret is an EventType used when the controller fails to set the owner reference
 on the OPA token secret.</p>
 </td>
-</tr><tr><td><p>&#34;ErrorOwnerRefSLPConfigMap&#34;</p></td>
-<td><p>EventErrorOwnerRefSLPConfigMap is an EventType used when the controller fails to set the owner reference
-on the SLP ConfigMap.</p>
-</td>
-</tr><tr><td><p>&#34;ErrorPatchStatefulSet&#34;</p></td>
-<td><p>EventErrorPatchStatefulSet is an EventType used when the controller fails to patch the StatefulSet
-for the SLP used by the System.</p>
-</td>
 </tr><tr><td><p>&#34;ErrorPhaseToCreated&#34;</p></td>
 <td><p>EventErrorPhaseToCreated is an EventType used when the controller fails to set the
 phase of the System resource to Created.</p>
 </td>
-</tr><tr><td><p>&#34;ErrorReconcileID&#34;</p></td>
-<td><p>EventErrorReconcileID is an EventType used when the controller fails to reconcile the ID for the System.</p>
-</td>
 </tr><tr><td><p>&#34;ErrorRemovingFinalizer&#34;</p></td>
 <td><p>EventErrorRemovingFinalizer is an EventType used when the controller fails to
 remove the finalizer from the System resource.</p>
-</td>
-</tr><tr><td><p>&#34;ErrorRestartSLPs&#34;</p></td>
-<td><p>EventErrorRestartSLPs is an EventType used when the controller fails to restart the SLPs.</p>
 </td>
 </tr><tr><td><p>&#34;ErrorSecretNotOwnedByController&#34;</p></td>
 <td><p>EventErrorSecretNotOwnedByController is an EventType used when the controller tries to update a Secret
@@ -545,10 +444,6 @@ that is not owned by the controller.</p>
 </tr><tr><td><p>&#34;ErrorSetFinalizer&#34;</p></td>
 <td><p>EventErrorSetFinalizer is an EventType used when the controller fails to set
 the finalizer on the System resource.</p>
-</td>
-</tr><tr><td><p>&#34;ErrorStatefulSetNotFound&#34;</p></td>
-<td><p>EventErrorStatefulSetNotFound is an EventType used when a system with &lsquo;localPlane&rsquo; enabled but which
-does not have a StatefulSet created for the SLP.</p>
 </td>
 </tr><tr><td><p>&#34;ErrorUpdateBundle&#34;</p></td>
 <td><p>EventErrorUpdateBundle is an EventType used when the controller fails to update the Source in OCP.</p>
@@ -562,25 +457,12 @@ does not have a StatefulSet created for the SLP.</p>
 </tr><tr><td><p>&#34;ErrorUpdateOPATokenSecret&#34;</p></td>
 <td><p>EventErrorUpdateOPATokenSecret is an EventType used when the controller fails to update the OPA token Secret.</p>
 </td>
-</tr><tr><td><p>&#34;ErrorUpdateRolebinding&#34;</p></td>
-<td><p>EventErrorUpdateRolebinding is an EventType used when the controller fails to update a rolebinding
-for a user in Styra.</p>
-</td>
-</tr><tr><td><p>&#34;ErrorUpdateSLPConfigMap&#34;</p></td>
-<td><p>EventErrorUpdateSLPConfigmap is an EventType used when the controller fails to update the SLP ConfigMap.</p>
-</td>
 </tr><tr><td><p>&#34;ErrorUpdateSource&#34;</p></td>
 <td><p>EventErrorUpdateSource is an EventType used when the controller fails to update the Source in OCP.</p>
 </td>
 </tr><tr><td><p>&#34;ErrorUpdateStatus&#34;</p></td>
 <td><p>EventErrorUpdateStatus is an EventType used when the controller fails to update
 the status of the System resource.</p>
-</td>
-</tr><tr><td><p>&#34;ErrorUpdateSystem&#34;</p></td>
-<td><p>EventErrorUpdateSystem is an EventType used when the controller fails to update the System in Styra.</p>
-</td>
-</tr><tr><td><p>&#34;ErrorUpsertDatasource&#34;</p></td>
-<td><p>EventErrorUpsertDatasource is an EventType used when the controller fails to upsert a datasource in Styra.</p>
 </td>
 </tr></tbody>
 </table>
@@ -722,8 +604,7 @@ string
 (<em>Appears on:</em><a href="#styra.bankdata.dk/v1beta1.SystemSpec">SystemSpec</a>)
 </p>
 <div>
-<p>LocalPlane specifies how the Styra Local Plane should be configured. This is
-used to generate Secret and ConfigMap for the SLP to consume.</p>
+<p>LocalPlane specifies how the local plane should be configured.</p>
 </div>
 <table>
 <thead>
@@ -1058,8 +939,8 @@ bool
 </em>
 </td>
 <td>
-<p>DeletionProtection disables deletion of the system in Styra, when the
-System resource is deleted.</p>
+<p>DeletionProtection disables deletion of backing OPA Control Plane
+resources when the System resource is deleted.</p>
 </td>
 </tr>
 <tr>
@@ -1109,8 +990,7 @@ bool
 </em>
 </td>
 <td>
-<p>Datasources represents a list of Styra datasources to be mounted in the
-system.</p>
+<p>Datasources represents a list of datasources to be mounted in the system.</p>
 </td>
 </tr>
 <tr>
@@ -1123,8 +1003,8 @@ DiscoveryOverrides
 </em>
 </td>
 <td>
-<p>DiscoveryOverrides is an opa config which will take precedence over the
-configuration supplied by Styra discovery API. Configuration set here
+<p>DiscoveryOverrides is an OPA config which will take precedence over the
+configuration supplied by the OPA discovery API. Configuration set here
 will be merged with the configuration supplied by the discovery API.</p>
 </td>
 </tr>
@@ -1235,8 +1115,8 @@ bool
 </em>
 </td>
 <td>
-<p>DeletionProtection disables deletion of the system in Styra, when the
-System resource is deleted.</p>
+<p>DeletionProtection disables deletion of backing OPA Control Plane
+resources when the System resource is deleted.</p>
 </td>
 </tr>
 <tr>
@@ -1286,8 +1166,7 @@ bool
 </em>
 </td>
 <td>
-<p>Datasources represents a list of Styra datasources to be mounted in the
-system.</p>
+<p>Datasources represents a list of datasources to be mounted in the system.</p>
 </td>
 </tr>
 <tr>
@@ -1300,8 +1179,8 @@ DiscoveryOverrides
 </em>
 </td>
 <td>
-<p>DiscoveryOverrides is an opa config which will take precedence over the
-configuration supplied by Styra discovery API. Configuration set here
+<p>DiscoveryOverrides is an OPA config which will take precedence over the
+configuration supplied by the OPA discovery API. Configuration set here
 will be merged with the configuration supplied by the discovery API.</p>
 </td>
 </tr>
@@ -1424,5 +1303,5 @@ System.</p>
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>577de2c</code>.
+on git commit <code>4b70bcc</code>.
 </em></p>
