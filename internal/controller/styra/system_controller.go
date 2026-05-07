@@ -662,10 +662,10 @@ func bundleRevision(uniqueName string, defaultRequirements []ocp.Requirement) st
 	defaultReqSet := strings.Join(defaultReqNames, ", ")
 
 	return fmt.Sprintf(
-		`$"data:{crypto.sha256(concat("", {x | x := input.sources[_].sql.hash}))},`+
+		`$"data:{crypto.sha256(concat("", {x | some y in [%s]; x := input.sources[y].sql.hash}))},`+
 			`git-sha:{input.sources["%s"].git.commit},`+ // git sha for the system source
 			`libraries:{crypto.sha256(concat("", {x | some y in [%s]; x := input.sources[y].git.commit}))}"`,
-		uniqueName, defaultReqSet,
+		defaultReqSet, uniqueName, defaultReqSet,
 	)
 }
 
