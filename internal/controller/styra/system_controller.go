@@ -113,16 +113,20 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	log = log.WithValues("controlPlane", system.Labels["styra-controller/control-plane"])
 	log = log.WithValues("uniqueName", system.OCPUniqueName(r.Config.SystemPrefix, r.Config.SystemSuffix))
 
-	if r.isNamespaceExcluded(&system) {
-		log.Info("Namespace is excluded from reconciliation. Skipping.")
+	if !r.isSystemNamespaceMatchingSelector(&system) {
+		log.Info("Namespace is not in NamespaceSelector for reconciliation. Skipping reconciliation")
 		r.deleteMetrics(req)
 		return ctrl.Result{}, nil
 	}
 
-	if !labels.ControllerClassMatches(&system, r.Config.ControllerClass) {
-		log.Info("This is not a System we are managing. Skipping reconciliation.")
-		r.deleteMetrics(req)
-		return ctrl.Result{}, nil
+	if r.isSystemControllerClassOnIgnoreList(&system) {
+		log.Info("Starting reconciliation since controllerClass is on ignore list")
+	} else {
+		if !labels.ControllerClassMatches(&system, r.Config.ControllerClass) {
+			log.Info("This is not a System we are managing. Skipping reconciliation.")
+			r.deleteMetrics(req)
+			return ctrl.Result{}, nil
+		}
 	}
 
 	var (
@@ -159,13 +163,27 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	return res, err
 }
 
-func (r *SystemReconciler) isNamespaceExcluded(system *v1beta1.System) bool {
-	if r.Config.NamespaceExclusionSelector == nil {
+func (r *SystemReconciler) isSystemNamespaceMatchingSelector(system *v1beta1.System) bool {
+	if r.Config.NamespaceSelector == nil || len(r.Config.NamespaceSelector.MatchPatterns) == 0 {
+		return true
+	}
+
+	for _, pattern := range r.Config.NamespaceSelector.MatchPatterns {
+		if matched, _ := filepath.Match(pattern, system.Namespace); matched {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (r *SystemReconciler) isSystemControllerClassOnIgnoreList(system *v1beta1.System) bool {
+	if len(r.Config.SystemControllerClassesIgnoreList) == 0 {
 		return false
 	}
 
-	for _, pattern := range r.Config.NamespaceExclusionSelector.MatchPatterns {
-		if matched, _ := filepath.Match(pattern, system.Namespace); matched {
+	for _, ignoreClass := range r.Config.SystemControllerClassesIgnoreList {
+		if ignoreClass != "" && labels.ControllerClassMatches(system, ignoreClass) {
 			return true
 		}
 	}

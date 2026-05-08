@@ -17,11 +17,12 @@ limitations under the License.
 package styra
 
 import (
-	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
-	"github.com/bankdata/styra-controller/api/styra/v1beta1"
 	ginkgo "github.com/onsi/ginkgo/v2"
 	gomega "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
+	"github.com/bankdata/styra-controller/api/styra/v1beta1"
 )
 
 // test the isURLValid method
@@ -39,33 +40,61 @@ var _ = ginkgo.DescribeTable("isURLValid",
 	ginkgo.Entry("invalid url", "google", false),
 )
 
-// test the isNamespaceExcluded method
-var _ = ginkgo.DescribeTable("isNamespaceExcluded",
-	func(namespaceExclusionSelector *configv2alpha2.NamespaceExclusionSelector, systemNamespace string, expected bool) {
-		reconciler := &SystemReconciler{
+// test the isSystemControllerClassOnIgnoreList method
+var _ = ginkgo.DescribeTable("isSystemControllerClassOnIgnoreList",
+	func(ignoreList []string, labels map[string]string, expected bool) {
+		r := &SystemReconciler{
 			Config: &configv2alpha2.ProjectConfig{
-				NamespaceExclusionSelector: namespaceExclusionSelector,
+				SystemControllerClassesIgnoreList: ignoreList,
 			},
 		}
-		system := v1beta1.System{
+		system := &v1beta1.System{
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace: systemNamespace,
+				Labels: labels,
 			},
 		}
-		gomega.Ω(reconciler.isNamespaceExcluded(&system)).To(gomega.Equal(expected))
+		gomega.Ω(r.isSystemControllerClassOnIgnoreList(system)).To(gomega.Equal(expected))
 	},
-	ginkgo.Entry("no exclusion selector",
-		nil, "namespace-dev", false),
-	ginkgo.Entry("empty exclusion selector",
-		&configv2alpha2.NamespaceExclusionSelector{}, "namespace-dev", false),
-	ginkgo.Entry("no match multiple patterns",
-		&configv2alpha2.NamespaceExclusionSelector{MatchPatterns: []string{"dev-*"}}, "namespace-dev", false),
-	ginkgo.Entry("match single pattern",
-		&configv2alpha2.NamespaceExclusionSelector{MatchPatterns: []string{"*-dev"}}, "namespace-dev", true),
-	ginkgo.Entry("no match single pattern",
-		&configv2alpha2.NamespaceExclusionSelector{MatchPatterns: []string{"*-staging", "*-prod"}},
-		"namespace-dev", false),
-	ginkgo.Entry("match multiple patterns",
-		&configv2alpha2.NamespaceExclusionSelector{MatchPatterns: []string{"*-dev", "*-staging"}},
-		"namespace-dev", true),
+	ginkgo.Entry("empty ignore list returns false", []string{},
+		map[string]string{"styra-controller/class": "myclass"}, false),
+	ginkgo.Entry("nil ignore list returns false", nil,
+		map[string]string{"styra-controller/class": "myclass"}, false),
+	ginkgo.Entry("class in ignore list returns true", []string{"myclass"},
+		map[string]string{"styra-controller/class": "myclass"}, true),
+	ginkgo.Entry("class not in ignore list returns false", []string{"otherclass"},
+		map[string]string{"styra-controller/class": "myclass"}, false),
+	ginkgo.Entry("class matches one of multiple entries", []string{"a", "myclass", "b"},
+		map[string]string{"styra-controller/class": "myclass"}, true),
+	ginkgo.Entry("no labels, empty class in ignore list returns false", []string{""}, nil, false),
+	ginkgo.Entry("no labels, non-empty class in ignore list returns false", []string{"myclass"}, nil, false),
+)
+
+// test the isSystemNamespaceMatchingSelector method
+var _ = ginkgo.DescribeTable("isSystemNamespaceMatchingSelector",
+	func(namespaceSelector *configv2alpha2.NamespaceSelector, namespace string, expected bool) {
+		r := &SystemReconciler{
+			Config: &configv2alpha2.ProjectConfig{
+				NamespaceSelector: namespaceSelector,
+			},
+		}
+		system := &v1beta1.System{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+			},
+		}
+		gomega.Ω(r.isSystemNamespaceMatchingSelector(system)).To(gomega.Equal(expected))
+	},
+	ginkgo.Entry("nil selector returns true", nil, "mynamespace", true),
+	ginkgo.Entry("exact match returns true", &configv2alpha2.NamespaceSelector{
+		MatchPatterns: []string{"mynamespace"}}, "mynamespace", true),
+	ginkgo.Entry("no match returns false", &configv2alpha2.NamespaceSelector{
+		MatchPatterns: []string{"other"}}, "mynamespace", false),
+	ginkgo.Entry("wildcard matches namespace", &configv2alpha2.NamespaceSelector{
+		MatchPatterns: []string{"*-dev"}}, "mynamespace-dev", true),
+	ginkgo.Entry("wildcard does not match unrelated namespace", &configv2alpha2.NamespaceSelector{
+		MatchPatterns: []string{"*-dev"}}, "other", false),
+	ginkgo.Entry("matches one of multiple patterns", &configv2alpha2.NamespaceSelector{
+		MatchPatterns: []string{"*-dev", "*-staging", "*-prod"}}, "mynamespace-staging", true),
+	ginkgo.Entry("empty patterns returns true", &configv2alpha2.NamespaceSelector{
+		MatchPatterns: []string{}}, "mynamespace", true),
 )
