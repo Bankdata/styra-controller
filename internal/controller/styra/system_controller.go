@@ -639,7 +639,7 @@ func (r *SystemReconciler) reconcileSystemBundle(
 		Name:          uniqueName,
 		ObjectStorage: objectStorage,
 		Requirements:  append(requirements, defaultRequirements...),
-		Revision:      bundleRevision(uniqueName, defaultRequirements),
+		Revision:      bundleRevision(uniqueName, defaultRequirements, requirements),
 	}
 	err := r.OCP.PutBundle(ctx, bundle)
 
@@ -654,18 +654,19 @@ func (r *SystemReconciler) reconcileSystemBundle(
 // - git-sha: the git commit for the system's unique source
 // - libraries: sha256 hash of all default requirement git commits
 // for example "data:sha256,git-sha:commitsha,libraries:sha256"
-func bundleRevision(uniqueName string, defaultRequirements []ocp.Requirement) string {
-	defaultReqNames := make([]string, len(defaultRequirements))
-	for i, req := range defaultRequirements {
-		defaultReqNames[i] = fmt.Sprintf(`"%s"`, req.Source)
+func bundleRevision(uniqueName string, defaultRequirements []ocp.Requirement, requirements []ocp.Requirement) string {
+	reqNames := make([]string, len(defaultRequirements)+len(requirements))
+	requirementLst := append(requirements, defaultRequirements...)
+	for i, req := range requirementLst {
+		reqNames[i] = fmt.Sprintf(`"%s"`, req.Source)
 	}
-	defaultReqSet := strings.Join(defaultReqNames, ", ")
+	reqSet := strings.Join(reqNames, ", ")
 
 	return fmt.Sprintf(
 		`$"data:{crypto.sha256(concat("", {x | some y in [%s]; x := input.sources[y].sql.hash}))},`+
 			`git-sha:{input.sources["%s"].git.commit},`+ // git sha for the system source
 			`libraries:{crypto.sha256(concat("", {x | some y in [%s]; x := input.sources[y].git.commit}))}"`,
-		defaultReqSet, uniqueName, defaultReqSet,
+		reqSet, uniqueName, reqSet,
 	)
 }
 
