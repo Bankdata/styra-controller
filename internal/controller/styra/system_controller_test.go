@@ -40,35 +40,6 @@ var _ = ginkgo.DescribeTable("isURLValid",
 	ginkgo.Entry("invalid url", "google", false),
 )
 
-// test the isSystemControllerClassOnIgnoreList method
-var _ = ginkgo.DescribeTable("isSystemControllerClassOnIgnoreList",
-	func(ignoreList []string, labels map[string]string, expected bool) {
-		r := &SystemReconciler{
-			Config: &configv2alpha2.ProjectConfig{
-				SystemControllerClassesIgnoreList: ignoreList,
-			},
-		}
-		system := &v1beta1.System{
-			ObjectMeta: metav1.ObjectMeta{
-				Labels: labels,
-			},
-		}
-		gomega.Ω(r.isSystemControllerClassOnIgnoreList(system)).To(gomega.Equal(expected))
-	},
-	ginkgo.Entry("empty ignore list returns false", []string{},
-		map[string]string{"styra-controller/class": "myclass"}, false),
-	ginkgo.Entry("nil ignore list returns false", nil,
-		map[string]string{"styra-controller/class": "myclass"}, false),
-	ginkgo.Entry("class in ignore list returns true", []string{"myclass"},
-		map[string]string{"styra-controller/class": "myclass"}, true),
-	ginkgo.Entry("class not in ignore list returns false", []string{"otherclass"},
-		map[string]string{"styra-controller/class": "myclass"}, false),
-	ginkgo.Entry("class matches one of multiple entries", []string{"a", "myclass", "b"},
-		map[string]string{"styra-controller/class": "myclass"}, true),
-	ginkgo.Entry("no labels, empty class in ignore list returns false", []string{""}, nil, false),
-	ginkgo.Entry("no labels, non-empty class in ignore list returns false", []string{"myclass"}, nil, false),
-)
-
 // test the isSystemNamespaceMatchingSelector method
 var _ = ginkgo.DescribeTable("isSystemNamespaceMatchingSelector",
 	func(namespaceSelector *configv2alpha2.NamespaceSelector, namespace string, expected bool) {

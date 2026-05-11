@@ -31,13 +31,10 @@ type ProjectConfig struct {
 	// running multiple controllers in the same cluster.
 	ControllerClass string `json:"controllerClass"`
 
-	// SystemControllerClassesIgnoreList is a list of controller classes that the controller should ignore.
-	// If a System has a controller class that is in this list the Controller will ignore controllerClass validation
-	SystemControllerClassesIgnoreList []string `json:"systemControllerClassesIgnoreList,omitempty"`
-
-	// NamespaceSelector defines criteria for only accepting  namespaces matching the selector.
+	// NamespaceSelector defines criteria for only accepting namespaces matching the selector.
 	// If a resource is in a namespace that matches the criteria defined in NamespaceSelector,
-	// it will be included in reconciliation. If not set, the controller will reconcile resources in all namespaces.
+	// it will be included in reconciliation.
+	// If not set, the controller will reconcile resources in all namespaces.
 	NamespaceSelector *NamespaceSelector `json:"namespaceSelector,omitempty"`
 
 	// DeletionProtectionDefault sets the default to use with regards to deletion

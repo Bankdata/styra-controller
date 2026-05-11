@@ -119,16 +119,6 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, nil
 	}
 
-	if r.isSystemControllerClassOnIgnoreList(&system) {
-		log.Info("Starting reconciliation since controllerClass is on ignore list")
-	} else {
-		if !labels.ControllerClassMatches(&system, r.Config.ControllerClass) {
-			log.Info("This is not a System we are managing. Skipping reconciliation.")
-			r.deleteMetrics(req)
-			return ctrl.Result{}, nil
-		}
-	}
-
 	var (
 		res ctrl.Result
 		err error
@@ -177,20 +167,6 @@ func (r *SystemReconciler) isSystemNamespaceMatchingSelector(system *v1beta1.Sys
 	return false
 }
 
-func (r *SystemReconciler) isSystemControllerClassOnIgnoreList(system *v1beta1.System) bool {
-	if len(r.Config.SystemControllerClassesIgnoreList) == 0 {
-		return false
-	}
-
-	for _, ignoreClass := range r.Config.SystemControllerClassesIgnoreList {
-		if ignoreClass != "" && labels.ControllerClassMatches(system, ignoreClass) {
-			return true
-		}
-	}
-
-	return false
-}
-
 func (r *SystemReconciler) setSystemStatusError(System *v1beta1.System, err error) {
 	System.Status.FailureMessage = err.Error()
 	System.Status.Phase = v1beta1.SystemPhaseFailed
@@ -222,7 +198,7 @@ func (r *SystemReconciler) deleteMetrics(req ctrl.Request) {
 	}
 	if deleted := r.Metrics.ControllerSystemStatusReady.DeletePartialMatch(
 		prometheus.Labels{"system_name": req.Name, "namespace": req.Namespace},
-	); deleted != 1 {
+	); deleted > 1 {
 		log.Log.Error(errors.New("Failed to delete metric"), "Incorrect number of deleted metrics", "deleted", deleted)
 	}
 }
