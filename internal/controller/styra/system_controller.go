@@ -654,7 +654,7 @@ func (r *SystemReconciler) reconcileSystemBundle(
 		Name:          uniqueName,
 		ObjectStorage: objectStorage,
 		Requirements:  append(requirements, defaultRequirements...),
-		Revision:      bundleRevision(uniqueName, defaultRequirements),
+		Revision:      bundleRevision(uniqueName, defaultRequirements, requirements),
 	}
 	err := r.OCP.PutBundle(ctx, bundle)
 
@@ -669,18 +669,22 @@ func (r *SystemReconciler) reconcileSystemBundle(
 // - git-sha: the git commit for the system's unique source
 // - libraries: sha256 hash of all default requirement git commits
 // for example "data:sha256,git-sha:commitsha,libraries:sha256"
-func bundleRevision(uniqueName string, defaultRequirements []ocp.Requirement) string {
-	defaultReqNames := make([]string, len(defaultRequirements))
-	for i, req := range defaultRequirements {
-		defaultReqNames[i] = fmt.Sprintf(`"%s"`, req.Source)
+func bundleRevision(uniqueName string, defaultRequirements []ocp.Requirement, requirements []ocp.Requirement) string {
+	sqlHashes := make([]string, len(defaultRequirements)+len(requirements))
+	gitCommits := make([]string, len(defaultRequirements)+len(requirements))
+	requirementList := append(requirements, defaultRequirements...)
+	for i, req := range requirementList {
+		sqlHashes[i] = fmt.Sprintf(`input.sources["%s"].sql.hash`, req.Source)
+		gitCommits[i] = fmt.Sprintf(`input.sources["%s"].git.commit`, req.Source)
 	}
-	defaultReqSet := strings.Join(defaultReqNames, ", ")
+	sqlHashSet := strings.Join(sqlHashes, ", ")
+	gitCommitSet := strings.Join(gitCommits, ", ")
 
 	return fmt.Sprintf(
-		`$"data:{crypto.sha256(concat("", {x | x := input.sources[_].sql.hash}))},`+
+		`$"data:{crypto.sha256(concat("", [%s]))},`+
 			`git-sha:{input.sources["%s"].git.commit},`+ // git sha for the system source
-			`libraries:{crypto.sha256(concat("", {x | some y in [%s]; x := input.sources[y].git.commit}))}"`,
-		uniqueName, defaultReqSet,
+			`libraries:{crypto.sha256(concat("", [%s]))}"`,
+		sqlHashSet, uniqueName, gitCommitSet,
 	)
 }
 

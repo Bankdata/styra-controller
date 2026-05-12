@@ -129,9 +129,17 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"
 					Source: "library1",
 				},
 			},
-			Revision: `$"data:{crypto.sha256(concat("", {x | x := input.sources[_].sql.hash}))},` +
+			Revision: `$"data:{crypto.sha256(concat("", [` +
+				`input.sources["path-to-datasource"].sql.hash, ` +
+				`input.sources["default-ocp-system"].sql.hash, ` +
+				`input.sources["library1"].sql.hash` +
+				`]))},` +
 				`git-sha:{input.sources["default-ocp-system"].git.commit},` +
-				`libraries:{crypto.sha256(concat("", {x | some y in ["library1"]; x := input.sources[y].git.commit}))}"`,
+				`libraries:{crypto.sha256(concat("", [` +
+				`input.sources["path-to-datasource"].git.commit, ` +
+				`input.sources["default-ocp-system"].git.commit, ` +
+				`input.sources["library1"].git.commit` +
+				`]))}"`,
 		}).Return(nil).Times(3)
 
 		gomega.Expect(k8sClient.Create(ctx, toCreate)).To(gomega.Succeed())
