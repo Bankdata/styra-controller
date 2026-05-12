@@ -657,8 +657,8 @@ func (r *SystemReconciler) reconcileSystemBundle(
 func bundleRevision(uniqueName string, defaultRequirements []ocp.Requirement, requirements []ocp.Requirement) string {
 	sqlHashes := make([]string, len(defaultRequirements)+len(requirements))
 	gitCommits := make([]string, len(defaultRequirements)+len(requirements))
-	requirementLst := append(requirements, defaultRequirements...)
-	for i, req := range requirementLst {
+	requirementList := append(requirements, defaultRequirements...)
+	for i, req := range requirementList {
 		sqlHashes[i] = fmt.Sprintf(`input.sources["%s"].sql.hash`, req.Source)
 		gitCommits[i] = fmt.Sprintf(`input.sources["%s"].git.commit`, req.Source)
 	}
