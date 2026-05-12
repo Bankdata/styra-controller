@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -112,8 +113,8 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	log = log.WithValues("controlPlane", system.Labels["styra-controller/control-plane"])
 	log = log.WithValues("uniqueName", system.OCPUniqueName(r.Config.SystemPrefix, r.Config.SystemSuffix))
 
-	if !labels.ControllerClassMatches(&system, r.Config.ControllerClass) {
-		log.Info("This is not a System we are managing. Skipping reconciliation.")
+	if !r.isSystemNamespaceMatchingSelector(&system) {
+		log.Info("Namespace is not in NamespaceSelector for reconciliation. Skipping reconciliation")
 		r.deleteMetrics(req)
 		return ctrl.Result{}, nil
 	}
@@ -152,6 +153,20 @@ func (r *SystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	return res, err
 }
 
+func (r *SystemReconciler) isSystemNamespaceMatchingSelector(system *v1beta1.System) bool {
+	if r.Config.NamespaceSelector == nil || len(r.Config.NamespaceSelector.MatchPatterns) == 0 {
+		return true
+	}
+
+	for _, pattern := range r.Config.NamespaceSelector.MatchPatterns {
+		if matched, _ := filepath.Match(pattern, system.Namespace); matched {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (r *SystemReconciler) setSystemStatusError(System *v1beta1.System, err error) {
 	System.Status.FailureMessage = err.Error()
 	System.Status.Phase = v1beta1.SystemPhaseFailed
@@ -183,7 +198,7 @@ func (r *SystemReconciler) deleteMetrics(req ctrl.Request) {
 	}
 	if deleted := r.Metrics.ControllerSystemStatusReady.DeletePartialMatch(
 		prometheus.Labels{"system_name": req.Name, "namespace": req.Namespace},
-	); deleted != 1 {
+	); deleted > 1 {
 		log.Log.Error(errors.New("Failed to delete metric"), "Incorrect number of deleted metrics", "deleted", deleted)
 	}
 }
