@@ -19,6 +19,10 @@ package styra
 import (
 	ginkgo "github.com/onsi/ginkgo/v2"
 	gomega "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	configv2alpha2 "github.com/bankdata/styra-controller/api/config/v2alpha2"
+	"github.com/bankdata/styra-controller/api/styra/v1beta1"
 )
 
 // test the isURLValid method
@@ -34,4 +38,34 @@ var _ = ginkgo.DescribeTable("isURLValid",
 	ginkgo.Entry("invalid url", "www.google.com", false),
 	ginkgo.Entry("invalid url", "google.com", false),
 	ginkgo.Entry("invalid url", "google", false),
+)
+
+// test the isSystemNamespaceMatchingSelector method
+var _ = ginkgo.DescribeTable("isSystemNamespaceMatchingSelector",
+	func(namespaceSelector *configv2alpha2.NamespaceSelector, namespace string, expected bool) {
+		r := &SystemReconciler{
+			Config: &configv2alpha2.ProjectConfig{
+				NamespaceSelector: namespaceSelector,
+			},
+		}
+		system := &v1beta1.System{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+			},
+		}
+		gomega.Ω(r.isSystemNamespaceMatchingSelector(system)).To(gomega.Equal(expected))
+	},
+	ginkgo.Entry("nil selector returns true", nil, "mynamespace", true),
+	ginkgo.Entry("exact match returns true", &configv2alpha2.NamespaceSelector{
+		MatchPatterns: []string{"mynamespace"}}, "mynamespace", true),
+	ginkgo.Entry("no match returns false", &configv2alpha2.NamespaceSelector{
+		MatchPatterns: []string{"other"}}, "mynamespace", false),
+	ginkgo.Entry("wildcard matches namespace", &configv2alpha2.NamespaceSelector{
+		MatchPatterns: []string{"*-dev"}}, "mynamespace-dev", true),
+	ginkgo.Entry("wildcard does not match unrelated namespace", &configv2alpha2.NamespaceSelector{
+		MatchPatterns: []string{"*-dev"}}, "other", false),
+	ginkgo.Entry("matches one of multiple patterns", &configv2alpha2.NamespaceSelector{
+		MatchPatterns: []string{"*-dev", "*-staging", "*-prod"}}, "mynamespace-staging", true),
+	ginkgo.Entry("empty patterns returns true", &configv2alpha2.NamespaceSelector{
+		MatchPatterns: []string{}}, "mynamespace", true),
 )

@@ -31,6 +31,12 @@ type ProjectConfig struct {
 	// running multiple controllers in the same cluster.
 	ControllerClass string `json:"controllerClass"`
 
+	// NamespaceSelector defines criteria for only accepting namespaces matching the selector.
+	// If a resource is in a namespace that matches the criteria defined in NamespaceSelector,
+	// it will be included in reconciliation.
+	// If not set, the controller will reconcile resources in all namespaces.
+	NamespaceSelector *NamespaceSelector `json:"namespaceSelector,omitempty"`
+
 	// DeletionProtectionDefault sets the default to use with regards to deletion
 	// protection if it is not set on the resource.
 	DeletionProtectionDefault bool `json:"deletionProtectionDefault"`
@@ -92,6 +98,12 @@ type OPAControlPlaneConfig struct {
 	SystemDatasourceChanged string `json:"systemDatasourceChanged,omitempty"`
 	// LibraryDatasourceChanged is the URL to be called when a library datasource has changed.
 	LibraryDatasourceChanged string `json:"libraryDatasourceChanged,omitempty"`
+}
+
+// NamespaceSelector defines criteria for only accepting MatchPatterns namespaces for reconciliation.
+type NamespaceSelector struct {
+	// MatchPatterns is a list of glob patterns to match namespace names against.
+	MatchPatterns []string `json:"matchPatterns,omitempty"`
 }
 
 // BundleObjectStorage defines the structure for object storage configuration used by bundles
