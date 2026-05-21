@@ -136,8 +136,6 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"
 				`]))},` +
 				`git-sha:{input.sources["default-ocp-system"].git.commit},` +
 				`libraries:{crypto.sha256(concat("", [` +
-				`input.sources["path-to-datasource"].git.commit, ` +
-				`input.sources["default-ocp-system"].git.commit, ` +
 				`input.sources["library1"].git.commit` +
 				`]))}"`,
 		}).Return(nil).Times(3)
