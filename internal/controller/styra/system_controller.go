@@ -671,24 +671,24 @@ func (r *SystemReconciler) reconcileSystemBundle(
 // for example "data:sha256,git-sha:commitsha,libraries:sha256"
 func bundleRevision(uniqueName string, defaultRequirements []ocp.Requirement, requirements []ocp.Requirement) string {
 	// SQL hashes for datasources
-	datasourceSqlHashes := make([]string, len(requirements))
+	datasourceSQLHashes := make([]string, len(requirements))
 	for i, req := range requirements {
-		datasourceSqlHashes[i] = fmt.Sprintf(`input.sources["%s"].sql.hash`, req.Source)
+		datasourceSQLHashes[i] = fmt.Sprintf(`input.sources["%s"].sql.hash`, req.Source)
 	}
-	datasourceSqlHashSet := strings.Join(datasourceSqlHashes, ", ")
+	datasourceSQLHashSet := strings.Join(datasourceSQLHashes, ", ")
 
 	// SQL hashes for libraries (default requirements)
-	librarySqlHashes := make([]string, len(defaultRequirements))
+	librarySQLHashes := make([]string, len(defaultRequirements))
 	for i, req := range defaultRequirements {
-		librarySqlHashes[i] = fmt.Sprintf(`input.sources["%s"].sql.hash`, req.Source)
+		librarySQLHashes[i] = fmt.Sprintf(`input.sources["%s"].sql.hash`, req.Source)
 	}
-	librarySqlHashSet := strings.Join(librarySqlHashes, ", ")
+	librarySQLHashSet := strings.Join(librarySQLHashes, ", ")
 
 	return fmt.Sprintf(
 		`$"data:{crypto.sha256(concat("", [%s]))},`+
 			`git-sha:{input.sources["%s"].git.commit},`+ // git sha for the system source
 			`libraries:{crypto.sha256(concat("", [%s]))}"`,
-		datasourceSqlHashSet, uniqueName, librarySqlHashSet,
+		datasourceSQLHashSet, uniqueName, librarySQLHashSet,
 	)
 }
 
