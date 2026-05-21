@@ -131,7 +131,8 @@ var _ = ginkgo.Describe("SystemReconciler.Reconcile", ginkgo.Label("integration"
 			},
 			Revision: `$"data:{crypto.sha256(concat("", [` +
 				`input.sources["path-to-datasource"].sql.hash, ` +
-				`input.sources["default-ocp-system"].sql.hash` +
+				`input.sources["default-ocp-system"].sql.hash, ` +
+				`input.sources["library1"].sql.hash` +
 				`]))},` +
 				`git-sha:{input.sources["default-ocp-system"].git.commit},` +
 				`libraries:{crypto.sha256(concat("", [` +

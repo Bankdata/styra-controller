@@ -665,7 +665,7 @@ func (r *SystemReconciler) reconcileSystemBundle(
 }
 
 // bundleRevision produces a Rego template string containing:
-// - data: sha256 hash of all datasource SQL hashes
+// - data: sha256 hash of all SQL hashes (datasources + libraries)
 // - git-sha: the git commit for the system's unique source
 // - libraries: sha256 hash of all library (default requirement) git commits
 // for example "data:sha256,git-sha:commitsha,libraries:sha256"
@@ -675,7 +675,16 @@ func bundleRevision(uniqueName string, defaultRequirements []ocp.Requirement, re
 	for i, req := range requirements {
 		datasourceSQLHashes[i] = fmt.Sprintf(`input.sources["%s"].sql.hash`, req.Source)
 	}
-	datasourceSQLHashSet := strings.Join(datasourceSQLHashes, ", ")
+
+	// SQL hashes for libraries (default requirements)
+	librarySQLHashes := make([]string, len(defaultRequirements))
+	for i, req := range defaultRequirements {
+		librarySQLHashes[i] = fmt.Sprintf(`input.sources["%s"].sql.hash`, req.Source)
+	}
+
+	// Combine datasource and library SQL hashes for data field
+	allSQLHashes := append(datasourceSQLHashes, librarySQLHashes...)
+	allSQLHashSet := strings.Join(allSQLHashes, ", ")
 
 	// Git commits for libraries (default requirements)
 	libraryGitCommits := make([]string, len(defaultRequirements))
@@ -688,7 +697,7 @@ func bundleRevision(uniqueName string, defaultRequirements []ocp.Requirement, re
 		`$"data:{crypto.sha256(concat("", [%s]))},`+
 			`git-sha:{input.sources["%s"].git.commit},`+ // git sha for the system source
 			`libraries:{crypto.sha256(concat("", [%s]))}"`,
-		datasourceSQLHashSet, uniqueName, libraryHashSet,
+		allSQLHashSet, uniqueName, libraryHashSet,
 	)
 }
 
