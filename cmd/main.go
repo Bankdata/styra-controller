@@ -199,7 +199,7 @@ func main() {
 	r1 := &controllers.SystemReconciler{
 		Client:    mgr.GetClient(),
 		Scheme:    mgr.GetScheme(),
-		Recorder:  mgr.GetEventRecorderFor("system-controller"),
+		Recorder:  mgr.GetEventRecorder("system-controller"),
 		Metrics:   systemMetrics,
 		Config:    ctrlConfig,
 		APIReader: mgr.GetAPIReader(),

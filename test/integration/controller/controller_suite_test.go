@@ -115,12 +115,12 @@ var _ = ginkgo.BeforeSuite(func() {
 		Scheme:        k8sManager.GetScheme(),
 		OCP:           ocpClientMock,
 		WebhookClient: webhookMock,
-		Recorder:      k8sManager.GetEventRecorderFor("system-controller"),
+		Recorder:      k8sManager.GetEventRecorder("system-controller"),
 		Config: &configv2alpha2.ProjectConfig{
 			OPAControlPlaneConfig: &configv2alpha2.OPAControlPlaneConfig{
 				Address: "ocp-url",
 				Token:   "ocp-token",
-				GitCredentials: []*configv2alpha2.GitCredentials{&configv2alpha2.GitCredentials{
+				GitCredentials: []*configv2alpha2.GitCredentials{{
 					ID:         "github-credentials",
 					RepoPrefix: "https://github",
 				}},
