@@ -20,6 +20,7 @@ package v1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // Object is a very simple kubernetes object which doesn't have a spec or
@@ -32,5 +33,8 @@ type Object struct {
 }
 
 func init() {
-	SchemeBuilder.Register(&Object{})
+	SchemeBuilder.Register(func(s *runtime.Scheme) error {
+		s.AddKnownTypes(SchemeGroupVersion, &Object{})
+		return nil
+	})
 }

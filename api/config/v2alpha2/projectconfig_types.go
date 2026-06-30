@@ -18,6 +18,7 @@ package v2alpha2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 //+kubebuilder:object:root=true
@@ -194,5 +195,8 @@ type HTTP struct {
 }
 
 func init() {
-	SchemeBuilder.Register(&ProjectConfig{})
+	SchemeBuilder.Register(func(s *runtime.Scheme) error {
+		s.AddKnownTypes(SchemeGroupVersion, &ProjectConfig{})
+		return nil
+	})
 }

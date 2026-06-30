@@ -63,7 +63,7 @@ opaControlPlaneConfig:
 		&v2alpha2.ProjectConfig{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "ProjectConfig",
-				APIVersion: v2alpha2.GroupVersion.Identifier(),
+				APIVersion: v2alpha2.SchemeGroupVersion.Identifier(),
 			},
 			OPAControlPlaneConfig: &v2alpha2.OPAControlPlaneConfig{
 				Token: "my-token",

@@ -118,7 +118,7 @@ func deserialize(data []byte, scheme *runtime.Scheme) (*v2alpha2.ProjectConfig, 
 		return nil, errors.Wrap(err, "could not decode config")
 	}
 
-	if gvk.Group != v2alpha2.GroupVersion.Group {
+	if gvk.Group != v2alpha2.SchemeGroupVersion.Group {
 		return nil, errors.New("unsupported api group")
 	}
 
@@ -129,7 +129,7 @@ func deserialize(data []byte, scheme *runtime.Scheme) (*v2alpha2.ProjectConfig, 
 	cfg := &v2alpha2.ProjectConfig{}
 
 	switch gvk.Version {
-	case v2alpha2.GroupVersion.Version:
+	case v2alpha2.SchemeGroupVersion.Version:
 		if _, _, err := decoder.Decode(data, nil, cfg); err != nil {
 			return nil, errors.Wrap(err, "could not decode into kind")
 		}

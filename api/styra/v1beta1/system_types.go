@@ -434,7 +434,10 @@ type SystemList struct {
 }
 
 func init() {
-	SchemeBuilder.Register(&System{}, &SystemList{})
+	SchemeBuilder.Register(func(s *runtime.Scheme) error {
+		s.AddKnownTypes(SchemeGroupVersion, &System{}, &SystemList{})
+		return nil
+	})
 }
 
 // SetCondition updates the matching condition under the System's status field.
