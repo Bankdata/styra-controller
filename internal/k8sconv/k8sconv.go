@@ -19,8 +19,6 @@ limitations under the License.
 package k8sconv
 
 import (
-	"fmt"
-
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
@@ -213,7 +211,6 @@ func OPAConfToK8sOPAConfigMapforOCP(
 
 	var customConfig map[string]interface{}
 	if opaDefaultConfig.CustomConfig != nil {
-		fmt.Println("opaDefaultConfig.CustomConfig.Raw: ", string(opaDefaultConfig.CustomConfig.Raw))
 		err := yaml.Unmarshal(opaDefaultConfig.CustomConfig.Raw, &customConfig)
 		if err != nil {
 			return corev1.ConfigMap{}, errors.Wrap(err, "Could not unmarshal custom config")
