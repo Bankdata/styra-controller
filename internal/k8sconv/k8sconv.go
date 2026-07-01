@@ -19,6 +19,8 @@ limitations under the License.
 package k8sconv
 
 import (
+	"fmt"
+
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
@@ -141,7 +143,7 @@ type HTTPMetricsConfig struct {
 func OPAConfToK8sOPAConfigMapforOCP(
 	opaconf ocp.OPAConfig,
 	opaDefaultConfig configv2alpha2.OPAConfig,
-	customConfig map[string]interface{},
+	customConfigFromSystem map[string]interface{},
 	_ logr.Logger,
 ) (corev1.ConfigMap, error) {
 	var services []*ocp.OPAServiceConfig
@@ -209,9 +211,21 @@ func OPAConfToK8sOPAConfigMapforOCP(
 		return corev1.ConfigMap{}, err
 	}
 
-	merged := mergeMaps(opaConfigMapMapStringInterface, customConfig)
+	var customConfig map[string]interface{}
+	if opaDefaultConfig.CustomConfig != nil {
+		fmt.Println("opaDefaultConfig.CustomConfig.Raw: ", string(opaDefaultConfig.CustomConfig.Raw))
+		err := yaml.Unmarshal(opaDefaultConfig.CustomConfig.Raw, &customConfig)
+		if err != nil {
+			return corev1.ConfigMap{}, errors.Wrap(err, "Could not unmarshal custom config")
+		}
+	}
 
-	res, err := yaml.Marshal(&merged)
+	// The OPA config provided in the controller config should take precedence over the standard config in ocpOPAConfigMap
+	merged1 := mergeMaps(opaConfigMapMapStringInterface, customConfig)
+	// The config in the system resource should take precedence over all configs
+	merged2 := mergeMaps(merged1, customConfigFromSystem)
+
+	res, err := yaml.Marshal(&merged2)
 	if err != nil {
 		return corev1.ConfigMap{}, errors.Wrap(err, "Could not marshal configmap data")
 	}
@@ -241,6 +255,7 @@ func opaConfigMapToMap(cm interface{}) (map[string]interface{}, error) {
 }
 
 // mergeMaps recursively merges two map[string]interface{} variables
+// map2 takes precedence over map1 in case of key conflicts.
 func mergeMaps(map1, map2 map[string]interface{}) map[string]interface{} {
 	// TODO: some times, yaml structs have a name as a key and the value under it
 	// but other times, it is a list, where 'name' is one of the fields.
