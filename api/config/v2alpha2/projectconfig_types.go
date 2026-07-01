@@ -132,12 +132,13 @@ type GitCredentials struct {
 
 // OPAConfig contains default configuration for generated OPA config.
 type OPAConfig struct {
-	DecisionLogs           DecisionLog        `json:"decisionLogs,omitempty" yaml:"decisionLogs,omitempty"`
-	Metrics                MetricsConfig      `json:"metrics,omitempty" yaml:"metrics,omitempty"`
-	PersistBundle          bool               `json:"persist_bundle,omitempty" yaml:"persist_bundle,omitempty"`
-	PersistBundleDirectory string             `json:"persist_bundle_directory,omitempty" yaml:"persist_bundle_directory,omitempty"` //nolint:lll
-	BundleServer           *OPABundleServer   `json:"bundleServer,omitempty" yaml:"bundleServer,omitempty"`
-	DecisionAPIConfig      *DecisionAPIConfig `json:"decisionAPIConfig,omitempty" yaml:"decisionAPIConfig,omitempty"`
+	DecisionLogs           DecisionLog           `json:"decisionLogs,omitempty" yaml:"decisionLogs,omitempty"`
+	Metrics                MetricsConfig         `json:"metrics,omitempty" yaml:"metrics,omitempty"`
+	PersistBundle          bool                  `json:"persist_bundle,omitempty" yaml:"persist_bundle,omitempty"`
+	PersistBundleDirectory string                `json:"persist_bundle_directory,omitempty" yaml:"persist_bundle_directory,omitempty"` //nolint:lll
+	BundleServer           *OPABundleServer      `json:"bundleServer,omitempty" yaml:"bundleServer,omitempty"`
+	DecisionAPIConfig      *DecisionAPIConfig    `json:"decisionAPIConfig,omitempty" yaml:"decisionAPIConfig,omitempty"`
+	CustomConfig           *runtime.RawExtension `json:"customConfig,omitempty" yaml:"customConfig,omitempty"`
 }
 
 // OPABundleServer contains configuration for the OPA bundle server

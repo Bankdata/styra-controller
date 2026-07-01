@@ -424,9 +424,9 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 	log.Info("Reconciling OPA ConfigMap")
 
 	var expectedOPAConfigMap corev1.ConfigMap
-	var customConfig map[string]interface{}
+	var customConfigFromSystem map[string]interface{}
 	if system.Spec.CustomOPAConfig != nil {
-		err := yaml.Unmarshal(system.Spec.CustomOPAConfig.Raw, &customConfig)
+		err := yaml.Unmarshal(system.Spec.CustomOPAConfig.Raw, &customConfigFromSystem)
 		if err != nil {
 			return ctrl.Result{}, false, err
 		}
@@ -473,7 +473,7 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 		Namespace:            system.Namespace,
 	}
 
-	expectedOPAConfigMap, err = k8sconv.OPAConfToK8sOPAConfigMapforOCP(opaconf, r.Config.OPA, customConfig, log)
+	expectedOPAConfigMap, err = k8sconv.OPAConfToK8sOPAConfigMapforOCP(opaconf, r.Config.OPA, customConfigFromSystem, log)
 	if err != nil {
 		return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not convert OPA conf to ConfigMap").
 			WithEvent(v1beta1.EventErrorConvertOPAConf).
