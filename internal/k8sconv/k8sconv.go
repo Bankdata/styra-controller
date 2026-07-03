@@ -141,7 +141,9 @@ type HTTPMetricsConfig struct {
 func OPAConfToK8sOPAConfigMapforOCP(
 	opaconf ocp.OPAConfig,
 	opaDefaultConfig configv2alpha2.OPAConfig,
+	projectConfig map[string]interface{},
 	customConfig map[string]interface{},
+	opaConfig map[string]interface{},
 	_ logr.Logger,
 ) (corev1.ConfigMap, error) {
 	var services []*ocp.OPAServiceConfig
@@ -209,7 +211,9 @@ func OPAConfToK8sOPAConfigMapforOCP(
 		return corev1.ConfigMap{}, err
 	}
 
-	merged := mergeMaps(opaConfigMapMapStringInterface, customConfig)
+	merged := mergeMaps(opaConfigMapMapStringInterface, projectConfig)
+	merged = mergeMaps(merged, customConfig)
+	merged = mergeMaps(merged, opaConfig)
 
 	res, err := yaml.Marshal(&merged)
 	if err != nil {

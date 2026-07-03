@@ -43,17 +43,33 @@ type SystemSpec struct {
 	// Datasources represents a list of datasources to be mounted in the system.
 	Datasources []Datasource `json:"datasources,omitempty"`
 
-	// DiscoveryOverrides is an OPA config which will take precedence over the
-	// configuration supplied by the OPA discovery API. Configuration set here
-	// will be merged with the configuration supplied by the discovery API.
+	// Deprecated: DiscoveryOverrides is unused by the controller and will be
+	// removed in a future version. Use OPA.Config instead.
 	DiscoveryOverrides *DiscoveryOverrides `json:"discoveryOverrides,omitempty"`
 
 	SourceControl *SourceControl `json:"sourceControl,omitempty"`
 	LocalPlane    *LocalPlane    `json:"localPlane,omitempty"`
 
-	// CustomOPAConfig allows the owner of a System resource to set custom features
-	// without having to extend the Controller
-	CustomOPAConfig *runtime.RawExtension `json:"customOPAConfig,omitempty"`
+	// Deprecated: CustomOPAConfig allows the owner of a System resource to set
+	// custom OPA configuration that is merged into the generated OPA config.
+	// Use OPA.Config instead, which provides the same capability with runtime
+	// validation of field names against the OPA configuration schema.
+	// If both are set, OPA.Config takes precedence on conflicting keys.
+	CustomOPAConfig *OPAConfigSpec `json:"customOPAConfig,omitempty"`
+
+	// OPA contains OPA-specific configuration for this system.
+	OPA *SystemOPASpec `json:"opa,omitempty"`
+}
+
+// SystemOPASpec contains OPA-specific configuration for a System.
+type SystemOPASpec struct {
+	// Config accepts any valid OPA configuration YAML. The top-level keys are
+	// validated by the OPA configuration schema (see
+	// https://github.com/open-policy-agent/opa/blob/main/v1/config/config.go).
+	//
+	// Configuration set here is merged on top of the generated OPA config and
+	// takes precedence over the deprecated customOPAConfig field on conflicts.
+	Config *OPAConfigSpec `json:"config,omitempty"`
 }
 
 // DiscoveryOverrides specifies system specific overrides for the configuration

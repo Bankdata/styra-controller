@@ -54,7 +54,12 @@ type ProjectConfig struct {
 
 	LeaderElection *LeaderElectionConfig `json:"leaderElection"`
 
+	// Deprecated: OPA contains the legacy controller-managed OPA settings.
 	OPA OPAConfig `json:"opa,omitempty"`
+
+	// OPAConfig contains the full OPA configuration schema and takes
+	// precedence over the legacy OPA settings.
+	OPAConfig *OPAConfigSpec `json:"opaConfig,omitempty"`
 
 	// SystemPrefix is a prefix for all the systems that the controller creates.
 	SystemPrefix string `json:"systemPrefix"`
