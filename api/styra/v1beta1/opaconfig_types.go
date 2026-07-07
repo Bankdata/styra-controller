@@ -20,8 +20,6 @@ import (
 	"encoding/json"
 
 	"k8s.io/apimachinery/pkg/runtime"
-
-	"github.com/bankdata/styra-controller/pkg/opaconfig"
 )
 
 // OPAConfigSpec mirrors the official OPA configuration schema.
@@ -59,13 +57,11 @@ type OPAStorageConfig struct {
 	Disk *runtime.RawExtension `json:"disk,omitempty"`
 }
 
-// UnmarshalJSON validates the OPA config against the known schema keys before
-// decoding it.
+// UnmarshalJSON decodes the OPA config. Validation of keys against the OPA
+// schema is intentionally not done here so that existing resources with
+// non-standard keys can still be read by the controller. Validation is
+// performed on write via the admission webhook.
 func (c *OPAConfigSpec) UnmarshalJSON(data []byte) error {
-	if err := opaconfig.ValidateRaw(data); err != nil {
-		return err
-	}
-
 	type alias OPAConfigSpec
 	var decoded alias
 	if err := json.Unmarshal(data, &decoded); err != nil {

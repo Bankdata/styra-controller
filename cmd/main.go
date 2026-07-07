@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -110,8 +111,7 @@ func main() {
 
 	ctrlConfig, err := config.Load(configFiles, scheme)
 	if err != nil {
-		log.Error(err, "unable to load the config file(s)")
-		exit(err)
+		exit(errors.Errorf("unable to load the config file(s): %s", err.Error()))
 	}
 
 	ctrl.SetLogger(zap.New(
@@ -123,8 +123,7 @@ func main() {
 
 	mgr, err := ctrl.NewManager(restCfg, options)
 	if err != nil {
-		log.Error(err, "unable to start manager")
-		exit(err)
+		exit(errors.Errorf("unable to start manager: %s", err.Error()))
 	}
 
 	var opaControlPlaneClient ocp.ClientInterface
@@ -134,14 +133,12 @@ func main() {
 		err := errors.New(
 			"missing OPA Control Plane configuration: address and token are required",
 		)
-		log.Error(err, "unable to start manager")
-		exit(err)
+		exit(errors.Errorf("unable to start manager: %s", err.Error()))
 	}
 
 	if ctrlConfig.OPAControlPlaneConfig.BundleObjectStorage == nil {
 		err := errors.New("missing OPA Control Plane bundle object storage configuration")
-		log.Error(err, "unable to start manager")
-		exit(err)
+		exit(errors.Errorf("unable to start manager: %s", err.Error()))
 	}
 
 	ocpHostURL := strings.TrimSuffix(ctrlConfig.OPAControlPlaneConfig.Address, "/")
@@ -158,7 +155,6 @@ func main() {
 
 	if err := metrics.Registry.Register(systemReadyMetric); err != nil {
 		err := errors.Wrap(err, "could not register controller_system_status_ready metric")
-		log.Error(err, err.Error())
 		exit(err)
 	}
 
@@ -172,7 +168,6 @@ func main() {
 
 	if err := metrics.Registry.Register(reconcileSegmentTimeMetric); err != nil {
 		err := errors.Wrap(err, "could not register reconcileSegmentTimeMetric")
-		log.Error(err, err.Error())
 		exit(err)
 	}
 
@@ -186,7 +181,6 @@ func main() {
 
 	if err := metrics.Registry.Register(reconcileTimeMetric); err != nil {
 		err := errors.Wrap(err, "could not register reconcileTimeMetric")
-		log.Error(err, err.Error())
 		exit(err)
 	}
 
@@ -212,19 +206,16 @@ func main() {
 		ctrlConfig.OPAControlPlaneConfig.LibraryDatasourceChanged)
 
 	if err = r1.SetupWithManager(mgr, "styra-controller"); err != nil {
-		log.Error(err, "unable to create controller", "controller", "System")
-		exit(err)
+		exit(errors.Errorf("unable to create System controller: %s", err.Error()))
 	}
 
 	if err = r1.CreateDefaultRequirements(context.Background(), log); err != nil {
-		log.Error(err, "unable to create default requirements")
-		exit(err)
+		exit(errors.Errorf("unable to create default requirements: %s", err.Error()))
 	}
 
 	if !ctrlConfig.DisableCRDWebhooks {
 		if err = webhookstyrav1beta1.SetupSystemWebhookWithManager(mgr); err != nil {
-			log.Error(err, "unable to create webhook", "webhook", "System")
-			os.Exit(1)
+			exit(errors.Errorf("unable to create System webhook: %s", err.Error()))
 		}
 	}
 
@@ -241,33 +232,30 @@ func main() {
 		ctrlConfig.OPAControlPlaneConfig.LibraryDatasourceChanged)
 
 	if err = libraryReconciler.SetupWithManager(mgr); err != nil {
-		log.Error(err, "unable to create controller", "controller", "Library")
-		os.Exit(1)
+		exit(errors.Errorf("unable to create Library controller: %s", err.Error()))
 	}
 
 	if !ctrlConfig.DisableCRDWebhooks {
 		if err = webhookstyrav1alpha1.SetupLibraryWebhookWithManager(mgr); err != nil {
-			log.Error(err, "unable to create webhook", "webhook", "Library")
-			os.Exit(1)
+			exit(errors.Errorf("unable to create Library webhook: %s", err.Error()))
 		}
 	}
 	//+kubebuilder:scaffold:builder
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		log.Error(err, "unable to set up health check")
-		exit(err)
+		exit(errors.Errorf("unable to set up health check: %s", err.Error()))
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		log.Error(err, "unable to set up ready check")
-		exit(err)
+		exit(errors.Errorf("unable to set up ready check: %s", err.Error()))
 	}
 
 	log.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		log.Error(err, "problem running manager")
-		exit(err)
+		exit(errors.Errorf("problem running manager: %s", err.Error()))
 	}
 }
 
-func exit(_ error) {
+func exit(err error) {
+	fmt.Printf("Exiting due to error: %v\n", err)
+	time.Sleep(10 * time.Second)
 	os.Exit(1)
 }

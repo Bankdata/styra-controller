@@ -736,6 +736,208 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="styra.bankdata.dk/v1beta1.OPAConfigSpec">OPAConfigSpec
+</h3>
+<p>
+(<em>Appears on:</em><a href="#styra.bankdata.dk/v1beta1.SystemOPASpec">SystemOPASpec</a>)
+</p>
+<div>
+<p>OPAConfigSpec mirrors the official OPA configuration schema.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>services</code><br/>
+<em>
+k8s.io/apimachinery/pkg/runtime.RawExtension
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>labels</code><br/>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>discovery</code><br/>
+<em>
+k8s.io/apimachinery/pkg/runtime.RawExtension
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>bundle</code><br/>
+<em>
+k8s.io/apimachinery/pkg/runtime.RawExtension
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>bundles</code><br/>
+<em>
+k8s.io/apimachinery/pkg/runtime.RawExtension
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>decision_logs</code><br/>
+<em>
+k8s.io/apimachinery/pkg/runtime.RawExtension
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code><br/>
+<em>
+k8s.io/apimachinery/pkg/runtime.RawExtension
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>plugins</code><br/>
+<em>
+map[string]*k8s.io/apimachinery/pkg/runtime.RawExtension
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>keys</code><br/>
+<em>
+k8s.io/apimachinery/pkg/runtime.RawExtension
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>default_decision</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>default_authorization_decision</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>caching</code><br/>
+<em>
+k8s.io/apimachinery/pkg/runtime.RawExtension
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>nd_builtin_cache</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>persistence_directory</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>distributed_tracing</code><br/>
+<em>
+k8s.io/apimachinery/pkg/runtime.RawExtension
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>metrics_export</code><br/>
+<em>
+k8s.io/apimachinery/pkg/runtime.RawExtension
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>server</code><br/>
+<em>
+<a href="#styra.bankdata.dk/v1beta1.OPAServerConfig">
+OPAServerConfig
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>storage</code><br/>
+<em>
+<a href="#styra.bankdata.dk/v1beta1.OPAStorageConfig">
+OPAStorageConfig
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="styra.bankdata.dk/v1beta1.OPAConfigStatus">OPAConfigStatus
 </h3>
 <p>
@@ -757,6 +959,92 @@ string
 <code>prometheus</code><br/>
 <em>
 bool
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="styra.bankdata.dk/v1beta1.OPAServerConfig">OPAServerConfig
+</h3>
+<p>
+(<em>Appears on:</em><a href="#styra.bankdata.dk/v1beta1.OPAConfigSpec">OPAConfigSpec</a>)
+</p>
+<div>
+<p>OPAServerConfig mirrors OPA&rsquo;s server configuration section.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>metrics</code><br/>
+<em>
+k8s.io/apimachinery/pkg/runtime.RawExtension
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>encoding</code><br/>
+<em>
+k8s.io/apimachinery/pkg/runtime.RawExtension
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>decoding</code><br/>
+<em>
+k8s.io/apimachinery/pkg/runtime.RawExtension
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>logger_plugin</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="styra.bankdata.dk/v1beta1.OPAStorageConfig">OPAStorageConfig
+</h3>
+<p>
+(<em>Appears on:</em><a href="#styra.bankdata.dk/v1beta1.OPAConfigSpec">OPAConfigSpec</a>)
+</p>
+<div>
+<p>OPAStorageConfig mirrors OPA&rsquo;s storage configuration section.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>disk</code><br/>
+<em>
+k8s.io/apimachinery/pkg/runtime.RawExtension
 </em>
 </td>
 <td>
@@ -1003,9 +1291,8 @@ DiscoveryOverrides
 </em>
 </td>
 <td>
-<p>DiscoveryOverrides is an OPA config which will take precedence over the
-configuration supplied by the OPA discovery API. Configuration set here
-will be merged with the configuration supplied by the discovery API.</p>
+<p>Deprecated: DiscoveryOverrides is unused by the controller and will be
+removed in a future version. Use OPA.Config instead.</p>
 </td>
 </tr>
 <tr>
@@ -1040,8 +1327,24 @@ k8s.io/apimachinery/pkg/runtime.RawExtension
 </em>
 </td>
 <td>
-<p>CustomOPAConfig allows the owner of a System resource to set custom features
-without having to extend the Controller</p>
+<p>Deprecated: CustomOPAConfig allows the owner of a System resource to set
+custom OPA configuration that is merged into the generated OPA config.
+Use OPA.Config instead, which provides the same capability with runtime
+validation of field names against the OPA configuration schema.
+If both are set, OPA.Config takes precedence on conflicting keys.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>opa</code><br/>
+<em>
+<a href="#styra.bankdata.dk/v1beta1.SystemOPASpec">
+SystemOPASpec
+</a>
+</em>
+</td>
+<td>
+<p>OPA contains OPA-specific configuration for this system.</p>
 </td>
 </tr>
 </table>
@@ -1058,6 +1361,41 @@ SystemStatus
 </td>
 <td>
 <p>Status is the status of the System resource.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="styra.bankdata.dk/v1beta1.SystemOPASpec">SystemOPASpec
+</h3>
+<p>
+(<em>Appears on:</em><a href="#styra.bankdata.dk/v1beta1.SystemSpec">SystemSpec</a>)
+</p>
+<div>
+<p>SystemOPASpec contains OPA-specific configuration for a System.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>config</code><br/>
+<em>
+<a href="#styra.bankdata.dk/v1beta1.OPAConfigSpec">
+OPAConfigSpec
+</a>
+</em>
+</td>
+<td>
+<p>Config accepts any valid OPA configuration YAML. The top-level keys are
+validated by the OPA configuration schema (see
+<a href="https://github.com/open-policy-agent/opa/blob/main/v1/config/config.go)">https://github.com/open-policy-agent/opa/blob/main/v1/config/config.go)</a>.</p>
+<p>Configuration set here is merged on top of the generated OPA config and
+takes precedence over the deprecated customOPAConfig field on conflicts.</p>
 </td>
 </tr>
 </tbody>
@@ -1179,9 +1517,8 @@ DiscoveryOverrides
 </em>
 </td>
 <td>
-<p>DiscoveryOverrides is an OPA config which will take precedence over the
-configuration supplied by the OPA discovery API. Configuration set here
-will be merged with the configuration supplied by the discovery API.</p>
+<p>Deprecated: DiscoveryOverrides is unused by the controller and will be
+removed in a future version. Use OPA.Config instead.</p>
 </td>
 </tr>
 <tr>
@@ -1216,8 +1553,24 @@ k8s.io/apimachinery/pkg/runtime.RawExtension
 </em>
 </td>
 <td>
-<p>CustomOPAConfig allows the owner of a System resource to set custom features
-without having to extend the Controller</p>
+<p>Deprecated: CustomOPAConfig allows the owner of a System resource to set
+custom OPA configuration that is merged into the generated OPA config.
+Use OPA.Config instead, which provides the same capability with runtime
+validation of field names against the OPA configuration schema.
+If both are set, OPA.Config takes precedence on conflicting keys.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>opa</code><br/>
+<em>
+<a href="#styra.bankdata.dk/v1beta1.SystemOPASpec">
+SystemOPASpec
+</a>
+</em>
+</td>
+<td>
+<p>OPA contains OPA-specific configuration for this system.</p>
 </td>
 </tr>
 </tbody>
@@ -1303,5 +1656,5 @@ System.</p>
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>4b70bcc</code>.
+on git commit <code>24c7f90</code>.
 </em></p>

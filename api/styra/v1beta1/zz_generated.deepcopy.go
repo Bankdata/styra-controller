@@ -572,7 +572,7 @@ func (in *SystemSpec) DeepCopyInto(out *SystemSpec) {
 	}
 	if in.CustomOPAConfig != nil {
 		in, out := &in.CustomOPAConfig, &out.CustomOPAConfig
-		*out = new(OPAConfigSpec)
+		*out = new(runtime.RawExtension)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.OPA != nil {

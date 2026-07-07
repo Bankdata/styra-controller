@@ -18,6 +18,8 @@ limitations under the License.
 package opaconfig
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -83,15 +85,44 @@ func ToMap(cfg any) (map[string]interface{}, error) {
 		return nil, nil
 	}
 
-	bs, err := yaml.Marshal(cfg)
+	bs, err := json.Marshal(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("could not marshal OPA config: %w", err)
 	}
 
+	// UseNumber preserves integer values as-is instead of converting them to
+	// float64, which yaml.Marshal would format as scientific notation for large
+	// values (e.g. 1048576 → 1.048576e+06).
+	dec := json.NewDecoder(bytes.NewReader(bs))
+	dec.UseNumber()
 	var result map[string]interface{}
-	if err := yaml.Unmarshal(bs, &result); err != nil {
+	if err := dec.Decode(&result); err != nil {
 		return nil, fmt.Errorf("could not unmarshal OPA config: %w", err)
 	}
 
-	return result, nil
+	return convertJSONNumbers(result).(map[string]interface{}), nil
+}
+
+// convertJSONNumbers recursively converts json.Number values to int64 or
+// float64 so that yaml.Marshal produces human-readable output.
+func convertJSONNumbers(v interface{}) interface{} {
+	switch val := v.(type) {
+	case json.Number:
+		if i, err := val.Int64(); err == nil {
+			return i
+		}
+		if f, err := val.Float64(); err == nil {
+			return f
+		}
+		return val.String()
+	case map[string]interface{}:
+		for k, vv := range val {
+			val[k] = convertJSONNumbers(vv)
+		}
+	case []interface{}:
+		for i, vv := range val {
+			val[i] = convertJSONNumbers(vv)
+		}
+	}
+	return v
 }

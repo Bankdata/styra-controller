@@ -55,7 +55,7 @@ type SystemSpec struct {
 	// Use OPA.Config instead, which provides the same capability with runtime
 	// validation of field names against the OPA configuration schema.
 	// If both are set, OPA.Config takes precedence on conflicting keys.
-	CustomOPAConfig *OPAConfigSpec `json:"customOPAConfig,omitempty"`
+	CustomOPAConfig *runtime.RawExtension `json:"customOPAConfig,omitempty"`
 
 	// OPA contains OPA-specific configuration for this system.
 	OPA *SystemOPASpec `json:"opa,omitempty"`

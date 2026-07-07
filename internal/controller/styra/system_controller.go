@@ -423,7 +423,6 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 ) (ctrl.Result, bool, error) {
 	log.Info("Reconciling OPA ConfigMap")
 
-	var expectedOPAConfigMap corev1.ConfigMap
 	var projectConfig map[string]interface{}
 	if r.Config.OPAConfig != nil {
 		var err error
@@ -458,33 +457,38 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 	legacyOPA := r.Config.OPA //nolint:staticcheck
 	legacyBundleServer := legacyOPA.BundleServer
 	legacyDecisionAPIConfig := legacyOPA.DecisionAPIConfig
-	bundleURL, err := url.JoinPath(legacyBundleServer.URL, legacyBundleServer.Path)
-	if err != nil {
-		return ctrl.Result{}, false, ctrlerr.Wrap(err, "Invalid OPA BundleServer URL or path").
-			WithEvent(v1beta1.EventErrorConvertOPAConf).
-			WithSystemCondition(v1beta1.ConditionTypeOPAConfigMapUpdated)
-	}
 
-	bundleServiceCredentials := &ocp.ServiceCredentials{
-		S3: &ocp.S3Signing{
-			S3EnvironmentCredentials: map[string]ocp.EmptyStruct{},
-		},
-	}
-	if legacyBundleServer.TokenPath != "" {
-		bundleServiceCredentials = &ocp.ServiceCredentials{
-			Bearer: &ocp.Bearer{
-				TokenPath: legacyBundleServer.TokenPath,
+	var bundleService *ocp.OPAServiceConfig
+	if legacyBundleServer != nil {
+		bundleURL, err := url.JoinPath(legacyBundleServer.URL, legacyBundleServer.Path)
+		if err != nil {
+			return ctrl.Result{}, false, ctrlerr.Wrap(err, "Invalid OPA BundleServer URL or path").
+				WithEvent(v1beta1.EventErrorConvertOPAConf).
+				WithSystemCondition(v1beta1.ConditionTypeOPAConfigMapUpdated)
+		}
+		bundleServiceCredentials := &ocp.ServiceCredentials{
+			S3: &ocp.S3Signing{
+				S3EnvironmentCredentials: map[string]ocp.EmptyStruct{},
 			},
 		}
-	}
-
-	opaconf := ocp.OPAConfig{
-		BundleService: &ocp.OPAServiceConfig{
+		if legacyBundleServer.TokenPath != "" {
+			bundleServiceCredentials = &ocp.ServiceCredentials{
+				Bearer: &ocp.Bearer{
+					TokenPath: legacyBundleServer.TokenPath,
+				},
+			}
+		}
+		bundleService = &ocp.OPAServiceConfig{
 			Name:        legacyBundleServer.Name,
 			URL:         bundleURL,
 			Credentials: bundleServiceCredentials,
-		},
-		LogService: &ocp.OPAServiceConfig{
+		}
+	}
+
+	var logService *ocp.OPAServiceConfig
+	var decisionLogReporting configv2alpha2.DecisionLogReporting
+	if legacyDecisionAPIConfig != nil {
+		logService = &ocp.OPAServiceConfig{
 			Name: legacyDecisionAPIConfig.Name,
 			URL:  legacyDecisionAPIConfig.ServiceURL,
 			Credentials: &ocp.ServiceCredentials{
@@ -492,14 +496,20 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 					TokenPath: legacyDecisionAPIConfig.TokenPath,
 				},
 			},
-		},
-		DecisionLogReporting: legacyDecisionAPIConfig.Reporting,
+		}
+		decisionLogReporting = legacyDecisionAPIConfig.Reporting
+	}
+
+	opaconf := ocp.OPAConfig{
+		BundleService:        bundleService,
+		LogService:           logService,
+		DecisionLogReporting: decisionLogReporting,
 		BundleResource:       fmt.Sprintf("bundles/%s/bundle.tar.gz", uniqueName),
 		UniqueName:           uniqueName,
 		Namespace:            system.Namespace,
 	}
 
-	expectedOPAConfigMap, err = k8sconv.OPAConfToK8sOPAConfigMapforOCP(
+	expectedOPAConfigMap, err := k8sconv.OPAConfToK8sOPAConfigMapforOCP(
 		opaconf,
 		legacyOPA,
 		projectConfig,

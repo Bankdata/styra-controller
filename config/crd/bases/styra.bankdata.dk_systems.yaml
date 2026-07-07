@@ -56,79 +56,8 @@ spec:
                   Use OPA.Config instead, which provides the same capability with runtime
                   validation of field names against the OPA configuration schema.
                   If both are set, OPA.Config takes precedence on conflicting keys.
-                properties:
-                  bundle:
-                    type: object
-                    x-kubernetes-preserve-unknown-fields: true
-                  bundles:
-                    type: object
-                    x-kubernetes-preserve-unknown-fields: true
-                  caching:
-                    type: object
-                    x-kubernetes-preserve-unknown-fields: true
-                  decision_logs:
-                    type: object
-                    x-kubernetes-preserve-unknown-fields: true
-                  default_authorization_decision:
-                    type: string
-                  default_decision:
-                    type: string
-                  discovery:
-                    type: object
-                    x-kubernetes-preserve-unknown-fields: true
-                  distributed_tracing:
-                    type: object
-                    x-kubernetes-preserve-unknown-fields: true
-                  keys:
-                    type: object
-                    x-kubernetes-preserve-unknown-fields: true
-                  labels:
-                    additionalProperties:
-                      type: string
-                    type: object
-                  metrics_export:
-                    type: object
-                    x-kubernetes-preserve-unknown-fields: true
-                  nd_builtin_cache:
-                    type: boolean
-                  persistence_directory:
-                    type: string
-                  plugins:
-                    additionalProperties:
-                      type: object
-                      x-kubernetes-preserve-unknown-fields: true
-                    type: object
-                  server:
-                    description: OPAServerConfig mirrors OPA's server configuration
-                      section.
-                    properties:
-                      decoding:
-                        type: object
-                        x-kubernetes-preserve-unknown-fields: true
-                      encoding:
-                        type: object
-                        x-kubernetes-preserve-unknown-fields: true
-                      logger_plugin:
-                        type: string
-                      metrics:
-                        type: object
-                        x-kubernetes-preserve-unknown-fields: true
-                    type: object
-                  services:
-                    type: object
-                    x-kubernetes-preserve-unknown-fields: true
-                  status:
-                    type: object
-                    x-kubernetes-preserve-unknown-fields: true
-                  storage:
-                    description: OPAStorageConfig mirrors OPA's storage configuration
-                      section.
-                    properties:
-                      disk:
-                        type: object
-                        x-kubernetes-preserve-unknown-fields: true
-                    type: object
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               datasources:
                 description: Datasources represents a list of datasources to be mounted
                   in the system.

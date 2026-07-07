@@ -37,8 +37,8 @@ type credentials struct {
 }
 
 type authz struct {
-	Service  string `yaml:"service"`
-	Resource string `yaml:"resource"`
+	Service  string `yaml:"service,omitempty"`
+	Resource string `yaml:"resource,omitempty"`
 	Persist  bool   `yaml:"persist,omitempty"`
 }
 
@@ -156,18 +156,24 @@ func OPAConfToK8sOPAConfigMapforOCP(
 	}
 
 	ocpOPAConfigMap := OcpOPAConfigMap{
-		Bundles: bundle{
-			Authz: authz{
-				Service:  opaconf.BundleService.Name,
-				Resource: opaconf.BundleResource,
-			},
-		},
 		Services: services,
 		Labels: labelsOCP{
 			UniqueName: opaconf.UniqueName,
 			Namespace:  opaconf.Namespace,
 		},
-		DecisionLogs: DecisionLogs{
+		Bundles: bundle{
+			Authz: authz{
+				Resource: opaconf.BundleResource,
+			},
+		},
+	}
+
+	if opaconf.BundleService != nil {
+		ocpOPAConfigMap.Bundles.Authz.Service = opaconf.BundleService.Name
+	}
+
+	if opaconf.LogService != nil {
+		ocpOPAConfigMap.DecisionLogs = DecisionLogs{
 			ServiceName:  opaconf.LogService.Name,
 			ResourcePath: "/logs",
 			Reporting: &DecisionLogReporting{
@@ -175,7 +181,7 @@ func OPAConfToK8sOPAConfigMapforOCP(
 				MinDelaySeconds:      opaconf.DecisionLogReporting.MinDelaySeconds,
 				UploadSizeLimitBytes: opaconf.DecisionLogReporting.UploadSizeLimitBytes,
 			},
-		},
+		}
 	}
 
 	if opaDefaultConfig.Metrics.Prometheus.HTTP.Buckets != nil {
