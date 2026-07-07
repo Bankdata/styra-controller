@@ -136,6 +136,8 @@ type GitCredentials struct {
 }
 
 // OPAConfig contains default configuration for generated OPA config.
+//
+// Deprecated: use the typed OPA config schema instead.
 type OPAConfig struct {
 	DecisionLogs           DecisionLog        `json:"decisionLogs,omitempty" yaml:"decisionLogs,omitempty"`
 	Metrics                MetricsConfig      `json:"metrics,omitempty" yaml:"metrics,omitempty"`
@@ -173,7 +175,9 @@ type DecisionLog struct {
 	RequestContext RequestContext `json:"requestContext,omitempty"`
 }
 
-// DecisionAPIConfig contains configuration for decision log dispatch
+// DecisionAPIConfig contains configuration for decision log dispatch.
+//
+// Deprecated: use the typed OPA config schema instead.
 type DecisionAPIConfig struct {
 	Name       string               `json:"name,omitempty"`
 	ServiceURL string               `json:"serviceUrl,omitempty"`
@@ -181,7 +185,9 @@ type DecisionAPIConfig struct {
 	Reporting  DecisionLogReporting `json:"reporting,omitempty"`
 }
 
-// DecisionLogReporting contains configuration for decision log reporting
+// DecisionLogReporting contains configuration for decision log reporting.
+//
+// Deprecated: use the typed OPA config schema instead.
 type DecisionLogReporting struct {
 	MaxDelaySeconds      int `json:"maxDelaySeconds,omitempty" yaml:"maxDelaySeconds,omitempty"`
 	MinDelaySeconds      int `json:"minDelaySeconds,omitempty" yaml:"minDelaySeconds,omitempty"`

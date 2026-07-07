@@ -66,8 +66,7 @@ func (c *OPAConfigSpec) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	type alias OPAConfigSpec
-	var decoded alias
+	var decoded OPAConfigSpec
 	if err := json.Unmarshal(data, &decoded); err != nil {
 		return err
 	}

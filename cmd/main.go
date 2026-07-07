@@ -111,7 +111,7 @@ func main() {
 
 	ctrlConfig, err := config.Load(configFiles, scheme)
 	if err != nil {
-		exit(errors.Errorf("unable to load the config file(s): %s", err.Error()))
+		exit(errors.Wrap(err, "unable to load the config file(s)"))
 	}
 
 	ctrl.SetLogger(zap.New(
@@ -123,7 +123,7 @@ func main() {
 
 	mgr, err := ctrl.NewManager(restCfg, options)
 	if err != nil {
-		exit(errors.Errorf("unable to start manager: %s", err.Error()))
+		exit(errors.Wrap(err, "unable to start manager"))
 	}
 
 	var opaControlPlaneClient ocp.ClientInterface
@@ -133,12 +133,12 @@ func main() {
 		err := errors.New(
 			"missing OPA Control Plane configuration: address and token are required",
 		)
-		exit(errors.Errorf("unable to start manager: %s", err.Error()))
+		exit(errors.Wrap(err, "unable to start manager"))
 	}
 
 	if ctrlConfig.OPAControlPlaneConfig.BundleObjectStorage == nil {
 		err := errors.New("missing OPA Control Plane bundle object storage configuration")
-		exit(errors.Errorf("unable to start manager: %s", err.Error()))
+		exit(errors.Wrap(err, "unable to start manager"))
 	}
 
 	ocpHostURL := strings.TrimSuffix(ctrlConfig.OPAControlPlaneConfig.Address, "/")
@@ -206,16 +206,16 @@ func main() {
 		ctrlConfig.OPAControlPlaneConfig.LibraryDatasourceChanged)
 
 	if err = r1.SetupWithManager(mgr, "styra-controller"); err != nil {
-		exit(errors.Errorf("unable to create System controller: %s", err.Error()))
+		exit(errors.Wrap(err, "unable to create System controller"))
 	}
 
 	if err = r1.CreateDefaultRequirements(context.Background(), log); err != nil {
-		exit(errors.Errorf("unable to create default requirements: %s", err.Error()))
+		exit(errors.Wrap(err, "unable to create default requirements"))
 	}
 
 	if !ctrlConfig.DisableCRDWebhooks {
 		if err = webhookstyrav1beta1.SetupSystemWebhookWithManager(mgr); err != nil {
-			exit(errors.Errorf("unable to create System webhook: %s", err.Error()))
+			exit(errors.Wrap(err, "unable to create System webhook"))
 		}
 	}
 
@@ -232,25 +232,25 @@ func main() {
 		ctrlConfig.OPAControlPlaneConfig.LibraryDatasourceChanged)
 
 	if err = libraryReconciler.SetupWithManager(mgr); err != nil {
-		exit(errors.Errorf("unable to create Library controller: %s", err.Error()))
+		exit(errors.Wrap(err, "unable to create Library controller"))
 	}
 
 	if !ctrlConfig.DisableCRDWebhooks {
 		if err = webhookstyrav1alpha1.SetupLibraryWebhookWithManager(mgr); err != nil {
-			exit(errors.Errorf("unable to create Library webhook: %s", err.Error()))
+			exit(errors.Wrap(err, "unable to create Library webhook"))
 		}
 	}
 	//+kubebuilder:scaffold:builder
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		exit(errors.Errorf("unable to set up health check: %s", err.Error()))
+		exit(errors.Wrap(err, "unable to set up health check"))
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		exit(errors.Errorf("unable to set up ready check: %s", err.Error()))
+		exit(errors.Wrap(err, "unable to set up ready check"))
 	}
 
 	log.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		exit(errors.Errorf("problem running manager: %s", err.Error()))
+		exit(errors.Wrap(err, "problem running manager"))
 	}
 }
 

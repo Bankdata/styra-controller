@@ -27,10 +27,12 @@ type OPAConfig struct {
 	UniqueName           string
 	Namespace            string
 	BundleResource       string
-	DecisionLogReporting configv2alpha2.DecisionLogReporting
+	DecisionLogReporting configv2alpha2.DecisionLogReporting //nolint:staticcheck
 }
 
-// OPAServiceConfig defines a services added to the OPAs' config files.
+// OPAServiceConfig defines services added to the OPAs' config files.
+//
+// Deprecated: use OPAServiceConfigV2 instead.
 type OPAServiceConfig struct {
 	Name                         string              `json:"name" yaml:"name"`
 	Credentials                  *ServiceCredentials `json:"credentials" yaml:"credentials"`
@@ -39,12 +41,16 @@ type OPAServiceConfig struct {
 }
 
 // ServiceCredentials defines the structure for service credentials.
+//
+// Deprecated: use the equivalent in a non-deprecated type.
 type ServiceCredentials struct {
 	Bearer *Bearer    `json:"bearer,omitempty" yaml:"bearer,omitempty"`
 	S3     *S3Signing `json:"s3_signing,omitempty" yaml:"s3_signing,omitempty"`
 }
 
 // S3Signing defines the structure for S3 signing configuration.
+//
+// Deprecated: use the equivalent in a non-deprecated type.
 type S3Signing struct {
 	S3EnvironmentCredentials map[string]EmptyStruct `json:"environment_credentials" yaml:"environment_credentials"`
 }
@@ -53,6 +59,8 @@ type S3Signing struct {
 type EmptyStruct struct{}
 
 // Bearer defines the structure for bearer token credentials.
+//
+// Deprecated: use the equivalent in a non-deprecated type.
 type Bearer struct {
 	TokenPath string `json:"token_path" yaml:"token_path"`
 }

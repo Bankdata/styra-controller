@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package k8sconv_test
+package k8sconv_test //nolint:staticcheck
 
 import (
 	"strings"
@@ -46,7 +46,10 @@ var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMap", func() {
 			nil,
 			test.customConfig,
 			nil,
-			logr.Discard())
+			logr.Discard(),
+			test.opaconf.BundleService,
+			test.opaconf.LogService,
+			test.opaconf.DecisionLogReporting)
 
 		gomega.Expect(err).To(gomega.BeNil())
 
@@ -172,7 +175,10 @@ var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMap", func() {
 			nil,
 			test.customConfig,
 			nil,
-			logr.Discard())
+			logr.Discard(),
+			test.opaconf.BundleService,
+			test.opaconf.LogService,
+			test.opaconf.DecisionLogReporting)
 
 		gomega.Expect(err).To(gomega.BeNil())
 
@@ -290,7 +296,10 @@ var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMap opaConfig precedence", func() 
 			nil,
 			test.customConfig,
 			test.opaConfig,
-			logr.Discard())
+			logr.Discard(),
+			test.opaconf.BundleService,
+			test.opaconf.LogService,
+			test.opaconf.DecisionLogReporting)
 
 		gomega.Expect(err).To(gomega.BeNil())
 
@@ -458,7 +467,10 @@ var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMap controller opaConfig precedenc
 			test.projectConfig,
 			test.customConfig,
 			test.opaConfig,
-			logr.Discard())
+			logr.Discard(),
+			test.opaconf.BundleService,
+			test.opaconf.LogService,
+			test.opaconf.DecisionLogReporting)
 
 		gomega.Expect(err).To(gomega.BeNil())
 
