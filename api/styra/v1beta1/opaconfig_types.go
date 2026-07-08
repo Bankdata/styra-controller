@@ -62,7 +62,10 @@ type OPAStorageConfig struct {
 // non-standard keys can still be read by the controller. Validation is
 // performed on write via the admission webhook.
 func (c *OPAConfigSpec) UnmarshalJSON(data []byte) error {
-	var decoded OPAConfigSpec
+	// Use a local alias to avoid infinite recursion: json.Unmarshal on the
+	// alias type uses the default struct decoder, bypassing this method.
+	type alias OPAConfigSpec
+	var decoded alias
 	if err := json.Unmarshal(data, &decoded); err != nil {
 		return err
 	}
