@@ -54,7 +54,12 @@ type ProjectConfig struct {
 
 	LeaderElection *LeaderElectionConfig `json:"leaderElection"`
 
+	// Deprecated: OPA contains the legacy controller-managed OPA settings.
 	OPA OPAConfig `json:"opa,omitempty"`
+
+	// OPAConfig contains the full OPA configuration schema and takes
+	// precedence over the legacy OPA settings.
+	OPAConfig *OPAConfigSpec `json:"opaConfig,omitempty"`
 
 	// SystemPrefix is a prefix for all the systems that the controller creates.
 	SystemPrefix string `json:"systemPrefix"`
@@ -131,6 +136,8 @@ type GitCredentials struct {
 }
 
 // OPAConfig contains default configuration for generated OPA config.
+//
+// Deprecated: use the typed OPA config schema instead.
 type OPAConfig struct {
 	DecisionLogs           DecisionLog        `json:"decisionLogs,omitempty" yaml:"decisionLogs,omitempty"`
 	Metrics                MetricsConfig      `json:"metrics,omitempty" yaml:"metrics,omitempty"`
@@ -168,7 +175,9 @@ type DecisionLog struct {
 	RequestContext RequestContext `json:"requestContext,omitempty"`
 }
 
-// DecisionAPIConfig contains configuration for decision log dispatch
+// DecisionAPIConfig contains configuration for decision log dispatch.
+//
+// Deprecated: use the typed OPA config schema instead.
 type DecisionAPIConfig struct {
 	Name       string               `json:"name,omitempty"`
 	ServiceURL string               `json:"serviceUrl,omitempty"`
@@ -176,7 +185,9 @@ type DecisionAPIConfig struct {
 	Reporting  DecisionLogReporting `json:"reporting,omitempty"`
 }
 
-// DecisionLogReporting contains configuration for decision log reporting
+// DecisionLogReporting contains configuration for decision log reporting.
+//
+// Deprecated: use the typed OPA config schema instead.
 type DecisionLogReporting struct {
 	MaxDelaySeconds      int `json:"maxDelaySeconds,omitempty" yaml:"maxDelaySeconds,omitempty"`
 	MinDelaySeconds      int `json:"minDelaySeconds,omitempty" yaml:"minDelaySeconds,omitempty"`

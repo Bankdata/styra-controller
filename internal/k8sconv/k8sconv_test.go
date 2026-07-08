@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package k8sconv_test
+package k8sconv_test //nolint:staticcheck
 
 import (
 	"strings"
@@ -43,8 +43,13 @@ var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMap", func() {
 		cm, err := k8sconv.OPAConfToK8sOPAConfigMapforOCP(
 			test.opaconf,
 			test.opaDefaultConfig,
+			nil,
 			test.customConfig,
-			logr.Discard())
+			nil,
+			logr.Discard(),
+			test.opaconf.BundleService,
+			test.opaconf.LogService,
+			test.opaconf.DecisionLogReporting)
 
 		gomega.Expect(err).To(gomega.BeNil())
 
@@ -73,6 +78,8 @@ var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMap", func() {
 				PersistBundleDirectory: "/opa-bundles",
 			},
 			opaconf: ocp.OPAConfig{
+				UniqueName:     "system",
+				Namespace:      "system-ns",
 				BundleResource: "bundles/system/bundle.tar.gz",
 				BundleService: &ocp.OPAServiceConfig{
 					Name: "s3",
@@ -127,6 +134,9 @@ bundles:
     persist: true
     test: 123
 persistence_directory: /opa-bundles
+labels:
+  namespace: system-ns
+  unique-name: system
 decision_logs:
   reporting:
     upload_size_limit_bytes: 1
@@ -162,8 +172,13 @@ var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMap", func() {
 		cm, err := k8sconv.OPAConfToK8sOPAConfigMapforOCP(
 			test.opaconf,
 			test.opaDefaultConfig,
+			nil,
 			test.customConfig,
-			logr.Discard())
+			nil,
+			logr.Discard(),
+			test.opaconf.BundleService,
+			test.opaconf.LogService,
+			test.opaconf.DecisionLogReporting)
 
 		gomega.Expect(err).To(gomega.BeNil())
 
@@ -258,6 +273,296 @@ decision_logs:
 distributed_tracing:
   type: grpc
   address: localhost:1234
+`,
+		}),
+	)
+})
+
+// Test that spec.opa.config (opaConfig) takes highest precedence over customConfig on conflict.
+var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMap opaConfig precedence", func() {
+
+	type test struct {
+		opaDefaultConfig  configv2alpha2.OPAConfig
+		opaconf           ocp.OPAConfig
+		customConfig      map[string]interface{}
+		opaConfig         map[string]interface{}
+		expectedCMContent string
+	}
+
+	ginkgo.DescribeTable("OPAConfToK8sOPAConfigMap", func(test test) {
+		cm, err := k8sconv.OPAConfToK8sOPAConfigMapforOCP(
+			test.opaconf,
+			test.opaDefaultConfig,
+			nil,
+			test.customConfig,
+			test.opaConfig,
+			logr.Discard(),
+			test.opaconf.BundleService,
+			test.opaconf.LogService,
+			test.opaconf.DecisionLogReporting)
+
+		gomega.Expect(err).To(gomega.BeNil())
+
+		var actualMap, expectedMap map[string]interface{}
+		actualYAML := cm.Data["opa-conf.yaml"]
+		expectedYAML := test.expectedCMContent
+
+		err = yaml.Unmarshal([]byte(actualYAML), &actualMap)
+		gomega.Expect(err).ToNot(gomega.HaveOccurred(), "Failed to unmarshal actual YAML")
+
+		err = yaml.Unmarshal([]byte(expectedYAML), &expectedMap)
+		gomega.Expect(err).ToNot(gomega.HaveOccurred(), "Failed to unmarshal expected YAML")
+
+		gomega.Expect(actualMap).To(gomega.Equal(expectedMap))
+	},
+		ginkgo.Entry("opaConfig wins over customConfig on conflict", test{
+			opaconf: ocp.OPAConfig{
+				BundleResource: "bundles/system/bundle.tar.gz",
+				BundleService: &ocp.OPAServiceConfig{
+					Name: "s3",
+					URL:  "https://minio/ocp",
+					Credentials: &ocp.ServiceCredentials{
+						S3: &ocp.S3Signing{
+							S3EnvironmentCredentials: map[string]ocp.EmptyStruct{},
+						},
+					},
+				},
+				LogService: &ocp.OPAServiceConfig{
+					Name: "logs",
+					URL:  "https://log-service/ocp",
+					Credentials: &ocp.ServiceCredentials{
+						Bearer: &ocp.Bearer{
+							TokenPath: "/etc/opa/auth/token",
+						},
+					},
+				},
+				DecisionLogReporting: configv2alpha2.DecisionLogReporting{
+					UploadSizeLimitBytes: 1048576,
+					MinDelaySeconds:      1,
+					MaxDelaySeconds:      30,
+				},
+			},
+			// customConfig sets bundles.authz.service to "s4"
+			customConfig: map[string]interface{}{
+				"bundles": map[string]interface{}{
+					"authz": map[string]interface{}{
+						"service": "s4",
+					},
+				},
+			},
+			// opaConfig overrides the same key back to "s5" — must win
+			opaConfig: map[string]interface{}{
+				"bundles": map[string]interface{}{
+					"authz": map[string]interface{}{
+						"service": "s5",
+					},
+				},
+			},
+			expectedCMContent: `services:
+- name: s3
+  url: https://minio/ocp
+  credentials:
+    s3_signing:
+      environment_credentials: {}
+- name: logs
+  url: https://log-service/ocp
+  credentials:
+    bearer:
+      token_path: /etc/opa/auth/token
+bundles:
+  authz:
+    resource: bundles/system/bundle.tar.gz
+    service: s5
+decision_logs:
+  reporting:
+    upload_size_limit_bytes: 1048576
+    min_delay_seconds: 1
+    max_delay_seconds: 30
+  service: logs
+  resource_path: /logs
+`,
+		}),
+		ginkgo.Entry("opaConfig adds keys not in customConfig", test{
+			opaconf: ocp.OPAConfig{
+				BundleResource: "bundles/system/bundle.tar.gz",
+				BundleService: &ocp.OPAServiceConfig{
+					Name: "s3",
+					URL:  "https://minio/ocp",
+					Credentials: &ocp.ServiceCredentials{
+						S3: &ocp.S3Signing{
+							S3EnvironmentCredentials: map[string]ocp.EmptyStruct{},
+						},
+					},
+				},
+				LogService: &ocp.OPAServiceConfig{
+					Name: "logs",
+					URL:  "https://log-service/ocp",
+					Credentials: &ocp.ServiceCredentials{
+						Bearer: &ocp.Bearer{
+							TokenPath: "/etc/opa/auth/token",
+						},
+					},
+				},
+				DecisionLogReporting: configv2alpha2.DecisionLogReporting{
+					UploadSizeLimitBytes: 1048576,
+					MinDelaySeconds:      1,
+					MaxDelaySeconds:      30,
+				},
+			},
+			customConfig: nil,
+			opaConfig: map[string]interface{}{
+				"caching": map[string]interface{}{
+					"inter_query_builtin_cache": map[string]interface{}{
+						"max_size_bytes": 10000000,
+					},
+				},
+			},
+			expectedCMContent: `services:
+- name: s3
+  url: https://minio/ocp
+  credentials:
+    s3_signing:
+      environment_credentials: {}
+- name: logs
+  url: https://log-service/ocp
+  credentials:
+    bearer:
+      token_path: /etc/opa/auth/token
+bundles:
+  authz:
+    resource: bundles/system/bundle.tar.gz
+    service: s3
+decision_logs:
+  reporting:
+    upload_size_limit_bytes: 1048576
+    min_delay_seconds: 1
+    max_delay_seconds: 30
+  service: logs
+  resource_path: /logs
+caching:
+  inter_query_builtin_cache:
+    max_size_bytes: 10000000
+`,
+		}),
+	)
+})
+
+// Test that controller-level OPAConfig overlays the generated config but can be
+// overridden by legacy customConfig and new opaConfig fields.
+var _ = ginkgo.Describe("OPAConfToK8sOPAConfigMap controller opaConfig precedence", func() {
+
+	type test struct {
+		opaDefaultConfig  configv2alpha2.OPAConfig
+		opaconf           ocp.OPAConfig
+		projectConfig     map[string]interface{}
+		customConfig      map[string]interface{}
+		opaConfig         map[string]interface{}
+		expectedCMContent string
+	}
+
+	ginkgo.DescribeTable("OPAConfToK8sOPAConfigMap", func(test test) {
+		cm, err := k8sconv.OPAConfToK8sOPAConfigMapforOCP(
+			test.opaconf,
+			test.opaDefaultConfig,
+			test.projectConfig,
+			test.customConfig,
+			test.opaConfig,
+			logr.Discard(),
+			test.opaconf.BundleService,
+			test.opaconf.LogService,
+			test.opaconf.DecisionLogReporting)
+
+		gomega.Expect(err).To(gomega.BeNil())
+
+		var actualMap, expectedMap map[string]interface{}
+		actualYAML := cm.Data["opa-conf.yaml"]
+		expectedYAML := test.expectedCMContent
+
+		err = yaml.Unmarshal([]byte(actualYAML), &actualMap)
+		gomega.Expect(err).ToNot(gomega.HaveOccurred(), "Failed to unmarshal actual YAML")
+
+		err = yaml.Unmarshal([]byte(expectedYAML), &expectedMap)
+		gomega.Expect(err).ToNot(gomega.HaveOccurred(), "Failed to unmarshal expected YAML")
+
+		gomega.Expect(actualMap).To(gomega.Equal(expectedMap))
+	},
+		ginkgo.Entry("controller config overrides generated labels and customConfig can override it", test{
+			opaDefaultConfig: configv2alpha2.OPAConfig{
+				DecisionLogs: configv2alpha2.DecisionLog{
+					RequestContext: configv2alpha2.RequestContext{
+						HTTP: configv2alpha2.HTTP{
+							Headers: strings.Split("header1,header2", ","),
+						},
+					},
+				},
+			},
+			opaconf: ocp.OPAConfig{
+				BundleResource: "bundles/system/bundle.tar.gz",
+				BundleService: &ocp.OPAServiceConfig{
+					Name: "s3",
+					URL:  "https://minio/ocp",
+					Credentials: &ocp.ServiceCredentials{
+						S3: &ocp.S3Signing{
+							S3EnvironmentCredentials: map[string]ocp.EmptyStruct{},
+						},
+					},
+				},
+				LogService: &ocp.OPAServiceConfig{
+					Name: "logs",
+					URL:  "https://log-service/ocp",
+					Credentials: &ocp.ServiceCredentials{
+						Bearer: &ocp.Bearer{
+							TokenPath: "/etc/opa/auth/token",
+						},
+					},
+				},
+				DecisionLogReporting: configv2alpha2.DecisionLogReporting{
+					UploadSizeLimitBytes: 1048576,
+					MinDelaySeconds:      1,
+					MaxDelaySeconds:      30,
+				},
+			},
+			projectConfig: map[string]interface{}{
+				"labels": map[string]interface{}{
+					"namespace": "project-ns",
+					"role":      "project",
+				},
+			},
+			customConfig: map[string]interface{}{
+				"labels": map[string]interface{}{
+					"namespace": "custom-ns",
+				},
+			},
+			expectedCMContent: `services:
+- name: s3
+  url: https://minio/ocp
+  credentials:
+    s3_signing:
+      environment_credentials: {}
+- name: logs
+  url: https://log-service/ocp
+  credentials:
+    bearer:
+      token_path: /etc/opa/auth/token
+bundles:
+  authz:
+    resource: bundles/system/bundle.tar.gz
+    service: s3
+decision_logs:
+  request_context:
+    http:
+      headers:
+      - header1
+      - header2
+  reporting:
+    upload_size_limit_bytes: 1048576
+    min_delay_seconds: 1
+    max_delay_seconds: 30
+  service: logs
+  resource_path: /logs
+labels:
+  namespace: custom-ns
+  role: project
 `,
 		}),
 	)

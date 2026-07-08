@@ -28,7 +28,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -55,6 +54,7 @@ import (
 	"github.com/bankdata/styra-controller/internal/webhook"
 	"github.com/bankdata/styra-controller/pkg/httperror"
 	"github.com/bankdata/styra-controller/pkg/ocp"
+	opaconfigutil "github.com/bankdata/styra-controller/pkg/opaconfig"
 )
 
 const (
@@ -423,57 +423,102 @@ func (r *SystemReconciler) reconcileOPAConfigMapForOCP(
 ) (ctrl.Result, bool, error) {
 	log.Info("Reconciling OPA ConfigMap")
 
-	var expectedOPAConfigMap corev1.ConfigMap
-	var customConfig map[string]interface{}
-	if system.Spec.CustomOPAConfig != nil {
-		err := yaml.Unmarshal(system.Spec.CustomOPAConfig.Raw, &customConfig)
+	var controllerOpaConfig map[string]interface{}
+	if r.Config.OPAConfig != nil {
+		var err error
+		controllerOpaConfig, err = opaconfigutil.ToMap(r.Config.OPAConfig)
 		if err != nil {
-			return ctrl.Result{}, false, err
+			return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not convert controller OPA config").
+				WithEvent(v1beta1.EventErrorConvertOPAConf).
+				WithSystemCondition(v1beta1.ConditionTypeOPAConfigMapUpdated)
 		}
 	}
 
-	bundleURL, err := url.JoinPath(r.Config.OPA.BundleServer.URL, r.Config.OPA.BundleServer.Path)
-	if err != nil {
-		return ctrl.Result{}, false, ctrlerr.Wrap(err, "Invalid OPA BundleServer URL or path").
-			WithEvent(v1beta1.EventErrorConvertOPAConf).
-			WithSystemCondition(v1beta1.ConditionTypeOPAConfigMapUpdated)
+	var legacySystemCustomOpaConfig map[string]interface{}
+	if system.Spec.CustomOPAConfig != nil { //nolint:staticcheck
+		var err error
+		legacySystemCustomOpaConfig, err = opaconfigutil.ToMap(system.Spec.CustomOPAConfig) //nolint:staticcheck
+		if err != nil {
+			return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not convert legacy controller OPA config").
+				WithEvent(v1beta1.EventErrorConvertOPAConf).
+				WithSystemCondition(v1beta1.ConditionTypeOPAConfigMapUpdated)
+		}
 	}
 
-	bundleServiceCredentials := &ocp.ServiceCredentials{
-		S3: &ocp.S3Signing{
-			S3EnvironmentCredentials: map[string]ocp.EmptyStruct{},
-		},
+	var systemOpaConfig map[string]interface{}
+	if system.Spec.OPA != nil && system.Spec.OPA.Config != nil {
+		var err error
+		systemOpaConfig, err = opaconfigutil.ToMap(system.Spec.OPA.Config)
+		if err != nil {
+			return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not convert spec.opa.config").
+				WithEvent(v1beta1.EventErrorConvertOPAConf).
+				WithSystemCondition(v1beta1.ConditionTypeOPAConfigMapUpdated)
+		}
 	}
-	if r.Config.OPA.BundleServer.TokenPath != "" {
-		bundleServiceCredentials = &ocp.ServiceCredentials{
-			Bearer: &ocp.Bearer{
-				TokenPath: r.Config.OPA.BundleServer.TokenPath,
+
+	legacyControllerOpaConfig := r.Config.OPA //nolint:staticcheck
+	legacyControllerBundleServer := legacyControllerOpaConfig.BundleServer
+	legacyControllerDecisionAPIConfig := legacyControllerOpaConfig.DecisionAPIConfig
+
+	var legacyBundleService *ocp.OPAServiceConfig //nolint:staticcheck
+	if legacyControllerBundleServer != nil {
+		legacyBundleURL, err := url.JoinPath(legacyControllerBundleServer.URL, legacyControllerBundleServer.Path)
+		if err != nil {
+			return ctrl.Result{}, false, ctrlerr.Wrap(err, "Invalid OPA BundleServer URL or path").
+				WithEvent(v1beta1.EventErrorConvertOPAConf).
+				WithSystemCondition(v1beta1.ConditionTypeOPAConfigMapUpdated)
+		}
+		bundleServiceCredentials := &ocp.ServiceCredentials{ //nolint:staticcheck
+			S3: &ocp.S3Signing{ //nolint:staticcheck
+				S3EnvironmentCredentials: map[string]ocp.EmptyStruct{},
 			},
 		}
+		if legacyControllerBundleServer.TokenPath != "" {
+			bundleServiceCredentials = &ocp.ServiceCredentials{ //nolint:staticcheck
+				Bearer: &ocp.Bearer{ //nolint:staticcheck
+					TokenPath: legacyControllerBundleServer.TokenPath,
+				},
+			}
+		}
+		legacyBundleService = &ocp.OPAServiceConfig{ //nolint:staticcheck
+			Name:        legacyControllerBundleServer.Name,
+			URL:         legacyBundleURL,
+			Credentials: bundleServiceCredentials,
+		}
+	}
+
+	var legacyLogService *ocp.OPAServiceConfig                         //nolint:staticcheck
+	var legacyDecisionLogReporting configv2alpha2.DecisionLogReporting //nolint:staticcheck
+	if legacyControllerDecisionAPIConfig != nil {
+		legacyLogService = &ocp.OPAServiceConfig{ //nolint:staticcheck
+			Name: legacyControllerDecisionAPIConfig.Name,
+			URL:  legacyControllerDecisionAPIConfig.ServiceURL,
+			Credentials: &ocp.ServiceCredentials{ //nolint:staticcheck
+				Bearer: &ocp.Bearer{ //nolint:staticcheck
+					TokenPath: legacyControllerDecisionAPIConfig.TokenPath,
+				},
+			},
+		}
+		legacyDecisionLogReporting = legacyControllerDecisionAPIConfig.Reporting
 	}
 
 	opaconf := ocp.OPAConfig{
-		BundleService: &ocp.OPAServiceConfig{
-			Name:        r.Config.OPA.BundleServer.Name,
-			URL:         bundleURL,
-			Credentials: bundleServiceCredentials,
-		},
-		LogService: &ocp.OPAServiceConfig{
-			Name: r.Config.OPA.DecisionAPIConfig.Name,
-			URL:  r.Config.OPA.DecisionAPIConfig.ServiceURL,
-			Credentials: &ocp.ServiceCredentials{
-				Bearer: &ocp.Bearer{
-					TokenPath: r.Config.OPA.DecisionAPIConfig.TokenPath,
-				},
-			},
-		},
-		DecisionLogReporting: r.Config.OPA.DecisionAPIConfig.Reporting,
-		BundleResource:       fmt.Sprintf("bundles/%s/bundle.tar.gz", uniqueName),
-		UniqueName:           uniqueName,
-		Namespace:            system.Namespace,
+		BundleResource: fmt.Sprintf("bundles/%s/bundle.tar.gz", uniqueName),
+		UniqueName:     uniqueName,
+		Namespace:      system.Namespace,
 	}
 
-	expectedOPAConfigMap, err = k8sconv.OPAConfToK8sOPAConfigMapforOCP(opaconf, r.Config.OPA, customConfig, log)
+	expectedOPAConfigMap, err := k8sconv.OPAConfToK8sOPAConfigMapforOCP(
+		opaconf,
+		legacyControllerOpaConfig,
+		controllerOpaConfig,
+		legacySystemCustomOpaConfig,
+		systemOpaConfig,
+		log,
+		legacyBundleService,
+		legacyLogService,
+		legacyDecisionLogReporting,
+	)
 	if err != nil {
 		return ctrl.Result{}, false, ctrlerr.Wrap(err, "Could not convert OPA conf to ConfigMap").
 			WithEvent(v1beta1.EventErrorConvertOPAConf).

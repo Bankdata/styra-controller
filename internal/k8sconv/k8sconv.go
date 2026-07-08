@@ -37,8 +37,8 @@ type credentials struct {
 }
 
 type authz struct {
-	Service  string `yaml:"service"`
-	Resource string `yaml:"resource"`
+	Service  string `yaml:"service,omitempty"`
+	Resource string `yaml:"resource,omitempty"`
 	Persist  bool   `yaml:"persist,omitempty"`
 }
 
@@ -101,7 +101,7 @@ type OPAConfigMap struct {
 
 // OcpOPAConfigMap represents the structure of the OPA configuration file for OCP
 type OcpOPAConfigMap struct {
-	Services             []*ocp.OPAServiceConfig `yaml:"services"`
+	Services             []*ocp.OPAServiceConfig `yaml:"services"` //nolint:staticcheck
 	Bundles              bundle                  `yaml:"bundles,omitempty"`
 	DecisionLogs         DecisionLogs            `yaml:"decision_logs,omitempty"`
 	PersistenceDirectory string                  `yaml:"persistence_directory,omitempty"`
@@ -138,50 +138,62 @@ type HTTPMetricsConfig struct {
 // OPAConfToK8sOPAConfigMapforOCP creates a ConfigMap for the OPA.
 // It configures OPA to fetch bundle from MinIO.
 // OPAConfToK8sOPAConfigMapforOCP merges the information given as input into a ConfigMap for OPA
-func OPAConfToK8sOPAConfigMapforOCP(
+func OPAConfToK8sOPAConfigMapforOCP( //nolint:staticcheck
 	opaconf ocp.OPAConfig,
-	opaDefaultConfig configv2alpha2.OPAConfig,
-	customConfig map[string]interface{},
+	legacyControllerOpaConfig configv2alpha2.OPAConfig, //nolint:staticcheck
+	controllerOpaConfig map[string]interface{},
+	legacySystemCustomOpaConfig map[string]interface{},
+	systemOpaConfig map[string]interface{},
 	_ logr.Logger,
+	legacyBundleService *ocp.OPAServiceConfig, //nolint:staticcheck
+	legacyLogService *ocp.OPAServiceConfig, //nolint:staticcheck
+	legacyDecisionLogReporting configv2alpha2.DecisionLogReporting, //nolint:staticcheck
 ) (corev1.ConfigMap, error) {
-	var services []*ocp.OPAServiceConfig
+	var services []*ocp.OPAServiceConfig //nolint:staticcheck
 
-	if opaconf.BundleService != nil {
-		services = append(services, opaconf.BundleService)
+	if legacyBundleService != nil {
+		services = append(services, legacyBundleService)
 	}
-	if opaconf.LogService != nil {
-		services = append(services, opaconf.LogService)
+
+	if legacyLogService != nil {
+		services = append(services, legacyLogService)
 	}
 
 	ocpOPAConfigMap := OcpOPAConfigMap{
-		Bundles: bundle{
-			Authz: authz{
-				Service:  opaconf.BundleService.Name,
-				Resource: opaconf.BundleResource,
-			},
-		},
 		Services: services,
 		Labels: labelsOCP{
 			UniqueName: opaconf.UniqueName,
 			Namespace:  opaconf.Namespace,
 		},
-		DecisionLogs: DecisionLogs{
-			ServiceName:  opaconf.LogService.Name,
-			ResourcePath: "/logs",
-			Reporting: &DecisionLogReporting{
-				MaxDelaySeconds:      opaconf.DecisionLogReporting.MaxDelaySeconds,
-				MinDelaySeconds:      opaconf.DecisionLogReporting.MinDelaySeconds,
-				UploadSizeLimitBytes: opaconf.DecisionLogReporting.UploadSizeLimitBytes,
+		Bundles: bundle{
+			Authz: authz{
+				Resource: opaconf.BundleResource,
 			},
 		},
 	}
 
-	if opaDefaultConfig.Metrics.Prometheus.HTTP.Buckets != nil {
+	if legacyBundleService != nil {
+		ocpOPAConfigMap.Bundles.Authz.Service = legacyBundleService.Name
+	}
+
+	if legacyLogService != nil {
+		ocpOPAConfigMap.DecisionLogs = DecisionLogs{
+			ServiceName:  legacyLogService.Name,
+			ResourcePath: "/logs",
+			Reporting: &DecisionLogReporting{
+				MaxDelaySeconds:      legacyDecisionLogReporting.MaxDelaySeconds,
+				MinDelaySeconds:      legacyDecisionLogReporting.MinDelaySeconds,
+				UploadSizeLimitBytes: legacyDecisionLogReporting.UploadSizeLimitBytes,
+			},
+		}
+	}
+
+	if legacyControllerOpaConfig.Metrics.Prometheus.HTTP.Buckets != nil {
 		ocpOPAConfigMap.Server = Serverconfig{
 			Metrics: Metricsconfig{
 				Prometheus: PrometheusMetricsConfig{
 					HTTP: HTTPMetricsConfig{
-						Buckets: opaDefaultConfig.Metrics.Prometheus.HTTP.Buckets,
+						Buckets: legacyControllerOpaConfig.Metrics.Prometheus.HTTP.Buckets,
 					},
 				},
 			},
@@ -191,15 +203,15 @@ func OPAConfToK8sOPAConfigMapforOCP(
 		}
 	}
 
-	if opaDefaultConfig.PersistBundle {
-		ocpOPAConfigMap.Bundles.Authz.Persist = opaDefaultConfig.PersistBundle
-		ocpOPAConfigMap.PersistenceDirectory = opaDefaultConfig.PersistBundleDirectory
+	if legacyControllerOpaConfig.PersistBundle {
+		ocpOPAConfigMap.Bundles.Authz.Persist = legacyControllerOpaConfig.PersistBundle
+		ocpOPAConfigMap.PersistenceDirectory = legacyControllerOpaConfig.PersistBundleDirectory
 	}
 
-	if opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers != nil {
+	if legacyControllerOpaConfig.DecisionLogs.RequestContext.HTTP.Headers != nil {
 		ocpOPAConfigMap.DecisionLogs.RequestContext = requestContext{
 			HTTP: http{
-				Headers: opaDefaultConfig.DecisionLogs.RequestContext.HTTP.Headers,
+				Headers: legacyControllerOpaConfig.DecisionLogs.RequestContext.HTTP.Headers,
 			},
 		}
 	}
@@ -209,7 +221,9 @@ func OPAConfToK8sOPAConfigMapforOCP(
 		return corev1.ConfigMap{}, err
 	}
 
-	merged := mergeMaps(opaConfigMapMapStringInterface, customConfig)
+	merged := mergeMaps(opaConfigMapMapStringInterface, controllerOpaConfig)
+	merged = mergeMaps(merged, legacySystemCustomOpaConfig)
+	merged = mergeMaps(merged, systemOpaConfig)
 
 	res, err := yaml.Marshal(&merged)
 	if err != nil {
@@ -240,7 +254,8 @@ func opaConfigMapToMap(cm interface{}) (map[string]interface{}, error) {
 	return opaConfigMapMapStringInterface, nil
 }
 
-// mergeMaps recursively merges two map[string]interface{} variables
+// mergeMaps recursively merges two map[string]interface{} variables. map2 takes precedence
+// over map1 in case of key conflicts.
 func mergeMaps(map1, map2 map[string]interface{}) map[string]interface{} {
 	// TODO: some times, yaml structs have a name as a key and the value under it
 	// but other times, it is a list, where 'name' is one of the fields.

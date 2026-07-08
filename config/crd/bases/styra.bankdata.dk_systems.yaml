@@ -51,8 +51,11 @@ spec:
             properties:
               customOPAConfig:
                 description: |-
-                  CustomOPAConfig allows the owner of a System resource to set custom features
-                  without having to extend the Controller
+                  Deprecated: CustomOPAConfig allows the owner of a System resource to set
+                  custom OPA configuration that is merged into the generated OPA config.
+                  Use OPA.Config instead, which provides the same capability with runtime
+                  validation of field names against the OPA configuration schema.
+                  If both are set, OPA.Config takes precedence on conflicting keys.
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
               datasources:
@@ -159,9 +162,8 @@ spec:
                 type: boolean
               discoveryOverrides:
                 description: |-
-                  DiscoveryOverrides is an OPA config which will take precedence over the
-                  configuration supplied by the OPA discovery API. Configuration set here
-                  will be merged with the configuration supplied by the discovery API.
+                  Deprecated: DiscoveryOverrides is unused by the controller and will be
+                  removed in a future version. Use OPA.Config instead.
                 properties:
                   distributed_tracing:
                     description: |-
@@ -214,6 +216,91 @@ spec:
                     type: string
                 required:
                 - name
+                type: object
+              opa:
+                description: OPA contains OPA-specific configuration for this system.
+                properties:
+                  config:
+                    description: |-
+                      Config accepts any valid OPA configuration YAML. The top-level keys are
+                      validated by the OPA configuration schema (see
+                      https://github.com/open-policy-agent/opa/blob/main/v1/config/config.go).
+
+                      Configuration set here is merged on top of the generated OPA config and
+                      takes precedence over the deprecated customOPAConfig field on conflicts.
+                    properties:
+                      bundle:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      bundles:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      caching:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      decision_logs:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      default_authorization_decision:
+                        type: string
+                      default_decision:
+                        type: string
+                      discovery:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      distributed_tracing:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      keys:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      labels:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      metrics_export:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      nd_builtin_cache:
+                        type: boolean
+                      persistence_directory:
+                        type: string
+                      plugins:
+                        additionalProperties:
+                          type: object
+                          x-kubernetes-preserve-unknown-fields: true
+                        type: object
+                      server:
+                        description: OPAServerConfig mirrors OPA's server configuration
+                          section.
+                        properties:
+                          decoding:
+                            type: object
+                            x-kubernetes-preserve-unknown-fields: true
+                          encoding:
+                            type: object
+                            x-kubernetes-preserve-unknown-fields: true
+                          logger_plugin:
+                            type: string
+                          metrics:
+                            type: object
+                            x-kubernetes-preserve-unknown-fields: true
+                        type: object
+                      services:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      status:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      storage:
+                        description: OPAStorageConfig mirrors OPA's storage configuration
+                          section.
+                        properties:
+                          disk:
+                            type: object
+                            x-kubernetes-preserve-unknown-fields: true
+                        type: object
+                    type: object
                 type: object
               sourceControl:
                 description: SourceControl holds SourceControl configuration.

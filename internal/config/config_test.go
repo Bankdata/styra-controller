@@ -196,6 +196,19 @@ not: valid: yaml: {{
 		gomega.Ω(err).Should(gomega.HaveOccurred())
 	})
 
+	ginkgo.It("returns an error when opaConfig contains an unknown key", func() {
+		f := writeFile("opa-config.yaml", `
+apiVersion: config.bankdata.dk/v2alpha2
+kind: ProjectConfig
+opaConfig:
+  servicess:
+  - name: bundle
+    url: https://example.invalid
+`)
+		_, err := Load([]string{f}, scheme)
+		gomega.Ω(err).Should(gomega.HaveOccurred())
+	})
+
 	ginkgo.It("preserves nested OPA config when overlay only sets secrets", func() {
 		base := writeFile("base.yaml", `
 apiVersion: config.bankdata.dk/v2alpha2
@@ -221,10 +234,10 @@ opaControlPlaneConfig:
 `)
 		cfg, err := Load([]string{base, secrets}, scheme)
 		gomega.Ω(err).ShouldNot(gomega.HaveOccurred())
-		gomega.Ω(cfg.OPA.BundleServer).ShouldNot(gomega.BeNil())
-		gomega.Ω(cfg.OPA.BundleServer.URL).Should(gomega.Equal("https://minio-host"))
-		gomega.Ω(cfg.OPA.BundleServer.Path).Should(gomega.Equal("/ocp"))
-		gomega.Ω(cfg.OPA.Metrics.Prometheus.HTTP.Buckets).Should(gomega.Equal([]float64{0.01, 0.1, 1}))
+		gomega.Ω(cfg.OPA.BundleServer).ShouldNot(gomega.BeNil())                                        //nolint:staticcheck
+		gomega.Ω(cfg.OPA.BundleServer.URL).Should(gomega.Equal("https://minio-host"))                   //nolint:staticcheck
+		gomega.Ω(cfg.OPA.BundleServer.Path).Should(gomega.Equal("/ocp"))                                //nolint:staticcheck
+		gomega.Ω(cfg.OPA.Metrics.Prometheus.HTTP.Buckets).Should(gomega.Equal([]float64{0.01, 0.1, 1})) //nolint:staticcheck
 		gomega.Ω(cfg.OPAControlPlaneConfig.Token).Should(gomega.Equal("secret-token"))
 	})
 
@@ -340,7 +353,7 @@ opaControlPlaneConfig:
 		gomega.Ω(cfg.OPAControlPlaneConfig.Address).Should(gomega.Equal("https://ocp.example.com"))
 		gomega.Ω(cfg.OPAControlPlaneConfig.BundleObjectStorage.S3.Bucket).Should(gomega.Equal("bundles"))
 		gomega.Ω(cfg.OPAControlPlaneConfig.DefaultRequirements).Should(gomega.Equal([]string{"base-library"}))
-		gomega.Ω(cfg.OPA.BundleServer.URL).Should(gomega.Equal("https://s3.example.com"))
+		gomega.Ω(cfg.OPA.BundleServer.URL).Should(gomega.Equal("https://s3.example.com")) //nolint:staticcheck
 
 		// Secret fields from Secret overlay
 		gomega.Ω(cfg.OPAControlPlaneConfig.Token).Should(gomega.Equal("real-ocp-token"))

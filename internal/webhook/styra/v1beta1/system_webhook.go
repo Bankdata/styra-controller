@@ -19,6 +19,7 @@ package v1beta1
 
 import (
 	"context"
+	"encoding/json"
 	"sort"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -29,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	styrav1beta1 "github.com/bankdata/styra-controller/api/styra/v1beta1"
+	"github.com/bankdata/styra-controller/pkg/opaconfig"
 )
 
 // nolint:all
@@ -138,8 +140,26 @@ func validateSystemSpec(s *styrav1beta1.SystemSpec, path *field.Path) field.Erro
 
 	errs = append(errs, validateDecisionMappings(s, path.Child("decisionMappings"))...)
 	errs = append(errs, validateDatasources(s, path.Child("datasources"))...)
+	errs = append(errs, validateOPAConfig(s, path)...)
 
 	return errs
+}
+
+func validateOPAConfig(s *styrav1beta1.SystemSpec, path *field.Path) field.ErrorList {
+	if s.OPA == nil || s.OPA.Config == nil {
+		return nil
+	}
+
+	raw, err := json.Marshal(s.OPA.Config)
+	if err != nil {
+		return field.ErrorList{field.InternalError(path.Child("opa", "config"), err)}
+	}
+
+	if err := opaconfig.ValidateRaw(raw); err != nil {
+		return field.ErrorList{field.Invalid(path.Child("opa", "config"), s.OPA.Config, err.Error())}
+	}
+
+	return nil
 }
 
 func validateDecisionMappings(s *styrav1beta1.SystemSpec, path *field.Path) field.ErrorList {
