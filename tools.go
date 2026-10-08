@@ -21,8 +21,8 @@ package main
 
 import (
 	_ "github.com/ahmetb/gen-crd-api-reference-docs"
-	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
-	_ "github.com/goreleaser/goreleaser"
+	_ "github.com/golangci/golangci-lint/v2/cmd/golangci-lint"
+	_ "github.com/goreleaser/goreleaser/v2"
 	_ "github.com/onsi/ginkgo/v2/ginkgo"
 	_ "github.com/vektra/mockery/v2"
 	_ "sigs.k8s.io/controller-runtime/tools/setup-envtest"

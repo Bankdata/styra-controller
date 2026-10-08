@@ -12,29 +12,45 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+version: "2"
 run:
   timeout: 10m
-
 linters:
   enable:
+    - lll
     - misspell
     - revive
+    - staticcheck
+  settings:
+    staticcheck:
+      checks:
+        - all
+        # Keep the v1 checks without enabling quick-fix suggestions.
+        - "-QF*"
+  exclusions:
+    generated: lax
+    rules:
+      - linters:
+          - lll
+        source: ^//\+kubebuilder
+      - linters:
+          - staticcheck
+        path: _test\.go
+        text: SA1019
+      - path: (.+)\.go$
+        text: EXC0001
+      - path: (.+)\.go$
+        text: EXC0011
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
     - goimports
-    - stylecheck
-    - lll
-
-issues:
-  exclude-use-default: false
-  exclude:
-    # The list of ids of default excludes to include or disable.
-    # https://golangci-lint.run/usage/false-positives/#default-exclusions
-    - EXC0001
-    - EXC0011
-  exclude-rules:
-  - linters:
-      - lll
-    source: "^//\\+kubebuilder"
-  - path: "_test\\.go"
-    linters:
-      - staticcheck
-    text: "SA1019"
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

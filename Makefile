@@ -222,8 +222,8 @@ $(ENVTEST): $(LOCALBIN)
 .PHONY: golangci-lint
 golangci-lint: ## Download golangci-lint locally if necessary.
 	test -s $(GOLANGCI_LINT) && \
-	$(GOLANGCI_LINT) --version | grep -o $(GOLANGCI_LINT_GO_MOD_VERSION) || \
-	GOBIN=$(LOCALBIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint
+	$(GOLANGCI_LINT) --version | grep -F "version $(patsubst v%,%,$(GOLANGCI_LINT_GO_MOD_VERSION))" || \
+	GOBIN=$(LOCALBIN) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint
 
 .PHONY: ginkgo
 ginkgo: ## Download ginkgo locally if necessary.
@@ -252,4 +252,4 @@ gen-crd-api-reference-docs: ## Download gen-crd-api-reference-docs locally if ne
 goreleaser: ## Download goreleaser locally if necessary.
 	test -s $(GORELEASER) && \
 	$(GORELEASER) -v | grep $(GORELEASER_GO_MOD_VERSION) || \
-	GOBIN=$(LOCALBIN) go install github.com/goreleaser/goreleaser
+	GOBIN=$(LOCALBIN) go install github.com/goreleaser/goreleaser/v2
