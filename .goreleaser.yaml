@@ -45,39 +45,37 @@ archives:
 checksum:
   name_template: 'checksums.txt'
 
-dockers:
-- image_templates:
-  - "ghcr.io/bankdata/styra-controller:{{ .Version }}-amd64"
-  use: buildx
-  goarch: amd64
-  dockerfile: build/package/Dockerfile
-  build_flag_templates:
-  - "--platform=linux/amd64"
-- image_templates:
-  - "ghcr.io/bankdata/styra-controller:{{ .Version }}-arm64"
-  use: buildx
-  goarch: arm64
-  dockerfile: build/package/Dockerfile
-  build_flag_templates:
-  - "--platform=linux/arm64"
-
-docker_manifests:
-- name_template: "ghcr.io/bankdata/styra-controller:latest"
-  image_templates:
-  - "ghcr.io/bankdata/styra-controller:{{ .Version }}-amd64"
-  - "ghcr.io/bankdata/styra-controller:{{ .Version }}-arm64"
-- name_template: "ghcr.io/bankdata/styra-controller:{{ .Major }}"
-  image_templates:
-  - "ghcr.io/bankdata/styra-controller:{{ .Version }}-amd64"
-  - "ghcr.io/bankdata/styra-controller:{{ .Version }}-arm64"
-- name_template: "ghcr.io/bankdata/styra-controller:{{ .Major }}.{{ .Minor }}"
-  image_templates:
-  - "ghcr.io/bankdata/styra-controller:{{ .Version }}-amd64"
-  - "ghcr.io/bankdata/styra-controller:{{ .Version }}-arm64"
-- name_template: "ghcr.io/bankdata/styra-controller:{{ .Version }}"
-  image_templates:
-  - "ghcr.io/bankdata/styra-controller:{{ .Version }}-amd64"
-  - "ghcr.io/bankdata/styra-controller:{{ .Version }}-arm64"
+dockers_v2:
+  - id: multiarch
+    dockerfile: build/package/Dockerfile
+    images:
+      - ghcr.io/bankdata/styra-controller
+    tags:
+      - latest
+      - "{{ .Major }}"
+      - "{{ .Major }}.{{ .Minor }}"
+      - "{{ .Version }}"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+  - id: amd64
+    dockerfile: build/package/Dockerfile
+    images:
+      - ghcr.io/bankdata/styra-controller
+    tags:
+      - "{{ .Version }}-amd64"
+    platforms:
+      - linux/amd64
+    disable: "{{ .IsSnapshot }}"
+  - id: arm64
+    dockerfile: build/package/Dockerfile
+    images:
+      - ghcr.io/bankdata/styra-controller
+    tags:
+      - "{{ .Version }}-arm64"
+    platforms:
+      - linux/arm64
+    disable: "{{ .IsSnapshot }}"
 
 release:
   github:

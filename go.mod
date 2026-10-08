@@ -1,6 +1,6 @@
 module github.com/bankdata/styra-controller
 
-go 1.27.0
+go 1.27.1
 
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
@@ -8,23 +8,23 @@ require (
 	github.com/golangci/golangci-lint/v2 v2.14.0
 	github.com/google/uuid v1.6.0
 	github.com/goreleaser/goreleaser/v2 v2.18.0
-	github.com/onsi/ginkgo/v2 v2.32.1
+	github.com/onsi/ginkgo/v2 v2.33.0
 	github.com/onsi/gomega v1.44.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.24.1
 	github.com/stretchr/testify v1.12.1
-	github.com/vektra/mockery/v2 v2.53.6
+	github.com/vektra/mockery/v2 v2.53.7
 	go.uber.org/zap v1.28.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.37.1
 	k8s.io/apimachinery v0.37.1
 	k8s.io/client-go v0.37.1
-	sigs.k8s.io/controller-runtime v0.24.1
-	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.24.1
+	sigs.k8s.io/controller-runtime v0.25.2
+	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.25.2
 	sigs.k8s.io/controller-tools v0.22.0
 	sigs.k8s.io/kind v0.33.0
-	sigs.k8s.io/kustomize/kustomize/v5 v5.8.1
+	sigs.k8s.io/kustomize/kustomize/v5 v5.8.2
 	sigs.k8s.io/yaml v1.6.0
 )
 
@@ -212,7 +212,7 @@ require (
 	github.com/ghostiam/protogetter v1.0.1 // indirect
 	github.com/github/smimesign v0.2.0 // indirect
 	github.com/go-critic/go-critic v0.15.0 // indirect
-	github.com/go-errors/errors v1.4.2 // indirect
+	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-fed/httpsig v1.1.0 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.9.0 // indirect
@@ -545,9 +545,9 @@ require (
 	mvdan.cc/gofumpt v0.12.0 // indirect
 	mvdan.cc/unparam v0.0.0-20260823230713-2fa3d841b0c8 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
-	sigs.k8s.io/kustomize/api v0.21.1 // indirect
-	sigs.k8s.io/kustomize/cmd/config v0.21.1 // indirect
-	sigs.k8s.io/kustomize/kyaml v0.21.1 // indirect
+	sigs.k8s.io/kustomize/api v0.21.2 // indirect
+	sigs.k8s.io/kustomize/cmd/config v0.21.2 // indirect
+	sigs.k8s.io/kustomize/kyaml v0.21.2 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.4.2 // indirect
 	software.sslmate.com/src/go-pkcs12 v0.7.3 // indirect
