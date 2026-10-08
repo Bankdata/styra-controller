@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.17.2 AS certs
+FROM --platform=$BUILDPLATFORM alpine:3.17.2 AS certs
 
 RUN apk add --no-cache ca-certificates
 
 FROM scratch
 
-ARG BINARY=styra-controller
+ARG TARGETPLATFORM
+ARG BINARY=${TARGETPLATFORM}/styra-controller
 
 USER 65532:65532
 
