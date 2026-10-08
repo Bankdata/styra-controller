@@ -458,5 +458,5 @@ GitRepo
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>24c7f90</code>.
+on git commit <code>6cb1f30</code>.
 </em></p>
